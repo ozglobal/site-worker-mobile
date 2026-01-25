@@ -24,20 +24,23 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Deploy to EC2 via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "dist/*"
-          target: ${{ secrets.EC2_TARGET_DIR }}
-          strip_components: 1
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Debug SSH key
+        run: |
+          echo "Key file size: $(wc -c < ~/.ssh/deploy_key)"
+          echo "Key type: $(head -1 ~/.ssh/deploy_key)"
+          ssh -vvv -i ~/.ssh/deploy_key -o BatchMode=yes ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo SSH OK" 2>&1 | tail -50
+
+      - name: Deploy via rsync
+        run: |
+          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key" dist/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_TARGET_DIR }}/
 
       - name: Reload Nginx
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: sudo systemctl reload nginx || true
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo systemctl reload nginx || true"
