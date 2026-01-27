@@ -17,7 +17,7 @@ export interface LoginResult {
 }
 
 // Mock login for development (when API is not available)
-const MOCK_LOGIN_ENABLED = true
+const MOCK_LOGIN_ENABLED = false
 
 const mockLogin = async (params: LoginParams): Promise<LoginResult> => {
   // Simulate network delay

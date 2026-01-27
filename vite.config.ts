@@ -56,6 +56,13 @@ export default defineConfig({
       ".ngrok-free.app",
       ".trycloudflare.com",
     ],
+    proxy: {
+      '/api': {
+        target: 'https://cworker.eformsign.io',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
 
   build: {
