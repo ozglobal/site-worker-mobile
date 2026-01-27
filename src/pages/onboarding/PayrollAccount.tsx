@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { Button } from "@/components/ui/button"
+import { profileStorage } from "@/lib/storage"
 
 interface Bank {
   id: string
@@ -24,7 +25,7 @@ export function PayrollAccountPage() {
   const navigate = useNavigate()
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
-  const accountHolder = "홍길동" // This would come from user profile
+  const accountHolder = profileStorage.getWorkerName() || ""
 
   const handleBack = () => {
     navigate(-1)
@@ -33,7 +34,7 @@ export function PayrollAccountPage() {
   const handleSubmit = () => {
     // TODO: Save account info
     console.log({ selectedBank, accountNumber, accountHolder })
-    navigate("/login")
+    navigate("/profile")
   }
 
   const handleFamilyProxy = () => {

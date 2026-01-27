@@ -22,7 +22,7 @@ export function OutsourcingPage() {
   const handleSubmit = () => {
     // TODO: Save outsourcing info
     console.log({ selectedCompany })
-    navigate("/onboarding/payroll-account")
+    navigate("/profile")
   }
 
   const isFormValid = selectedCompany !== ""

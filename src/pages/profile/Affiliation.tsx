@@ -37,7 +37,7 @@ const affiliationTypes: AffiliationType[] = [
   },
 ]
 
-export function AffiliationSelectPage() {
+export function AffiliationPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -51,6 +51,8 @@ export function AffiliationSelectPage() {
       navigate("/onboarding/payroll-account")
     } else if (id === "service") {
       navigate("/onboarding/outsourcing")
+    } else if (id === "equipment") {
+      navigate("/onboarding/engineer")
     }
   }
 

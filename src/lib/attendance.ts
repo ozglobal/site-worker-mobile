@@ -329,6 +329,94 @@ export const fetchTodayAttendance = async (workerId?: string): Promise<TodayAtte
 }
 
 /**
+ * Weekly attendance record item
+ */
+export interface WeeklyAttendanceRecord {
+  id: string
+  effectiveDate: string
+  siteId: string
+  siteName: string
+  checkInTime: number
+  checkOutTime?: number
+  workHours?: number
+  workEffort?: number
+  dailyWageSnapshot?: number
+  expectedWage?: number
+  status: string
+  recordType: string
+  hasCheckedIn: boolean
+  hasCheckedOut: boolean
+  complete: boolean
+}
+
+/**
+ * Weekly attendance API response
+ */
+export interface WeeklyAttendanceResponse {
+  success: boolean
+  data?: {
+    records: WeeklyAttendanceRecord[]
+    attendanceDays: number
+    totalWorkHours: number
+    totalWorkEffort: number
+    startDate: string
+    endDate: string
+  }
+  error?: string
+}
+
+/**
+ * Fetch weekly attendance records from API
+ * @param offset - Week offset (0 = current week, 1 = last week, etc.)
+ */
+export const fetchWeeklyAttendance = async (offset: number = 0): Promise<WeeklyAttendanceResponse> => {
+  try {
+    const endpoint = `/system/attendance/my/week?offset=${offset}`
+    console.log('[WEEKLY] Fetching:', endpoint)
+    devLogRequestRaw(endpoint, { method: 'GET', offset })
+
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: {
+        'accept': '*/*',
+        'X-Tenant-Id': X_TENANT_ID,
+      },
+    })
+
+    const data = await response.json()
+    console.log('[WEEKLY] Response status:', response.status)
+    console.log('[WEEKLY] Response data:', data)
+    devLogApiRaw(endpoint, { status: response.status, data })
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.message || data.error || `Failed to fetch weekly attendance (${response.status})`,
+      }
+    }
+
+    const payload = data.data || data
+    return {
+      success: true,
+      data: {
+        records: payload.records || [],
+        attendanceDays: payload.attendanceDays || 0,
+        totalWorkHours: payload.totalWorkHours || 0,
+        totalWorkEffort: payload.totalWorkEffort || 0,
+        startDate: payload.startDate || '',
+        endDate: payload.endDate || '',
+      },
+    }
+  } catch (error) {
+    console.error('[WEEKLY] Error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
+    }
+  }
+}
+
+/**
  * Sync API attendance records to localStorage
  */
 function syncTodayAttendanceToStorage(records: TodayAttendanceItem[]): void {

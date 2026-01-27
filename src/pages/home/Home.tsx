@@ -27,7 +27,9 @@ export function Home() {
 
   const handleNavigation = (item: NavItem) => {
     console.log("Navigation clicked:", item)
-    if (item === "profile") {
+    if (item === "attendance") {
+      navigate("/attendance")
+    } else if (item === "profile") {
       navigate("/profile")
     }
   }

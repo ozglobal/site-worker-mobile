@@ -1,0 +1,13 @@
+{
+  "name": "cworker-upload-server",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node upload-server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.1"
+  }
+}

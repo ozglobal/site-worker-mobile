@@ -115,7 +115,8 @@ export function WeeklyCalendar({
                 dayEvents.slice(0, 2).map((event, eventIndex) => (
                   <span
                     key={eventIndex}
-                    className={`w-1.5 h-1.5 rounded-full ${getColorClass(event.color)}`}
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: event.color.startsWith('#') ? event.color : undefined }}
                   />
                 ))
               )}

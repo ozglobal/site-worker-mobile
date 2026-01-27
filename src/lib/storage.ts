@@ -315,6 +315,101 @@ export const autoLoginStorage = {
 }
 
 // ============================================
+// File Storage (IndexedDB for binary files)
+// ============================================
+
+const FILE_DB_NAME = 'cworker-files'
+const FILE_DB_VERSION = 1
+const FILE_STORE_NAME = 'files'
+
+function openFileDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(FILE_DB_NAME, FILE_DB_VERSION)
+    request.onupgradeneeded = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains(FILE_STORE_NAME)) {
+        db.createObjectStore(FILE_STORE_NAME)
+      }
+    }
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+export interface StoredFileInfo {
+  name: string
+  size: number
+  type: string
+  savedAt: number
+}
+
+export const fileStorage = {
+  save: async (key: string, file: File): Promise<void> => {
+    const db = await openFileDB()
+    const tx = db.transaction(FILE_STORE_NAME, 'readwrite')
+    const store = tx.objectStore(FILE_STORE_NAME)
+    store.put({ blob: file, name: file.name, size: file.size, type: file.type, savedAt: Date.now() }, key)
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  },
+
+  get: async (key: string): Promise<File | null> => {
+    const db = await openFileDB()
+    const tx = db.transaction(FILE_STORE_NAME, 'readonly')
+    const store = tx.objectStore(FILE_STORE_NAME)
+    const request = store.get(key)
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        const result = request.result
+        if (!result) return resolve(null)
+        const file = new File([result.blob], result.name, { type: result.type })
+        resolve(file)
+      }
+      request.onerror = () => reject(request.error)
+    })
+  },
+
+  getInfo: async (key: string): Promise<StoredFileInfo | null> => {
+    const db = await openFileDB()
+    const tx = db.transaction(FILE_STORE_NAME, 'readonly')
+    const store = tx.objectStore(FILE_STORE_NAME)
+    const request = store.get(key)
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        const result = request.result
+        if (!result) return resolve(null)
+        resolve({ name: result.name, size: result.size, type: result.type, savedAt: result.savedAt })
+      }
+      request.onerror = () => reject(request.error)
+    })
+  },
+
+  remove: async (key: string): Promise<void> => {
+    const db = await openFileDB()
+    const tx = db.transaction(FILE_STORE_NAME, 'readwrite')
+    const store = tx.objectStore(FILE_STORE_NAME)
+    store.delete(key)
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  },
+
+  clear: async (): Promise<void> => {
+    const db = await openFileDB()
+    const tx = db.transaction(FILE_STORE_NAME, 'readwrite')
+    const store = tx.objectStore(FILE_STORE_NAME)
+    store.clear()
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  },
+}
+
+// ============================================
 // Clear All Storage (for logout)
 // ============================================
 
@@ -323,5 +418,6 @@ export const clearAllStorage = (): void => {
   profileStorage.clear()
   checkInStorage.clear()
   todayAttendanceStorage.clear()
+  fileStorage.clear()
   // Note: autoLoginStorage is intentionally NOT cleared on logout
 }

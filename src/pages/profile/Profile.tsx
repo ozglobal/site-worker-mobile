@@ -5,6 +5,7 @@ import { AlertBanner } from "@/components/ui/alert-banner"
 import { AffiliationCard } from "@/components/ui/affiliation-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
+import { handleLogout } from "@/lib/auth"
 
 export function ProfilePage() {
   const navigate = useNavigate()
@@ -48,7 +49,7 @@ export function ProfilePage() {
             title="일반"
             subtitle="건설사 소속 근로자"
             actionLabel="변경"
-            onActionClick={() => navigate("/profile/affiliation")}
+            onClick={() => navigate("/profile/affiliation")}
           />
         </div>
 
@@ -109,7 +110,7 @@ export function ProfilePage() {
           <Button
             variant="destructive"
             size="lg"
-            onClick={() => console.log("로그아웃")}
+            onClick={handleLogout}
             className="flex-1 bg-red-50 text-red-500 border border-red-100 hover:bg-red-100"
           >
             로그아웃

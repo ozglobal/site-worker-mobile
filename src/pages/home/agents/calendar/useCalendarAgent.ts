@@ -35,6 +35,9 @@ export interface CalendarAgentActions {
 // Agent Hook
 // ============================================
 
+// Module-level flag to prevent duplicate fetches (persists across StrictMode remounts)
+let hasFetchedThisSession = false
+
 export function useCalendarAgent(
   sites: Site[]
 ): CalendarAgentState & CalendarAgentActions {
@@ -45,7 +48,13 @@ export function useCalendarAgent(
   /**
    * Load events from API using skill
    */
-  const loadEvents = useCallback(async () => {
+  const loadEvents = useCallback(async (force: boolean = false) => {
+    // Skip if already fetched this session (prevents duplicate calls from StrictMode)
+    if (hasFetchedThisSession && !force) {
+      return
+    }
+    hasFetchedThisSession = true
+
     setIsLoading(true)
     try {
       const result = await fetchWeeklyAttendanceRecords()
@@ -85,6 +94,13 @@ export function useCalendarAgent(
     setSelectedDate(date)
   }, [])
 
+  /**
+   * Force refresh events from API
+   */
+  const refresh = useCallback(async () => {
+    await loadEvents(true)
+  }, [loadEvents])
+
   return {
     // State
     events,
@@ -94,6 +110,6 @@ export function useCalendarAgent(
     // Actions
     addEvent,
     selectDate,
-    refresh: loadEvents,
+    refresh,
   }
 }

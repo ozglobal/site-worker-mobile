@@ -8,7 +8,7 @@
  * - NotificationAgent: Toast notifications
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react"
+import { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { profileStorage } from "@/lib/storage"
 import { useAttendanceAgent } from "./agents/attendance"
 import { useLocationAgent } from "./agents/location"
@@ -242,8 +242,24 @@ export function useHomeAgent(): HomeAgentReturn {
   // Sync calendar with attendance records
   // ============================================
 
+  // Track previous records length to detect actual changes (not just initial load)
+  const prevRecordsLength = useRef<number | null>(null)
   useEffect(() => {
-    // Refresh calendar when attendance records change
+    const currentLength = attendance.todayRecords.length
+
+    // Skip if this is the first render (prevRecordsLength is null)
+    if (prevRecordsLength.current === null) {
+      prevRecordsLength.current = currentLength
+      return
+    }
+
+    // Skip if length hasn't actually changed
+    if (prevRecordsLength.current === currentLength) {
+      return
+    }
+
+    // Records changed - refresh calendar (after check-in/out)
+    prevRecordsLength.current = currentLength
     calendar.refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attendance.todayRecords.length])

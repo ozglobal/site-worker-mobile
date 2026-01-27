@@ -72,7 +72,7 @@ export const devLogApiRaw = (
   endpoint: string,
   data: unknown
 ) => {
-  devLog("warn", `[DEV-ONLY][API RAW] ${endpoint}`, data)
+  devLog("warn", `[DEBUG][RESPONSE] ${endpoint}`, data)
 }
 
 /**
@@ -82,5 +82,5 @@ export const devLogRequestRaw = (
   endpoint: string,
   params?: unknown
 ) => {
-  devLog("warn", `[DEV-ONLY][REQUEST RAW] ${endpoint}`, params)
+  devLog("warn", `[DEBUG][REQUEST] ${endpoint}`, params)
 }

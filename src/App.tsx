@@ -9,10 +9,13 @@ import { SignUpStep3Page } from './pages/signup/step3';
 import { SignUpCompletePage } from './pages/signup/complete';
 import { Home } from './pages/home';
 import { ProfilePage } from './pages/profile';
-import { AffiliationSelectPage } from './pages/profile/AffiliationSelect';
+import { AffiliationPage } from './pages/profile/Affiliation';
 import { OnboardingPage } from './pages/onboarding';
 import { PayrollAccountPage } from './pages/onboarding/PayrollAccount';
 import { OutsourcingPage } from './pages/onboarding/Outsourcing';
+import { EngineerPage } from './pages/onboarding/Engineer';
+import { EquipmentsPage } from './pages/onboarding/Equipments';
+import { AttendancePage } from './pages/attendance';
 
 // Public route - redirect to home if already authenticated
 const PublicRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
@@ -41,14 +44,17 @@ const AppRoutes: React.FC = () => {
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/onboarding/payroll-account" element={<PayrollAccountPage />} />
       <Route path="/onboarding/outsourcing" element={<OutsourcingPage />} />
+      <Route path="/onboarding/engineer" element={<EngineerPage />} />
+      <Route path="/onboarding/equipments" element={<EquipmentsPage />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
       <Route path="/signup/step2" element={<PublicRoute><SignUpStep2Page /></PublicRoute>} />
       <Route path="/signup/step3" element={<PublicRoute><SignUpStep3Page /></PublicRoute>} />
       <Route path="/signup/complete" element={<PublicRoute><SignUpCompletePage /></PublicRoute>} />
       <Route path="/home" element={<Home />} />
+      <Route path="/attendance" element={<AttendancePage />} />
       <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/profile/affiliation" element={<AffiliationSelectPage />} />
+      <Route path="/profile/affiliation" element={<AffiliationPage />} />
       <Route path="/" element={<Home />} />
       {/* Catch-all: redirect unknown routes to home or login */}
       <Route path="*" element={<CatchAllRedirect />} />
