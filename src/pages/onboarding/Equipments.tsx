@@ -166,7 +166,7 @@ export function EquipmentsPage() {
         </div>
 
         {/* Bottom Button */}
-        <div className="py-6">
+        <div className="sticky bottom-0 bg-white py-6">
           <Button
             variant={isFormValid ? "primary" : "primaryDisabled"}
             size="full"
