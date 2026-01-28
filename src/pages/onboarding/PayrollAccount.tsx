@@ -130,20 +130,17 @@ export function PayrollAccountPage() {
           </div>
         </div>
 
-        {/* Bottom spacer for scroll */}
-        <div className="h-8" />
-      </div>
-
-      {/* Bottom Button */}
-      <div className="px-4 py-6 shrink-0">
-        <Button
-          variant={isFormValid ? "primary" : "primaryDisabled"}
-          size="full"
-          onClick={handleSubmit}
-          disabled={!isFormValid}
-        >
-          다음
-        </Button>
+        {/* Bottom Button */}
+        <div className="py-6">
+          <Button
+            variant={isFormValid ? "primary" : "primaryDisabled"}
+            size="full"
+            onClick={handleSubmit}
+            disabled={!isFormValid}
+          >
+            다음
+          </Button>
+        </div>
       </div>
     </div>
   )
