@@ -9,6 +9,7 @@ import type { CalendarEvent, Site } from "../../home.types"
 import {
   fetchMonthlyAttendanceRecords,
   recordsToCalendarEvents,
+  recordsToSites,
   hasEventsThisWeek as computeHasEventsThisWeek,
 } from "./skills"
 
@@ -18,6 +19,7 @@ import {
 
 export interface CalendarAgentState {
   events: CalendarEvent[]
+  sites: Site[]
   isLoading: boolean
   selectedDate: Date | null
   hasEventsThisWeek: boolean
@@ -37,6 +39,7 @@ export function useCalendarAgent(
   sites: Site[]
 ): CalendarAgentState & CalendarAgentActions {
   const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [derivedSites, setDerivedSites] = useState<Site[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
@@ -48,6 +51,7 @@ export function useCalendarAgent(
       if (result.success) {
         const calendarEvents = recordsToCalendarEvents(result.records, sites)
         setEvents(calendarEvents)
+        setDerivedSites(recordsToSites(result.records))
       }
     } finally {
       setIsLoading(false)
@@ -77,6 +81,7 @@ export function useCalendarAgent(
 
   return {
     events,
+    sites: derivedSites,
     isLoading,
     selectedDate,
     hasEventsThisWeek,

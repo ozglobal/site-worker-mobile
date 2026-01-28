@@ -45,6 +45,7 @@ export async function fetchWeeklyAttendanceRecords(offset: number = 0): Promise<
         id: record.id,
         date: record.effectiveDate,
         siteId: record.siteId,
+        siteName: record.siteName,
       }))
 
     return { success: true, records }
@@ -58,11 +59,15 @@ export async function fetchWeeklyAttendanceRecords(offset: number = 0): Promise<
 
 /**
  * Fetch monthly attendance records from API
- * @param offset - Month offset (0 = current month, 1 = last month, etc.)
+ * @param year - 4-digit year (defaults to current year)
+ * @param month - 1-based month (defaults to current month)
  */
-export async function fetchMonthlyAttendanceRecords(offset: number = 0): Promise<FetchMonthlyRecordsResult> {
+export async function fetchMonthlyAttendanceRecords(
+  year: number = new Date().getFullYear(),
+  month: number = new Date().getMonth() + 1
+): Promise<FetchMonthlyRecordsResult> {
   try {
-    const result = await fetchMonthlyAttendance(offset)
+    const result = await fetchMonthlyAttendance(year, month)
 
     if (!result.success || !result.data) {
       return {
@@ -77,6 +82,7 @@ export async function fetchMonthlyAttendanceRecords(offset: number = 0): Promise
         id: record.id,
         date: record.effectiveDate,
         siteId: record.siteId,
+        siteName: record.siteName,
       }))
 
     return { success: true, records }

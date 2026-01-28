@@ -133,20 +133,15 @@ export function useHomeAgent(): HomeAgentReturn {
 
   /**
    * Clock In Flow:
-   * 1. Request location
-   * 2. If granted -> open scanner
-   * 3. If denied -> show location popup
+   * 1. Open scanner immediately
+   * 2. Fetch GPS in parallel (will be available by time user scans QR)
    */
   const handleClockIn = useCallback(async () => {
     if (!attendance.canCheckIn) return
 
-    setPendingAction("check-in")
-    const loc = await location.requestLocation()
-
-    if (loc) {
-      setShowScanner(true)
-      setPendingAction(null)
-    }
+    setShowScanner(true)
+    // Fetch GPS in background — don't block the scanner
+    location.requestLocation()
   }, [attendance.canCheckIn, location])
 
   /**
@@ -205,9 +200,7 @@ export function useHomeAgent(): HomeAgentReturn {
     (loc: Location) => {
       location.setLocation(loc)
 
-      if (pendingAction === "check-in") {
-        setShowScanner(true)
-      } else if (pendingAction === "check-out") {
+      if (pendingAction === "check-out") {
         // Execute check-out with the granted location
         attendance.checkOut(loc).then((result) => {
           if (result.success) {
@@ -301,24 +294,6 @@ export function useHomeAgent(): HomeAgentReturn {
     [attendance.todayRecords]
   )
 
-  // Derive visited sites from today's attendance records (for weekly calendar legend)
-  const visitedSites: Site[] = useMemo(() => {
-    const siteColors = ["#007DCA", "#F59E0B", "#10B981", "#EF4444"]
-    const seenSites = new Map<string, Site>()
-
-    attendance.todayRecords.forEach((record, index) => {
-      if (record.siteId && !seenSites.has(record.siteId)) {
-        seenSites.set(record.siteId, {
-          id: record.siteId,
-          name: record.siteName || "",
-          color: siteColors[index % siteColors.length],
-        })
-      }
-    })
-
-    return Array.from(seenSites.values())
-  }, [attendance.todayRecords])
-
   // ============================================
   // Return Grouped API
   // ============================================
@@ -343,7 +318,7 @@ export function useHomeAgent(): HomeAgentReturn {
 
     // Work site
     workSite,
-    sites: visitedSites,
+    sites: calendar.sites,
 
     // Today's work records
     todayWorkRecords,

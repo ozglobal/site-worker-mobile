@@ -29,6 +29,8 @@ export function Home() {
     console.log("Navigation clicked:", item)
     if (item === "attendance") {
       navigate("/attendance")
+    } else if (item === "contract") {
+      navigate("/contract")
     } else if (item === "profile") {
       navigate("/profile")
     }

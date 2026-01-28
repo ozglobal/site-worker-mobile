@@ -6,6 +6,7 @@ export {
   hasEventsThisWeek,
   getSiteColor,
   recordsToCalendarEvents,
+  recordsToSites,
   getWeekDays,
   type WeekBounds,
   type AttendanceRecord,

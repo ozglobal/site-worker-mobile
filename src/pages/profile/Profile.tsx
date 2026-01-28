@@ -19,6 +19,8 @@ export function ProfilePage() {
       navigate("/home")
     } else if (item === "attendance") {
       navigate("/attendance")
+    } else if (item === "contract") {
+      navigate("/contract")
     } else if (item === "profile") {
       // Already on profile page
     }
@@ -26,13 +28,7 @@ export function ProfilePage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
-      <AppHeader
-        showLeftAction={true}
-        title="프로필"
-        showRightAction={false}
-        onLeftActionClick={handleBack}
-        className="shrink-0"
-      />
+      <AppHeader showLeftAction={false} title="시재건설" showRightAction={true} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
         <div className="px-4 py-4">
@@ -63,7 +59,7 @@ export function ProfilePage() {
               title="내 프로필"
               subtitle="연락처 및 기본 정보"
               status="incomplete"
-              onClick={() => navigate("/profile/edit")}
+              onClick={() => navigate("/profile/myinfo")}
             />
             <StatusListItem
               title="계좌 정보"

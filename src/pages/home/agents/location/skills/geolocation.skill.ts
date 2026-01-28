@@ -34,9 +34,9 @@ export interface GeolocationOptions {
 // ============================================
 
 const DEFAULT_OPTIONS: GeolocationOptions = {
-  enableHighAccuracy: true,
+  enableHighAccuracy: false,
   timeout: 10000,
-  maximumAge: 0,
+  maximumAge: 30000,
 }
 
 /**

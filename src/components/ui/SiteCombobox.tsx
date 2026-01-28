@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import {
   Command,
-  CommandInput,
   CommandList,
   CommandEmpty,
   CommandGroup,
@@ -22,7 +21,6 @@ interface SiteComboboxProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
-  searchPlaceholder?: string
   emptyMessage?: string
   className?: string
 }
@@ -32,7 +30,6 @@ export function SiteCombobox({
   value,
   onChange,
   placeholder = "전체 현장",
-  searchPlaceholder = "전체 현장",
   emptyMessage = "현장을 찾을 수 없습니다.",
   className,
 }: SiteComboboxProps) {
@@ -58,16 +55,27 @@ export function SiteCombobox({
       </PopoverTrigger>
       <PopoverContent>
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             <CommandGroup>
+              <CommandItem
+                value="전체 현장"
+                onSelect={() => {
+                  onChange("")
+                  setOpen(false)
+                }}
+              >
+                <span className="flex-1">전체 현장</span>
+                {value === "" && (
+                  <CheckIcon sx={{ fontSize: 16 }} className="text-primary shrink-0" />
+                )}
+              </CommandItem>
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.label}
                   onSelect={() => {
-                    onChange(option.value === value ? "" : option.value)
+                    onChange(option.value)
                     setOpen(false)
                   }}
                 >

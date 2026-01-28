@@ -6,6 +6,7 @@ export interface CalendarEvent {
   date: Date
   color: "blue" | "yellow" | "orange" | string
   label: string
+  siteId?: string
 }
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
@@ -124,13 +125,13 @@ function Calendar({
           return (
             <button className={btnClassName} {...buttonProps}>
               <span>{children}</span>
-              <div className="flex flex-col gap-0.5 mt-1 items-start w-full px-0.5">
+              <div className="flex flex-col gap-0.5 mt-1 items-center w-full px-0.5">
                 {dayEvents.slice(0, 2).map((event, i) => {
                   const dotClass = getEventDotColor(event.color)
                   return (
-                    <div key={i} className="flex items-center gap-1">
+                    <div key={i} className="flex items-center justify-center gap-1">
                       <span
-                        className={cn("w-2 h-2 rounded-full shrink-0", dotClass)}
+                        className={cn("w-1.5 h-1.5 rounded-full shrink-0", dotClass)}
                         style={
                           !dotClass && event.color.startsWith("#")
                             ? { backgroundColor: event.color }

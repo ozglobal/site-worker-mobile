@@ -138,7 +138,7 @@ export function PayrollAccountPage() {
             onClick={handleSubmit}
             disabled={!isFormValid}
           >
-            다음
+            저장
           </Button>
         </div>
       </div>

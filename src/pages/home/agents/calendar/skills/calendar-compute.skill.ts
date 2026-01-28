@@ -18,6 +18,7 @@ export interface AttendanceRecord {
   id: string
   date: string
   siteId: string
+  siteName?: string
 }
 
 // ============================================
@@ -99,6 +100,28 @@ export function recordsToCalendarEvents(
     date: new Date(record.date),
     color: getSiteColor(record.siteId, sites, siteIndexMap.get(record.siteId)),
   }))
+}
+
+/**
+ * Extract unique sites from attendance records
+ */
+export function recordsToSites(records: AttendanceRecord[]): Site[] {
+  const siteIndexMap = new Map<string, number>()
+  const seenSites = new Map<string, Site>()
+
+  records.forEach((record) => {
+    if (record.siteId && !seenSites.has(record.siteId)) {
+      const index = siteIndexMap.size
+      siteIndexMap.set(record.siteId, index)
+      seenSites.set(record.siteId, {
+        id: record.siteId,
+        name: record.siteName || "",
+        color: SITE_COLORS[index % SITE_COLORS.length],
+      })
+    }
+  })
+
+  return Array.from(seenSites.values())
 }
 
 /**

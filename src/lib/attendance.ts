@@ -438,13 +438,15 @@ export interface MonthlyAttendanceResponse {
 
 /**
  * Fetch monthly attendance records from API
- * @param offset - Month offset (0 = current month, 1 = last month, etc.)
+ * @param year - 4-digit year (e.g. 2026)
+ * @param month - 1-based month (1–12)
  */
-export const fetchMonthlyAttendance = async (offset: number = 0): Promise<MonthlyAttendanceResponse> => {
+export const fetchMonthlyAttendance = async (year: number, month: number): Promise<MonthlyAttendanceResponse> => {
   try {
-    const endpoint = `/system/attendance/my/month?offset=${offset}`
+    const mm = String(month).padStart(2, '0')
+    const endpoint = `/system/attendance/my/${year}/${mm}`
     console.log('[MONTHLY] Fetching:', endpoint)
-    devLogRequestRaw(endpoint, { method: 'GET', offset })
+    devLogRequestRaw(endpoint, { method: 'GET', year, month })
 
     const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
       method: 'GET',
