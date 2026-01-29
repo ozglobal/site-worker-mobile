@@ -437,7 +437,8 @@ export const clearAllStorage = (): void => {
   authStorage.clear()
   profileStorage.clear()
   checkInStorage.clear()
+  todayAttendanceStorage.clear()
   monthlyAttendanceStorage.clear()
+  autoLoginStorage.clear()
   fileStorage.clear()
-  // Note: autoLoginStorage and todayAttendanceStorage are intentionally NOT cleared on logout
 }
