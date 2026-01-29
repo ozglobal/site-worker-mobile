@@ -141,6 +141,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
 
           // Persist using skill
           persistCheckIn(todayAttendanceStorage, {
+            id: result.data.id,
             siteId,
             siteName: result.data.siteName,
             siteAddress: result.data.siteAddress,

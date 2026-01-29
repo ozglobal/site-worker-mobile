@@ -41,8 +41,9 @@ const defaultStatusLabels: Record<StatusType, string> = {
 function StatusIcon({ status }: { status: StatusType }) {
   if (status === "complete") {
     return (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mr-1">
+        <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
       </svg>
     )
   }

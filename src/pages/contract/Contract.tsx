@@ -81,25 +81,42 @@ export function ContractPage() {
               onClick={() => {
                 if (year === 2026 && contract.month === 1) {
                   window.open("https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=33b8e540a52d44ffbabb66adda405e17&outsider_token_id=d3c6b2ae602f4abd9cc646180bd42cc0&country_code=kr&viewerLang=ko", "_blank")
+                } else if (year === 2025 && contract.month === 12) {
+                  window.open("/assets/contract_2025_12.pdf", "_blank")
                 }
               }}
             >
               <div className="flex flex-col items-start gap-2">
-                <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 font-medium text-xs px-2 py-0.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mr-1">
-                    <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                  </svg>
-                  서명 완료
-                </Badge>
+                {year === 2026 && contract.month === 1 ? (
+                  <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium bg-red-50 text-red-500">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    서명 미완료
+                  </span>
+                ) : (
+                  <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 font-medium text-xs px-2 py-0.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mr-1">
+                      <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                    서명 완료
+                  </Badge>
+                )}
                 <span className="text-base font-semibold text-slate-900">
                   {contract.month}월 근로계약서
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-sm text-slate-400">
-                보기
-                <ChevronRightIcon className="h-4 w-4" />
-              </div>
+              {year === 2026 && contract.month === 1 ? (
+                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              ) : (
+                <div className="flex items-center gap-1 text-sm text-slate-400">
+                  보기
+                  <ChevronRightIcon className="h-4 w-4" />
+                </div>
+              )}
             </button>
           ))}
         </div>

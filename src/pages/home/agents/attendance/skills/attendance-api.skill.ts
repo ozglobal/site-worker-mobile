@@ -22,6 +22,7 @@ export interface CheckOutParams {
 }
 
 export interface CheckInSuccessData {
+  id?: string
   siteId: string
   siteName: string
   siteAddress: string
@@ -48,6 +49,7 @@ export interface AttendanceApiDeps {
   checkIn: (request: any) => Promise<{
     success: boolean
     data?: {
+      attendanceId?: string
       serverTimestamp?: string
       checkInTime?: string
       siteName?: string
@@ -93,6 +95,7 @@ export async function executeCheckInApi(
       return {
         success: true,
         data: {
+          id: result.data?.attendanceId,
           siteId: params.siteId,
           siteName: result.data?.siteName || "",
           siteAddress: result.data?.siteAddress || "",

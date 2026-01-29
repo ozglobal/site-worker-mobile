@@ -10,6 +10,7 @@ import type { todayAttendanceStorage } from "@/lib/storage"
 // ============================================
 
 export interface StoredCheckIn {
+  id?: string
   siteId: string
   siteName: string
   siteAddress: string
@@ -58,6 +59,7 @@ export function persistCheckIn(
   data: StoredCheckIn
 ): boolean {
   return storage.checkIn({
+    id: data.id,
     siteId: data.siteId,
     siteName: data.siteName,
     siteAddress: data.siteAddress,

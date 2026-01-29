@@ -35,6 +35,7 @@ export interface ProfileData {
 }
 
 export interface CheckInData {
+  id?: string
   siteId: string
   siteName?: string
   siteAddress?: string
@@ -42,6 +43,7 @@ export interface CheckInData {
 }
 
 export interface AttendanceRecord {
+  id?: string
   siteId: string
   siteName?: string
   siteAddress?: string
@@ -232,6 +234,7 @@ export const todayAttendanceStorage = {
 
     // Add new record with checkInTime only
     const newRecord: AttendanceRecord = {
+      id: data.id,
       siteId: data.siteId,
       siteName: data.siteName,
       siteAddress: data.siteAddress,
@@ -263,6 +266,7 @@ export const todayAttendanceStorage = {
     const inProgress = records.find(r => !r.checkOutTime)
     if (!inProgress) return null
     return {
+      id: inProgress.id,
       siteId: inProgress.siteId,
       siteName: inProgress.siteName,
       siteAddress: inProgress.siteAddress,
@@ -433,7 +437,7 @@ export const clearAllStorage = (): void => {
   authStorage.clear()
   profileStorage.clear()
   checkInStorage.clear()
-  todayAttendanceStorage.clear()
+  monthlyAttendanceStorage.clear()
   fileStorage.clear()
-  // Note: autoLoginStorage is intentionally NOT cleared on logout
+  // Note: autoLoginStorage and todayAttendanceStorage are intentionally NOT cleared on logout
 }

@@ -124,11 +124,12 @@ export const checkIn = async (request: CheckInRequest): Promise<CheckInResponse>
     // Extract data from response (handle different API response formats)
     const responseData = data.data || data.result || data
 
-    // Ensure serverTimestamp is included (may be at root level or in nested data)
+    // Ensure all fields are included (may be at root level or in nested data)
     return {
       success: true,
       data: {
         ...responseData,
+        attendanceId: responseData.attendanceId || responseData.id || data.attendanceId || data.id,
         serverTimestamp: responseData.serverTimestamp || data.serverTimestamp,
         siteName: responseData.siteName || data.siteName,
         siteAddress: responseData.siteAddress || data.siteAddress,
@@ -177,6 +178,67 @@ export const checkOut = async (request: CheckOutRequest): Promise<CheckOutRespon
       success: false,
       error: error instanceof Error ? error.message : 'Network error',
     }
+  }
+}
+
+/**
+ * Delete attendance API response
+ */
+export interface DeleteAttendanceResponse {
+  success: boolean
+  error?: string
+}
+
+/**
+ * Delete attendance record by ID
+ */
+export const deleteAttendance = async (id: string): Promise<DeleteAttendanceResponse> => {
+  try {
+    devLogRequestRaw(`/system/attendance/${id}`, { method: 'DELETE' })
+    const response = await authFetch(`${API_BASE_URL}/system/attendance/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'accept': '*/*',
+        'X-Tenant-Id': X_TENANT_ID,
+      },
+    })
+
+    const data = await response.json().catch(() => ({}))
+    devLogApiRaw(`/system/attendance/${id}`, { status: response.status, data })
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.message || data.error || `Delete failed (${response.status})`,
+      }
+    }
+
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
+    }
+  }
+}
+
+/**
+ * Delete multiple attendance records by IDs
+ */
+export const deleteAttendanceRecords = async (ids: string[]): Promise<{ success: boolean; errors: string[] }> => {
+  const errors: string[] = []
+
+  for (const id of ids) {
+    if (!id) continue
+    const result = await deleteAttendance(id)
+    if (!result.success && result.error) {
+      errors.push(`ID ${id}: ${result.error}`)
+    }
+  }
+
+  return {
+    success: errors.length === 0,
+    errors,
   }
 }
 
@@ -510,6 +572,7 @@ function syncTodayAttendanceToStorage(records: TodayAttendanceItem[]): void {
   // Add each record from API
   for (const record of records) {
     attendance.records.push({
+      id: record.id,
       siteId: record.siteId,
       siteName: record.siteName,
       siteAddress: record.siteAddress,
