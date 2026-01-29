@@ -2,8 +2,8 @@ import { useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
 
 const UUIDS = [
-  "dd878b29-ab7f-4e03-ab93-0c248215e83d",
-  "eb626897-6b45-40fe-888a-8581bd428228",
+  {name: "무안성면개발사업", uuid: "dd878b29-ab7f-4e03-ab93-0c248215e83d"},
+  {name: "용인성파라곤건축", uuid: "eb626897-6b45-40fe-888a-8581bd428228"}
 ]
 
 export function QrGenerator() {
@@ -24,19 +24,16 @@ export function QrGenerator() {
         </h1>
 
         <div className="space-y-3">
-          <label htmlFor="uuid" className="block text-sm font-medium text-gray-700">
-            현장 코드
-          </label>
-          <select
+                    <select
             id="uuid"
             value={uuid}
             onChange={(e) => setUuid(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            <option value="">현장 코드 선택</option>
-            {UUIDS.map((id) => (
-              <option key={id} value={id}>
-                {id}
+            <option value="">현장 선택</option>
+            {UUIDS.map((site) => (
+              <option key={site.uuid} value={site.uuid}>
+                {site.name}
               </option>
             ))}
           </select>
