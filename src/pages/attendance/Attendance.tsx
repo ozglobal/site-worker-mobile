@@ -134,7 +134,7 @@ export function AttendancePage() {
               className="w-full"
             />
             {sites.length > 0 && (
-              <div className="px-4 py-3 space-y-1">
+              <div className="px-4 pt-1 pb-3 space-y-1">
                 {sites.map((site) => (
                   <div key={site.id} className="flex items-center gap-3">
                     <span
@@ -146,6 +146,27 @@ export function AttendancePage() {
                 ))}
               </div>
             )}
+
+            {/* Monthly Summary Card */}
+            <div className="px-4 pt-3 pb-4">
+              <div className="bg-slate-100 rounded-xl p-5">
+                <h3 className="text-lg font-bold text-slate-900 mb-4">이번 달 요약</h3>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600">총 출역일</span>
+                    <span className="text-sm font-semibold text-slate-900">18일</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600">총 공수</span>
+                    <span className="text-sm font-semibold text-slate-900">18공수</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600">예상 노임</span>
+                    <span className="text-sm font-semibold text-slate-900">2,746,000원</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>

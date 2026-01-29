@@ -16,7 +16,9 @@ const currentYear = new Date().getFullYear()
 function generateContracts(year: number): ContractItem[] {
   const now = new Date()
   const maxMonth = year === now.getFullYear() ? now.getMonth() + 1 : 12
-  return Array.from({ length: maxMonth }, (_, i) => ({
+  // Limit to 3 contracts maximum (show months 12-10 for past years)
+  const count = Math.min(maxMonth, 3)
+  return Array.from({ length: count }, (_, i) => ({
     month: maxMonth - i,
     status: "signed" as const,
   }))
@@ -81,7 +83,7 @@ export function ContractPage() {
               onClick={() => {
                 if (year === 2026 && contract.month === 1) {
                   window.open("https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=33b8e540a52d44ffbabb66adda405e17&outsider_token_id=d3c6b2ae602f4abd9cc646180bd42cc0&country_code=kr&viewerLang=ko", "_blank")
-                } else if (year === 2025 && contract.month === 12) {
+                } else if (year === 2025 && [12, 11, 10].includes(contract.month)) {
                   window.open("/assets/contract_2025_12.pdf", "_blank")
                 }
               }}
@@ -92,7 +94,7 @@ export function ContractPage() {
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    서명 미완료
+                    미완료
                   </span>
                 ) : (
                   <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 font-medium text-xs px-2 py-0.5">
@@ -100,7 +102,7 @@ export function ContractPage() {
                       <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
                     </svg>
-                    서명 완료
+                    완료
                   </Badge>
                 )}
                 <span className="text-base font-semibold text-slate-900">
