@@ -1,1 +1,2 @@
-export { AttendancePage } from './Attendance'
+export { CalendarPage } from './Calendar'
+export { ListPage } from './List'

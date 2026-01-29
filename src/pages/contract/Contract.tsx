@@ -65,7 +65,7 @@ export function ContractPage() {
                 <button
                   key={y}
                   onClick={() => { setYear(y); setYearOpen(false) }}
-                  className={`block w-full px-6 py-3 text-left text-sm ${y === year ? "font-bold text-primary" : "text-slate-700"} hover:bg-slate-50`}
+                  className={`block w-full px-6 py-3 text-left text-base ${y === year ? "font-bold text-primary" : "text-slate-700"} hover:bg-slate-50`}
                 >
                   {y}년
                 </button>
@@ -84,7 +84,7 @@ export function ContractPage() {
                 if (year === 2026 && contract.month === 1) {
                   window.open("https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=33b8e540a52d44ffbabb66adda405e17&outsider_token_id=d3c6b2ae602f4abd9cc646180bd42cc0&country_code=kr&viewerLang=ko", "_blank")
                 } else if (year === 2025 && [12, 11, 10].includes(contract.month)) {
-                  window.open("/assets/contract_2025_12.pdf", "_blank")
+                  window.open("https://cworker.eformsign.io/contract_2025_12.pdf", "_blank")
                 }
               }}
             >

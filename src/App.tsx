@@ -16,7 +16,7 @@ import { PayrollAccountPage } from './pages/onboarding/PayrollAccount';
 import { OutsourcingPage } from './pages/onboarding/Outsourcing';
 import { EngineerPage } from './pages/onboarding/Engineer';
 import { EquipmentsPage } from './pages/onboarding/Equipments';
-import { AttendancePage } from './pages/attendance';
+import { CalendarPage, ListPage } from './pages/attendance';
 import { ContractPage } from './pages/contract';
 import { QrGeneratorPage } from './pages/qr-generator';
 
@@ -55,7 +55,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/signup/step3" element={<PublicRoute><SignUpStep3Page /></PublicRoute>} />
       <Route path="/signup/complete" element={<PublicRoute><SignUpCompletePage /></PublicRoute>} />
       <Route path="/home" element={<Home />} />
-      <Route path="/attendance" element={<AttendancePage />} />
+      <Route path="/attendance" element={<CalendarPage />} />
+      <Route path="/attendance/list" element={<ListPage />} />
       <Route path="/contract" element={<ContractPage />} />
       <Route path="/qr-generator" element={<QrGeneratorPage />} />
       <Route path="/profile" element={<ProfilePage />} />
