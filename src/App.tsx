@@ -18,6 +18,7 @@ import { EngineerPage } from './pages/onboarding/Engineer';
 import { EquipmentsPage } from './pages/onboarding/Equipments';
 import { AttendancePage } from './pages/attendance';
 import { ContractPage } from './pages/contract';
+import { QrGeneratorPage } from './pages/qr-generator';
 
 // Public route - redirect to home if already authenticated
 const PublicRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
@@ -56,6 +57,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/home" element={<Home />} />
       <Route path="/attendance" element={<AttendancePage />} />
       <Route path="/contract" element={<ContractPage />} />
+      <Route path="/qr-generator" element={<QrGeneratorPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/profile/affiliation" element={<AffiliationPage />} />
       <Route path="/profile/myinfo" element={<MyInfoPage />} />
