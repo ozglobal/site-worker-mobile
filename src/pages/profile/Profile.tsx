@@ -47,10 +47,11 @@ export function ProfilePage() {
       await deleteAttendanceRecords(ids)
     }
 
-    // Clear todayAttendance from localStorage
+    // Clear todayAttendance from localStorage and logout
     todayAttendanceStorage.clear()
     setShowLogoutPopup(false)
     setIsDeleting(false)
+    handleLogout()
   }
 
   const handleLogoutWithoutClear = () => {
