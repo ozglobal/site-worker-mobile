@@ -10,10 +10,14 @@ export function QrGenerator() {
   const [uuid, setUuid] = useState("")
   const [qrPayload, setQrPayload] = useState<string | null>(null)
 
-  const handleGenerate = () => {
-    if (!uuid) return
-    const payload = `1|${uuid}|${Date.now()}`
-    setQrPayload(payload)
+  const handleSelect = (selectedUuid: string) => {
+    setUuid(selectedUuid)
+    if (selectedUuid) {
+      const payload = `1|${selectedUuid}|${Date.now()}`
+      setQrPayload(payload)
+    } else {
+      setQrPayload(null)
+    }
   }
 
   return (
@@ -24,10 +28,10 @@ export function QrGenerator() {
         </h1>
 
         <div className="space-y-3">
-                    <select
+          <select
             id="uuid"
             value={uuid}
-            onChange={(e) => setUuid(e.target.value)}
+            onChange={(e) => handleSelect(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <option value="">현장 선택</option>
@@ -37,13 +41,6 @@ export function QrGenerator() {
               </option>
             ))}
           </select>
-          <button
-            onClick={handleGenerate}
-            disabled={!uuid}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            QR 코드 생성
-          </button>
         </div>
 
         {qrPayload && (
