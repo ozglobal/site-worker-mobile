@@ -108,14 +108,14 @@ export function ListPage() {
             {/* 총 출역일 */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-200">
               <span className="text-sm text-slate-600">총 출역일</span>
-              <span className="text-sm font-semibold text-slate-900">18일</span>
+              <span className="text-sm font-semibold text-slate-900">20일</span>
             </div>
 
             {/* 총 공수 */}
             <div className="py-4 border-b border-slate-200">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-600">총 공수</span>
-                <span className="text-sm font-semibold text-slate-900">18공수</span>
+                <span className="text-sm font-semibold text-slate-900">21공수</span>
               </div>
               <div className="mt-3 space-y-2">
                 <div className="flex justify-between items-start">
