@@ -89,9 +89,14 @@ export function ContractPage() {
             return (
             <a
               key={contract.month}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={url || "#"}
+              target={url ? "_blank" : undefined}
+              rel={url ? "noopener noreferrer" : undefined}
+              onClick={(e) => {
+                if (!url) {
+                  e.preventDefault()
+                }
+              }}
               className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm ${year === currentYear && contract.month === new Date().getMonth() + 1 ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25" : "border-gray-100"}`}
             >
               <div className="flex flex-col items-start gap-2">
