@@ -82,7 +82,7 @@ export function ContractPage() {
               className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm ${year === currentYear && contract.month === new Date().getMonth() + 1 ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25" : "border-gray-100"}`}
               onClick={() => {
                 if (year === 2026 && contract.month === 1) {
-                  window.open("https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=09da49fe2c054492ad24a0c0c401fb84&outsider_token_id=983c452a2eaa4e7d96ec4e754ef0f314&country_code=kr&viewerLang=ko", "_blank")
+                  window.open("https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=4279cf3f24394e3c9bb3eaa3ff7283f2&outsider_token_id=8b616d31907b46a6971f33f360adb3b1&country_code=kr&viewerLang=ko", "_blank")
                 } else if (year === 2025 && [12, 11, 10].includes(contract.month)) {
                   window.open("https://cworker.eformsign.io/contract_2025_12.pdf", "_blank")
                 }
