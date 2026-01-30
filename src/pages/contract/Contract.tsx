@@ -86,18 +86,25 @@ export function ContractPage() {
               return undefined
             }
             const url = getContractUrl()
+            const handleClick = () => {
+              if (url) {
+                const link = document.createElement('a')
+                link.href = url
+                link.target = '_blank'
+                link.rel = 'noopener noreferrer'
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+              }
+            }
             return (
-            <a
+            <div
               key={contract.month}
-              href={url || "#"}
-              target={url ? "_blank" : undefined}
-              rel={url ? "noopener noreferrer" : undefined}
-              onClick={(e) => {
-                if (!url) {
-                  e.preventDefault()
-                }
-              }}
-              className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm ${year === currentYear && contract.month === new Date().getMonth() + 1 ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25" : "border-gray-100"}`}
+              role="button"
+              tabIndex={0}
+              onClick={handleClick}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleClick() }}
+              className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm cursor-pointer ${year === currentYear && contract.month === new Date().getMonth() + 1 ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25" : "border-gray-100"}`}
             >
               <div className="flex flex-col items-start gap-2">
                 {year === 2026 && contract.month === 1 ? (
@@ -130,7 +137,7 @@ export function ContractPage() {
                   <ChevronRightIcon className="h-4 w-4" />
                 </div>
               )}
-            </a>
+            </div>
           )
           })}
         </div>
