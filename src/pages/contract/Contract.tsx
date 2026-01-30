@@ -81,7 +81,7 @@ export function ContractPage() {
               if (year === 2026 && contract.month === 1) {
                 return "https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=4279cf3f24394e3c9bb3eaa3ff7283f2&outsider_token_id=8b616d31907b46a6971f33f360adb3b1&country_code=kr&viewerLang=ko"
               } else if (year === 2025 && [12, 11, 10].includes(contract.month)) {
-                return "https://cworker.eformsign.io/contract_2025_12.pdf"
+                return "https://cworker.eformsign.io/assets/contract_2025_12.pdf"
               }
               return undefined
             }
