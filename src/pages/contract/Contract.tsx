@@ -76,20 +76,23 @@ export function ContractPage() {
 
         {/* Contract List */}
         <div className="px-4 py-2 space-y-3">
-          {contracts.map((contract) => (
-            <button
-              type="button"
+          {contracts.map((contract) => {
+            const getContractUrl = () => {
+              if (year === 2026 && contract.month === 1) {
+                return "https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=4279cf3f24394e3c9bb3eaa3ff7283f2&outsider_token_id=8b616d31907b46a6971f33f360adb3b1&country_code=kr&viewerLang=ko"
+              } else if (year === 2025 && [12, 11, 10].includes(contract.month)) {
+                return "https://cworker.eformsign.io/assets/contract_2025_12.pdf?v=2"
+              }
+              return undefined
+            }
+            const url = getContractUrl()
+            return (
+            <a
               key={contract.month}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
               className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm ${year === currentYear && contract.month === new Date().getMonth() + 1 ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25" : "border-gray-100"}`}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                if (year === 2026 && contract.month === 1) {
-                  window.open("https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=4279cf3f24394e3c9bb3eaa3ff7283f2&outsider_token_id=8b616d31907b46a6971f33f360adb3b1&country_code=kr&viewerLang=ko", "_blank")
-                } else if (year === 2025 && [12, 11, 10].includes(contract.month)) {
-                  window.open("https://cworker.eformsign.io/assets/contract_2025_12.pdf?v=2", "_blank")
-                }
-              }}
             >
               <div className="flex flex-col items-start gap-2">
                 {year === 2026 && contract.month === 1 ? (
@@ -122,8 +125,9 @@ export function ContractPage() {
                   <ChevronRightIcon className="h-4 w-4" />
                 </div>
               )}
-            </button>
-          ))}
+            </a>
+          )
+          })}
         </div>
       </main>
 
