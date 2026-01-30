@@ -86,7 +86,9 @@ export function ContractPage() {
               return undefined
             }
             const url = getContractUrl()
-            const handleClick = () => {
+            const handleClick = (e: React.MouseEvent) => {
+              e.preventDefault()
+              e.stopPropagation()
               if (url) {
                 const link = document.createElement('a')
                 link.href = url
@@ -103,7 +105,7 @@ export function ContractPage() {
               role="button"
               tabIndex={0}
               onClick={handleClick}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleClick() }}
+              onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') handleClick(e as unknown as React.MouseEvent) }}
               className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm cursor-pointer ${year === currentYear && contract.month === new Date().getMonth() + 1 ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25" : "border-gray-100"}`}
             >
               <div className="flex flex-col items-start gap-2">
