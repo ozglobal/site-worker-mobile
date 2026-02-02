@@ -314,10 +314,38 @@ export const todayAttendanceStorage = {
 // Monthly Attendance Storage
 // ============================================
 
-export const monthlyAttendanceStorage = {
-  get: (): unknown[] | null => getStorageItem<unknown[]>(STORAGE_KEYS.MONTHLY_ATTENDANCE),
+interface MonthlyAttendanceData {
+  year: number
+  month: number
+  records: unknown[]
+  attendanceDays?: number
+  totalWorkEffort?: number
+}
 
-  set: (records: unknown[]): void => setStorageItem(STORAGE_KEYS.MONTHLY_ATTENDANCE, records),
+export const monthlyAttendanceStorage = {
+  get: (year: number, month: number): unknown[] | null => {
+    const data = getStorageItem<MonthlyAttendanceData>(STORAGE_KEYS.MONTHLY_ATTENDANCE)
+    // Return records only if they match the requested year/month
+    if (data && data.year === year && data.month === month) {
+      return data.records
+    }
+    return null
+  },
+
+  getSummary: (year: number, month: number): { attendanceDays: number; totalWorkEffort: number } | null => {
+    const data = getStorageItem<MonthlyAttendanceData>(STORAGE_KEYS.MONTHLY_ATTENDANCE)
+    if (data && data.year === year && data.month === month) {
+      return {
+        attendanceDays: data.attendanceDays ?? 0,
+        totalWorkEffort: data.totalWorkEffort ?? 0,
+      }
+    }
+    return null
+  },
+
+  set: (year: number, month: number, records: unknown[], attendanceDays?: number, totalWorkEffort?: number): void => {
+    setStorageItem(STORAGE_KEYS.MONTHLY_ATTENDANCE, { year, month, records, attendanceDays, totalWorkEffort })
+  },
 
   clear: (): void => removeStorageItem(STORAGE_KEYS.MONTHLY_ATTENDANCE),
 }

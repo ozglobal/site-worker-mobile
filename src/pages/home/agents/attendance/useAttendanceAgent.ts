@@ -69,6 +69,7 @@ export interface AttendanceAgentActions {
     location?: Location
   ) => Promise<CheckInResult>
   checkOut: (location?: Location) => Promise<CheckOutResult>
+  refreshRecords: () => void
 }
 
 // ============================================
@@ -148,7 +149,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
             serverTimestamp: result.data.serverTimestamp,
           })
 
-          // Refresh records after check-in
+          // Refresh records after check-in (calendar.refresh will sync with server)
           setTodayRecords(todayAttendanceStorage.getRecords())
 
           return { success: true, data: result.data }
@@ -195,7 +196,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
           // Don't clear siteName, siteAddress, checkInTime - keep them for display
           setCompletedCount((prev) => prev + 1)
 
-          // Refresh records after check-out
+          // Refresh records after check-out (calendar.refresh will sync with server)
           setTodayRecords(todayAttendanceStorage.getRecords())
 
           return { success: true }
@@ -208,6 +209,24 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     },
     [checkedInSiteId, checkInTime]
   )
+
+  // Refresh records from storage (called after calendar sync)
+  const refreshRecords = useCallback(() => {
+    const summary = loadTodayAttendance(todayAttendanceStorage)
+    setCompletedCount(summary.completedCount)
+    setTodayRecords(todayAttendanceStorage.getRecords())
+
+    // Also update current check-in state if changed
+    if (summary.currentCheckIn) {
+      setCheckedInSiteId(summary.currentCheckIn.siteId)
+      setSiteName(summary.currentCheckIn.siteName)
+      setSiteAddress(summary.currentCheckIn.siteAddress)
+      setCheckInTime(summary.currentCheckIn.serverTimestamp)
+    } else if (checkedInSiteId && !summary.currentCheckIn) {
+      // Clear check-in state if no longer checked in
+      setCheckedInSiteId(null)
+    }
+  }, [checkedInSiteId])
 
   return {
     // State
@@ -226,5 +245,6 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     // Actions
     checkIn: doCheckIn,
     checkOut: doCheckOut,
+    refreshRecords,
   }
 }

@@ -26,7 +26,6 @@ export function Home() {
   } = useHomeAgent()
 
   const handleNavigation = (item: NavItem) => {
-    console.log("Navigation clicked:", item)
     if (item === "attendance") {
       navigate("/attendance")
     } else if (item === "contract") {
@@ -105,16 +104,18 @@ export function Home() {
                 {attendance.isCheckedIn ? (
                   <button
                     onClick={actions.clockOut}
-                    className="w-full py-4 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors"
+                    disabled={attendance.isProcessing}
+                    className="w-full py-4 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    퇴근하기
+                    {attendance.isProcessing ? "처리 중..." : "퇴근하기"}
                   </button>
                 ) : attendance.canCheckIn && (
                   <button
                     onClick={actions.clockIn}
-                    className="w-full py-4 bg-primary hover:bg-primary-active text-white font-medium rounded-lg transition-colors"
+                    disabled={attendance.isProcessing}
+                    className="w-full py-4 bg-primary hover:bg-primary-active text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    출근하기
+                    {attendance.isProcessing ? "처리 중..." : "출근하기"}
                   </button>
                 )}
               </div>

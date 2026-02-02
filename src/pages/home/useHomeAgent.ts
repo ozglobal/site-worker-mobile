@@ -8,7 +8,7 @@
  * - NotificationAgent: Toast notifications
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { profileStorage } from "@/lib/storage"
 import { useAttendanceAgent } from "./agents/attendance"
 import { useLocationAgent } from "./agents/location"
@@ -102,24 +102,29 @@ interface HomeAgentReturn {
 // Master Agent Hook
 // ============================================
 
-// Stable empty array to prevent infinite re-renders
-const EMPTY_SITES: Site[] = []
-
 export function useHomeAgent(): HomeAgentReturn {
   // ============================================
   // Sub-agents
   // ============================================
   const attendance = useAttendanceAgent()
   const location = useLocationAgent()
-  const calendar = useCalendarAgent(EMPTY_SITES) // Sites will be computed from attendance records
+  const calendar = useCalendarAgent() // Sites will be computed from attendance records
   const notifications = useNotificationAgent()
+
+  // Refresh attendance records after calendar loads (syncs today's records from server)
+  useEffect(() => {
+    if (!calendar.isLoading) {
+      attendance.refreshRecords()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendar.isLoading])
 
   // ============================================
   // Local UI State
   // ============================================
   const [showScanner, setShowScanner] = useState(false)
   const [showCheckoutPopup, setShowCheckoutPopup] = useState(false)
-  const [pendingAction, setPendingAction] = useState<"check-in" | "check-out" | null>(null)
+  const [pendingAction, setPendingAction] = useState<"check-out" | null>(null)
 
   // ============================================
   // User Info
@@ -133,42 +138,34 @@ export function useHomeAgent(): HomeAgentReturn {
 
   /**
    * Clock In Flow:
-   * 1. Open scanner immediately
-   * 2. Fetch GPS in parallel (will be available by time user scans QR)
+   * 1. Open scanner
+   * 2. GPS is fetched fresh after successful QR scan in handleScanSuccess
    */
   const handleClockIn = useCallback(async () => {
     if (!attendance.canCheckIn) return
 
     setShowScanner(true)
-    // Fetch GPS in background — don't block the scanner
-    location.requestLocation()
-  }, [attendance.canCheckIn, location])
+  }, [attendance.canCheckIn])
 
   /**
    * Clock Out Flow:
-   * 1. Request location
-   * 2. If granted -> execute check-out
-   * 3. If denied -> show location popup
+   * Execute check-out immediately (no GPS required)
    */
   const handleClockOut = useCallback(async () => {
     if (!attendance.canCheckOut) return
 
     setPendingAction("check-out")
-    const loc = await location.requestLocation()
 
-    if (loc) {
-      // Location granted -> execute check-out
-      const result = await attendance.checkOut(loc)
+    const result = await attendance.checkOut()
 
-      if (result.success) {
-        setShowCheckoutPopup(true)
-      } else {
-        notifications.showError("퇴근 실패", result.error)
-      }
-      setPendingAction(null)
+    if (result.success) {
+      setShowCheckoutPopup(true)
+      calendar.refresh()
+    } else {
+      notifications.showError("퇴근 실패", result.error)
     }
-    // If null, location agent will show popup
-  }, [attendance, location, notifications])
+    setPendingAction(null)
+  }, [attendance, notifications, calendar])
 
   /**
    * Handle successful QR scan
@@ -177,42 +174,36 @@ export function useHomeAgent(): HomeAgentReturn {
     async (data: QRCodeData) => {
       setShowScanner(false)
 
+      // Always request fresh location for each check-in
+      // Don't rely on cached currentLocation due to React closure stale state
+      const freshLocation = await location.requestLocation()
+
       const result = await attendance.checkIn(
         data.siteId,
         data.issuedAt,
-        location.currentLocation || undefined
+        freshLocation || undefined
       )
 
       if (result.success) {
-        // Calendar will be refreshed automatically via useEffect when todayRecords changes
+        // Refresh calendar from API to show updated attendance
+        calendar.refresh()
         notifications.showSuccess("출근 완료", `${result.data.siteName}에 출근하였습니다.`)
       } else {
         notifications.showError("출근 실패", result.error)
       }
     },
-    [attendance, location.currentLocation, notifications]
+    [attendance, location, notifications, calendar]
   )
 
   /**
-   * Handle location granted from popup
+   * Handle location granted from popup (used during check-in flow)
    */
   const handleLocationGranted = useCallback(
     (loc: Location) => {
       location.setLocation(loc)
-
-      if (pendingAction === "check-out") {
-        // Execute check-out with the granted location
-        attendance.checkOut(loc).then((result) => {
-          if (result.success) {
-            setShowCheckoutPopup(true)
-          } else {
-            notifications.showError("퇴근 실패", result.error)
-          }
-        })
-      }
       setPendingAction(null)
     },
-    [pendingAction, location, attendance, notifications]
+    [location]
   )
 
   /**
@@ -231,31 +222,8 @@ export function useHomeAgent(): HomeAgentReturn {
     setPendingAction(null)
   }, [location])
 
-  // ============================================
-  // Sync calendar with attendance records
-  // ============================================
-
-  // Track previous records length to detect actual changes (not just initial load)
-  const prevRecordsLength = useRef<number | null>(null)
-  useEffect(() => {
-    const currentLength = attendance.todayRecords.length
-
-    // Skip if this is the first render (prevRecordsLength is null)
-    if (prevRecordsLength.current === null) {
-      prevRecordsLength.current = currentLength
-      return
-    }
-
-    // Skip if length hasn't actually changed
-    if (prevRecordsLength.current === currentLength) {
-      return
-    }
-
-    // Records changed - refresh calendar (after check-in/out)
-    prevRecordsLength.current = currentLength
-    calendar.refresh()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attendance.todayRecords.length])
+  // Note: Calendar is refreshed after check-in/out by calling calendar.refresh()
+  // which fetches fresh data from the monthly attendance API.
 
   // ============================================
   // Derived Values
@@ -307,7 +275,8 @@ export function useHomeAgent(): HomeAgentReturn {
     attendance: {
       status: attendance.checkInStatus,
       isCheckedIn: !!attendance.checkedInSiteId,
-      isProcessing: attendance.isProcessing,
+      // Include pendingAction to show loading during GPS fetch phase
+      isProcessing: attendance.isProcessing || pendingAction !== null,
       checkInTime: attendance.checkInTime,
       checkOutTime: attendance.checkOutTime,
       canCheckIn: attendance.canCheckIn,

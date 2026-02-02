@@ -28,7 +28,7 @@ function recordsToEvents(records: WeeklyAttendanceRecord[]): CalendarEvent[] {
   return checkedIn.map((r) => ({
     date: new Date(r.effectiveDate),
     color: SITE_COLORS[(siteIndexMap.get(r.siteId) ?? 0) % SITE_COLORS.length],
-    label: r.workEffort != null ? String(r.workEffort) : "",
+    label: r.workEffort != null ? r.workEffort.toFixed(2) : "",
     siteId: r.siteId,
   }))
 }
@@ -58,13 +58,16 @@ export function CalendarPage() {
   const [selectedSite, setSelectedSite] = useState("")
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [sites, setSites] = useState<SiteLegendItem[]>([])
+  const [attendanceDays, setAttendanceDays] = useState(0)
+  const [totalWorkEffort, setTotalWorkEffort] = useState(0)
 
   useEffect(() => {
-    console.log('[ATTENDANCE] useEffect fired, year:', year, 'month:', month)
     fetchMonthlyAttendance(year, month).then((res) => {
       if (res.success && res.data) {
         setEvents(recordsToEvents(res.data.records))
         setSites(recordsToSiteLegend(res.data.records))
+        setAttendanceDays(res.data.attendanceDays || 0)
+        setTotalWorkEffort(res.data.totalWorkEffort || 0)
       }
     })
   }, [year, month])
@@ -159,14 +162,14 @@ export function CalendarPage() {
             {/* 총 출역일 */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-200">
               <span className="text-sm text-slate-600">총 출역일</span>
-              <span className="text-sm font-semibold text-slate-900">18일</span>
+              <span className="text-sm font-semibold text-slate-900">{attendanceDays}일</span>
             </div>
 
             {/* 총 공수 */}
             <div className="py-4 border-b border-slate-200">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-600">총 공수</span>
-                <span className="text-sm font-semibold text-slate-900">18공수</span>
+                <span className="text-sm font-semibold text-slate-900">{totalWorkEffort}공수</span>
               </div>
               <div className="mt-3 space-y-2">
                 <div className="flex justify-between items-start">
