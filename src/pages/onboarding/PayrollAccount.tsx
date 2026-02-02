@@ -33,13 +33,11 @@ export function PayrollAccountPage() {
 
   const handleSubmit = () => {
     // TODO: Save account info
-    console.log({ selectedBank, accountNumber, accountHolder })
     navigate("/profile")
   }
 
   const handleFamilyProxy = () => {
     // TODO: Navigate to family proxy application
-    console.log("가족 대리수령 신청하기")
   }
 
   const isFormValid = selectedBank && accountNumber.length >= 10

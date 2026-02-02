@@ -21,7 +21,6 @@ export function OutsourcingPage() {
 
   const handleSubmit = () => {
     // TODO: Save outsourcing info
-    console.log({ selectedCompany })
     navigate("/profile")
   }
 

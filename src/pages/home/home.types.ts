@@ -16,6 +16,7 @@ export interface Site {
 export interface CalendarEvent {
   date: Date
   color: "blue" | "orange" | string
+  label?: string
 }
 
 export type CheckInStatus = "출근 전" | "근무 중" | "퇴근 완료"

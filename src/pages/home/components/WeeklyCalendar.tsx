@@ -50,47 +50,54 @@ export function WeeklyCalendar({
     return date.getTime() === selected.getTime()
   }
 
-  const getColorStyle = (color: string): { className?: string; style?: React.CSSProperties } => {
+  const getEventDotColor = (color: string) => {
     switch (color) {
       case "blue":
-        return { className: "bg-primary" }
+        return "bg-primary"
+      case "yellow":
+        return "bg-yellow-400"
       case "orange":
-        return { className: "bg-orange-400" }
+        return "bg-orange-400"
       default:
-        // For hex colors, use inline style
-        return { style: { backgroundColor: color } }
+        return undefined
     }
   }
 
   return (
-    <div className="grid grid-cols-7 gap-1">
-      {weekDays.map((date, index) => {
-        const dayEvents = getEventsForDate(date)
-        const isTodayDate = isToday(date)
-        const isSelectedDate = isSelected(date)
-
-        return (
-          <button
-            key={index}
-            type="button"
-            onClick={() => onSelect?.(date)}
-            className={`flex flex-col items-center py-2 rounded-lg transition-colors ${
-              isTodayDate ? "border border-primary" : ""
-            } ${isSelectedDate ? "bg-slate-200" : "hover:bg-slate-100"}`}
+    <div>
+      {/* Weekday header row - matches MonthlyCalendar */}
+      <div className="flex">
+        {dayNames.map((name, index) => (
+          <div
+            key={name}
+            className={`flex-1 text-center text-xs font-normal rounded-md ${
+              index === 0
+                ? "text-red-500"
+                : index === 6
+                  ? "text-blue-500"
+                  : "text-slate-500"
+            }`}
           >
-            <span
-              className={`text-xs mb-1 ${
-                index === 0
-                  ? "text-red-500"
-                  : index === 6
-                    ? "text-blue-500"
-                    : "text-slate-500"
-              }`}
-            >
-              {dayNames[index]}
-            </span>
-            <span
-              className={`text-sm font-medium ${
+            {name}
+          </div>
+        ))}
+      </div>
+
+      {/* Day cells row - matches MonthlyCalendar */}
+      <div className="flex w-full mt-2">
+        {weekDays.map((date, index) => {
+          const dayEvents = getEventsForDate(date)
+          const isTodayDate = isToday(date)
+          const isSelectedDate = isSelected(date)
+
+          return (
+            <button
+              key={index}
+              type="button"
+              onClick={() => onSelect?.(date)}
+              className={`flex-1 text-center text-sm p-0 relative h-16 rounded-lg font-medium flex flex-col items-center justify-start pt-1 ${
+                isTodayDate ? "border border-primary" : ""
+              } ${isSelectedDate ? "bg-slate-200" : "hover:bg-slate-100"} ${
                 index === 0
                   ? "text-red-500"
                   : index === 6
@@ -98,24 +105,33 @@ export function WeeklyCalendar({
                     : "text-slate-900"
               }`}
             >
-              {date.getDate()}
-            </span>
-            <div className="flex gap-0.5 mt-3 h-2 items-center">
-              {dayEvents.length > 0 &&
-                dayEvents.slice(0, 2).map((event, eventIndex) => {
-                  const colorProps = getColorStyle(event.color)
+              <span>{date.getDate()}</span>
+              <div className="flex flex-col gap-0.5 mt-1 items-center w-full px-0.5">
+                {dayEvents.slice(0, 2).map((event, eventIndex) => {
+                  const dotClass = getEventDotColor(event.color)
                   return (
-                    <span
-                      key={eventIndex}
-                      className={`w-1.5 h-1.5 rounded-full ${colorProps.className || ""}`}
-                      style={colorProps.style}
-                    />
+                    <div key={eventIndex} className="flex items-center justify-center gap-1">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass || ""}`}
+                        style={
+                          !dotClass && event.color.startsWith("#")
+                            ? { backgroundColor: event.color }
+                            : undefined
+                        }
+                      />
+                      {event.label && (
+                        <span className="text-xs font-medium text-slate-700 leading-tight">
+                          {event.label}
+                        </span>
+                      )}
+                    </div>
                   )
                 })}
-            </div>
-          </button>
-        )
-      })}
+              </div>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

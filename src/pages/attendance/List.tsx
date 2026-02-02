@@ -43,7 +43,6 @@ export function ListPage() {
   const [sites, setSites] = useState<SiteLegendItem[]>([])
 
   useEffect(() => {
-    console.log('[ATTENDANCE_LIST] useEffect fired, year:', year, 'month:', month)
     fetchMonthlyAttendance(year, month).then((res) => {
       if (res.success && res.data) {
         setSites(recordsToSiteLegend(res.data.records))

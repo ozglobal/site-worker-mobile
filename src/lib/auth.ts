@@ -56,7 +56,6 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
       captchaId: params.captchaId || '550e8400-e29b-41d4-a716-446655440000',
       clientId: params.clientId || 'mobile',
     }
-    console.log('[LOGIN] Request:', requestBody)
     devLogRequestRaw('/auth/login', requestBody)
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
@@ -67,41 +66,31 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
     })
 
     const responseData = await response.json()
-    console.log('[LOGIN] Response status:', response.status)
-    console.log('[LOGIN] Response data:', responseData)
     devLogApiRaw('/auth/login', { status: response.status, data: responseData })
 
     if (!response.ok) {
-      console.log('[LOGIN] Failed - not ok')
       return { success: false, error: responseData.message || 'Login failed' }
     }
 
     // Unwrap response: API returns { code, message, data: { ... } }
     const payload = responseData.data || responseData
-    console.log('[LOGIN] Payload:', payload)
 
     // Store auth tokens
     const accessToken = payload.accessToken
     const refreshToken = payload.refreshToken
     const expiresIn = payload.expiresIn
-    console.log('[LOGIN] Tokens:', { accessToken: !!accessToken, refreshToken: !!refreshToken, expiresIn })
 
     if (!accessToken) {
-      console.log('[LOGIN] No access token received')
       return { success: false, error: 'No access token received' }
     }
 
     // Calculate issued timestamp from current time (API doesn't provide it)
     const issuedAt = Math.floor(Date.now() / 1000)
     setTokens(accessToken, refreshToken, expiresIn, issuedAt)
-    console.log('[LOGIN] Tokens saved to localStorage')
 
     // Store worker info from login response
     if (payload.workerInfo) {
-      console.log('[LOGIN] Worker info:', payload.workerInfo)
       setWorkerInfo(payload.workerInfo)
-    } else {
-      console.log('[LOGIN] No workerInfo in payload')
     }
 
     // Save username from login request to profile
@@ -112,7 +101,6 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
       profileStorage.set({ workerId: '', workerName: '', username: params.username })
     }
 
-    console.log('[LOGIN] Success')
     return { success: true }
   } catch (error) {
     console.error('[LOGIN] Error:', error)

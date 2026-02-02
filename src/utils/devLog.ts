@@ -44,9 +44,9 @@ export const logApiSummary = (
 export const logDebug = (message: string, data?: unknown) => {
   if (!isDev) return
   if (data !== undefined) {
-    console.log(`[DEBUG] ${message}:`, data)
+    console.log(`${message}:`, data)
   } else {
-    console.log(`[DEBUG] ${message}`)
+    console.log(message)
   }
 }
 
@@ -72,7 +72,7 @@ export const devLogApiRaw = (
   endpoint: string,
   data: unknown
 ) => {
-  devLog("warn", `[DEBUG][RESPONSE] ${endpoint}`, data)
+  devLog("log", `[RESPONSE] ${endpoint}`, data)
 }
 
 /**
@@ -82,5 +82,5 @@ export const devLogRequestRaw = (
   endpoint: string,
   params?: unknown
 ) => {
-  devLog("warn", `[DEBUG][REQUEST] ${endpoint}`, params)
+  devLog("log", `[REQUEST] ${endpoint}`, params)
 }

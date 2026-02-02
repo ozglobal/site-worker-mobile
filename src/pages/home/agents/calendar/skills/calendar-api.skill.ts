@@ -46,6 +46,7 @@ export async function fetchWeeklyAttendanceRecords(offset: number = 0): Promise<
         date: record.effectiveDate,
         siteId: record.siteId,
         siteName: record.siteName,
+        workEffort: record.workEffort,
       }))
 
     return { success: true, records }
@@ -61,13 +62,15 @@ export async function fetchWeeklyAttendanceRecords(offset: number = 0): Promise<
  * Fetch monthly attendance records from API
  * @param year - 4-digit year (defaults to current year)
  * @param month - 1-based month (defaults to current month)
+ * @param forceRefresh - If true, bypass cache and always fetch from API
  */
 export async function fetchMonthlyAttendanceRecords(
   year: number = new Date().getFullYear(),
-  month: number = new Date().getMonth() + 1
+  month: number = new Date().getMonth() + 1,
+  forceRefresh: boolean = false
 ): Promise<FetchMonthlyRecordsResult> {
   try {
-    const result = await fetchMonthlyAttendance(year, month)
+    const result = await fetchMonthlyAttendance(year, month, forceRefresh)
 
     if (!result.success || !result.data) {
       return {
@@ -83,6 +86,7 @@ export async function fetchMonthlyAttendanceRecords(
         date: record.effectiveDate,
         siteId: record.siteId,
         siteName: record.siteName,
+        workEffort: record.workEffort,
       }))
 
     return { success: true, records }

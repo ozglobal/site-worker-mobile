@@ -19,6 +19,7 @@ export interface AttendanceRecord {
   date: string
   siteId: string
   siteName?: string
+  workEffort?: number
 }
 
 // ============================================
@@ -99,6 +100,7 @@ export function recordsToCalendarEvents(
   return records.map((record) => ({
     date: new Date(record.date),
     color: getSiteColor(record.siteId, sites, siteIndexMap.get(record.siteId)),
+    label: record.workEffort != null ? record.workEffort.toFixed(2) : "",
   }))
 }
 
