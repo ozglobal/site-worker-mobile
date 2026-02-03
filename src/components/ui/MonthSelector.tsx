@@ -48,7 +48,7 @@ export function MonthSelector({
             "flex items-center justify-center w-10 h-10 transition-colors",
             viewMode === "calendar"
               ? "bg-white text-slate-900"
-              : "bg-slate-200 text-slate-500"
+              : "bg-slate-200 text-slate-400"
           )}
         >
           <CalendarMonthIcon sx={{ fontSize: 20 }} />
@@ -59,7 +59,7 @@ export function MonthSelector({
             "flex items-center justify-center w-10 h-10 transition-colors",
             viewMode === "list"
               ? "bg-white text-slate-900"
-              : "bg-slate-200 text-slate-500"
+              : "bg-slate-200 text-slate-400"
           )}
         >
           <FormatListBulletedOutlinedIcon sx={{ fontSize: 20 }} />
