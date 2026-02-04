@@ -46,6 +46,7 @@ export function MyInfoPage() {
       <AppTopBar title="내 정보" onBack={() => navigate(-1)} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
+        <div className="flex flex-col min-h-full">
         <div className="px-4 py-6 space-y-6">
           {/* 이름 */}
           <div className="space-y-2">
@@ -101,8 +102,10 @@ export function MyInfoPage() {
             />
           </div>
 
+        </div>
+
           {/* Save Button */}
-          <div className="pt-2 pb-2">
+          <div className="mt-auto px-4 py-6">
             <Button
               variant={hasChanges ? "primary" : "primaryDisabled"}
               size="full"
