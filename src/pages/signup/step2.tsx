@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledInput } from "@/components/ui/labeled-input"
+import { useHoneypot } from "@/hooks/useHoneypot"
 
 function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11)
@@ -12,6 +13,7 @@ function formatPhoneNumber(value: string): string {
 
 export function SignUpStep2Page() {
   const navigate = useNavigate()
+  const { honeypotProps, isBotDetected } = useHoneypot()
   const [phoneNumber, setPhoneNumber] = useState("")
   const [showVerificationInput, setShowVerificationInput] = useState(false)
   const [verificationCode, setVerificationCode] = useState("")
@@ -28,6 +30,7 @@ export function SignUpStep2Page() {
   const isPhoneComplete = phoneNumber.replace(/\D/g, "").length === 11
 
   const handleRequestCode = () => {
+    if (isBotDetected) return
     if (isPhoneComplete) {
       setShowVerificationInput(true)
     }
@@ -48,6 +51,8 @@ export function SignUpStep2Page() {
           <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
             현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
           </p>
+
+          <input {...honeypotProps} />
 
           <div className="flex items-end gap-2">
             <LabeledInput

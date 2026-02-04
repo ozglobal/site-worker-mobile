@@ -13,7 +13,6 @@
  *     ],
  *     currentCheckIn: { siteId, siteName, siteAddress, serverTimestamp } | null
  *   }
- * - autoLogin: Auto-login credentials (phone, password)
  */
 
 // ============================================
@@ -57,11 +56,6 @@ export interface TodayAttendanceData {
   // A record with checkOutTime is complete, without checkOutTime is in-progress (currently checked in)
 }
 
-export interface AutoLoginData {
-  phone: string
-  password: string
-}
-
 // ============================================
 // Storage Keys
 // ============================================
@@ -72,7 +66,6 @@ const STORAGE_KEYS = {
   CHECK_IN: 'checkIn',
   TODAY_ATTENDANCE: 'todayAttendance',
   MONTHLY_ATTENDANCE: 'monthlyAttendance',
-  AUTO_LOGIN: 'autoLogin',
 } as const
 
 // ============================================
@@ -351,18 +344,6 @@ export const monthlyAttendanceStorage = {
 }
 
 // ============================================
-// Auto-Login Storage
-// ============================================
-
-export const autoLoginStorage = {
-  get: (): AutoLoginData | null => getStorageItem<AutoLoginData>(STORAGE_KEYS.AUTO_LOGIN),
-
-  set: (data: AutoLoginData): void => setStorageItem(STORAGE_KEYS.AUTO_LOGIN, data),
-
-  clear: (): void => removeStorageItem(STORAGE_KEYS.AUTO_LOGIN),
-}
-
-// ============================================
 // File Storage (IndexedDB for binary files)
 // ============================================
 
@@ -467,6 +448,5 @@ export const clearAllStorage = (): void => {
   checkInStorage.clear()
   todayAttendanceStorage.clear()
   monthlyAttendanceStorage.clear()
-  autoLoginStorage.clear()
   fileStorage.clear()
 }

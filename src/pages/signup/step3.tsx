@@ -2,9 +2,11 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav } from "@/components/layout/AppBottomNav"
+import { useHoneypot } from "@/hooks/useHoneypot"
 
 export function SignUpStep3Page() {
   const navigate = useNavigate()
+  const { honeypotProps, isBotDetected } = useHoneypot()
   const [formData, setFormData] = useState({
     password: "",
     passwordConfirm: "",
@@ -15,6 +17,7 @@ export function SignUpStep3Page() {
   }
 
   const handleSubmit = () => {
+    if (isBotDetected) return
     // TODO: Call signup API
     navigate("/signup/complete")
   }
@@ -41,6 +44,8 @@ export function SignUpStep3Page() {
       <main className="flex-1 overflow-y-auto bg-white px-4">
         <div className="mt-4">
           <p className="text-2xl font-bold text-slate-900 mb-6">비밀번호를 설정해주세요</p>
+
+          <input {...honeypotProps} />
 
           <div className="space-y-4">
             <div>

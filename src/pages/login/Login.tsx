@@ -1,83 +1,37 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { IconEye, IconEyeClosed } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/contexts/AuthContext"
-import { autoLoginStorage } from "@/lib/storage"
+import { useHoneypot } from "@/hooks/useHoneypot"
 
 export function LoginPage() {
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [autoLogin, setAutoLogin] = useState(false)
-  const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false)
   const navigate = useNavigate()
   const { login } = useAuth()
+  const { honeypotProps, isBotDetected } = useHoneypot()
 
-  // Check for saved credentials and auto-login on mount
-  useEffect(() => {
-    const savedCredentials = autoLoginStorage.get()
-    if (savedCredentials) {
-      setPhone(savedCredentials.phone)
-      setPassword(savedCredentials.password)
-      setAutoLogin(true)
-      setIsAutoLoggingIn(true)
-
-      // Perform auto-login
-      performLogin(savedCredentials.phone, savedCredentials.password, true)
-    }
-  }, [])
-
-  const performLogin = async (loginPhone: string, loginPassword: string, isAuto = false) => {
-    if (!loginPhone || !loginPassword) {
-      console.error('Login failed: Phone and password are required')
-      setIsAutoLoggingIn(false)
-      return
-    }
+  const handleLogin = async () => {
+    if (isBotDetected) return
+    if (!phone || !password) return
 
     const result = await login({
-      username: loginPhone,
-      password: loginPassword,
+      username: phone,
+      password: password,
     })
 
     if (result.success) {
-      // Save credentials if auto-login is enabled (only on manual login)
-      if (!isAuto && autoLogin) {
-        autoLoginStorage.set({ phone: loginPhone, password: loginPassword })
-      }
       navigate('/')
     } else {
       console.error('Login failed:', result.error)
-      // Clear saved credentials if auto-login failed
-      if (isAuto) {
-        autoLoginStorage.clear()
-        setAutoLogin(false)
-      }
-      setIsAutoLoggingIn(false)
     }
-  }
-
-  const handleLogin = async () => {
-    await performLogin(phone, password)
   }
 
   const handleSignUp = () => {
     navigate('/signup')
-  }
-
-  // Show loading during auto-login
-  if (isAutoLoggingIn) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-white">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-3xl">👷</span>
-          <h1 className="text-2xl font-bold text-slate-900">건설인 C-Worker</h1>
-        </div>
-        <p className="text-sm text-gray-500">자동 로그인 중...</p>
-      </div>
-    )
   }
 
   return (
@@ -124,17 +78,8 @@ export function LoginPage() {
           </button>
         </div>
 
-        {/* Auto Login Checkbox */}
-        <label className="flex items-center gap-2 cursor-pointer mt-1">
-          <Checkbox
-            checked={autoLogin}
-            onCheckedChange={(checked) => {
-              setAutoLogin(checked === true)
-              if (!checked) autoLoginStorage.clear()
-            }}
-          />
-          <span className="text-sm text-slate-700">자동 로그인 설정</span>
-        </label>
+        {/* Honeypot */}
+        <input {...honeypotProps} />
 
         {/* Login Button - Figma style */}
         <Button
@@ -150,11 +95,11 @@ export function LoginPage() {
       {/* Helper Links */}
       <div className="mt-5 flex items-center justify-center gap-4 text-sm text-gray-500">
         <button type="button" className="hover:underline" onClick={handleSignUp}>
-          회원가입
+          회원 가입
         </button>
         <span>·</span>
         <button type="button" className="hover:underline">
-          비밀번호 찾기
+          비밀번호 재설정
         </button>
       </div>
     </div>

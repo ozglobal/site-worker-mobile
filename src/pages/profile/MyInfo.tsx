@@ -1,11 +1,33 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { profileStorage } from "@/lib/storage"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
+  const profile = profileStorage.get()
+
+  const [formData, setFormData] = useState({
+    name: profile?.workerName || "",
+    ssnFirst: "990123",
+    ssnSecond: "1234567",
+    phone: "01012345678",
+    address: "서울특별시 강남구 논현로 646 포시에스빌딩",
+  })
+  const [originalData] = useState({ ...formData })
+
+  const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData)
+
+  const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }))
+  }
+
+  const handleSave = () => {
+    // TODO: Call profile update API
+  }
 
   const handleNavigation = (item: NavItem) => {
     if (item === "home") {
@@ -28,43 +50,70 @@ export function MyInfoPage() {
           {/* 이름 */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">이름</label>
-            <Input value={JSON.parse(localStorage.getItem("profile") || "{}").workerName || ""} readOnly className="bg-white" />
+            <Input
+              value={formData.name}
+              onChange={handleChange("name")}
+              className="bg-white"
+            />
           </div>
 
           {/* 주민등록번호 */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">주민등록번호</label>
             <div className="flex items-center gap-2">
-              <Input value="990123" readOnly className="flex-1 bg-white" />
+              <Input
+                inputMode="numeric"
+                maxLength={6}
+                value={formData.ssnFirst}
+                onChange={handleChange("ssnFirst")}
+                className="flex-1 bg-white"
+              />
               <span className="text-slate-400">-</span>
-              <Input value="1●●●●●●" readOnly className="flex-1 bg-white" />
+              <Input
+                type="password"
+                inputMode="numeric"
+                maxLength={7}
+                value={formData.ssnSecond}
+                onChange={handleChange("ssnSecond")}
+                className="flex-1 bg-white"
+              />
             </div>
           </div>
 
           {/* 연락처 */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">연락처</label>
-            <Input value="01012345678" readOnly className="bg-white" />
+            <Input
+              type="tel"
+              value={formData.phone}
+              onChange={handleChange("phone")}
+              className="bg-white"
+            />
           </div>
 
           {/* 주소 */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">주소</label>
-            <Input value="서울특별시 강남구 논현로 646 포시에스빌딩" readOnly className="bg-white" />
+            <Input
+              value={formData.address}
+              onChange={handleChange("address")}
+              className="bg-white"
+            />
+          </div>
+
+          {/* Save Button */}
+          <div className="pt-2 pb-2">
+            <Button
+              variant={hasChanges ? "primary" : "primaryDisabled"}
+              size="full"
+              disabled={!hasChanges}
+              onClick={handleSave}
+            >
+              저장
+            </Button>
           </div>
         </div>
       </main>
-
-      {/* Bottom Button */}
-      <div className="px-4 py-6 shrink-0">
-        <Button
-          variant="primaryDisabled"
-          size="full"
-          disabled
-        >
-          저장
-        </Button>
-      </div>
 
       <AppBottomNav
         active="profile"
