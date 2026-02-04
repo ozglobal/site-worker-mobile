@@ -1,0 +1,159 @@
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { Button } from "@/components/ui/button"
+
+interface Bank {
+  id: string
+  name: string
+}
+
+const banks: Bank[] = [
+  { id: "kb", name: "국민은행" },
+  { id: "shinhan", name: "신한은행" },
+  { id: "woori", name: "우리은행" },
+  { id: "hana", name: "하나은행" },
+  { id: "nh", name: "농협은행" },
+  { id: "ibk", name: "기업은행" },
+  { id: "kakao", name: "카카오뱅크" },
+  { id: "toss", name: "토스뱅크" },
+]
+
+export function FamilyAccountPage() {
+  const navigate = useNavigate()
+  const [familyName, setFamilyName] = useState("")
+  const [selectedBank, setSelectedBank] = useState("")
+  const [accountNumber, setAccountNumber] = useState("")
+  const [certificateFile, setCertificateFile] = useState<File | null>(null)
+
+  const handleBack = () => {
+    navigate(-1)
+  }
+
+  const handleSubmit = () => {
+    // TODO: Save family account info
+    navigate("/profile")
+  }
+
+  const isFormValid = familyName && selectedBank && accountNumber.length >= 10
+
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const handleResize = () => {
+      setKeyboardOpen(window.innerHeight - viewport.height > 150)
+    }
+    viewport.addEventListener("resize", handleResize)
+    return () => viewport.removeEventListener("resize", handleResize)
+  }, [])
+
+  return (
+    <div className="flex h-screen flex-col bg-white">
+      {/* Header */}
+      <div className="flex items-center px-4 py-4 shrink-0">
+        <button onClick={handleBack} className="p-2 -ml-2">
+          <ArrowBackIcon className="h-6 w-6 text-slate-900" />
+        </button>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="px-4 mb-6">
+        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-full w-1/3 bg-primary rounded-full" />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4">
+        <div className="flex flex-col min-h-full">
+        {/* Title */}
+        <h1 className="text-l font-bold text-slate-900 mb-2">가족 대리수령 계좌 정보를 입력해주세요</h1>
+        <p className="text-sm text-slate-500 mb-6">가족 명의 계좌로 급여를 대리 수령할 수 있습니다.</p>
+
+        {/* Form */}
+        <div className="space-y-5">
+          {/* Family Member Name */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              예금주
+            </label>
+            <input
+              type="text"
+              value={familyName}
+              onChange={(e) => setFamilyName(e.target.value)}
+              placeholder="예금주 이름"
+              className="w-full h-12 px-4 rounded-lg border border-gray-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+
+          {/* Bank Select */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              은행명
+            </label>
+            <select
+              value={selectedBank}
+              onChange={(e) => setSelectedBank(e.target.value)}
+              className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
+            >
+              <option value="" disabled>은행 선택</option>
+              {banks.map((bank) => (
+                <option key={bank.id} value={bank.id}>
+                  {bank.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Account Number */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              계좌번호
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+              placeholder="- 없이 숫자만 입력"
+              className="w-full h-12 px-4 rounded-lg border border-gray-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+
+          {/* Bankbook Copy */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              통장사본
+            </label>
+            <label className="flex items-center w-full h-12 px-4 rounded-lg border border-gray-200 bg-white cursor-pointer">
+              <span className="font-medium text-slate-900 mr-2">파일 선택</span>
+              <span className="text-sm text-slate-400 truncate">
+                {certificateFile ? certificateFile.name : "선택된 파일 없음"}
+              </span>
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Bottom Button */}
+        <div className={`py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
+          <Button
+            variant={isFormValid ? "primary" : "primaryDisabled"}
+            size="full"
+            onClick={handleSubmit}
+            disabled={!isFormValid}
+          >
+            저장
+          </Button>
+        </div>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
@@ -25,6 +25,7 @@ export function PayrollAccountPage() {
   const navigate = useNavigate()
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
+  const [certificateFile, setCertificateFile] = useState<File | null>(null)
   const accountHolder = profileStorage.getWorkerName() || ""
 
   const handleBack = () => {
@@ -37,10 +38,21 @@ export function PayrollAccountPage() {
   }
 
   const handleFamilyProxy = () => {
-    // TODO: Navigate to family proxy application
+    navigate("/profile/family-account")
   }
 
   const isFormValid = selectedBank && accountNumber.length >= 10
+
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const handleResize = () => {
+      setKeyboardOpen(window.innerHeight - viewport.height > 150)
+    }
+    viewport.addEventListener("resize", handleResize)
+    return () => viewport.removeEventListener("resize", handleResize)
+  }, [])
 
   return (
     <div className="flex h-screen flex-col bg-white">
@@ -60,6 +72,7 @@ export function PayrollAccountPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4">
+        <div className="flex flex-col min-h-full">
         {/* Title */}
         <h1 className="text-l font-bold text-slate-900 mb-2">급여 계좌 정보를 입력해주세요</h1>
         <p className="text-sm text-slate-500 mb-6">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
@@ -69,7 +82,7 @@ export function PayrollAccountPage() {
           {/* Account Holder Name (readonly) */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              예금주 이름
+              예금주
             </label>
             <div className="w-full h-12 px-4 flex items-center rounded-lg border border-gray-200 bg-gray-50 text-slate-500">
               {accountHolder}
@@ -96,7 +109,7 @@ export function PayrollAccountPage() {
           {/* Bank Select */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              은행 이름
+              은행명
             </label>
             <select
               value={selectedBank}
@@ -113,9 +126,9 @@ export function PayrollAccountPage() {
           </div>
 
           {/* Account Number */}
-          <div className="mb-4">
+          <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              계좌 번호
+              계좌번호
             </label>
             <input
               type="text"
@@ -126,10 +139,29 @@ export function PayrollAccountPage() {
               className="w-full h-12 px-4 rounded-lg border border-gray-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
+
+          {/* Equipment Certificate */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              통장사본
+            </label>
+            <label className="flex items-center w-full h-12 px-4 rounded-lg border border-gray-200 bg-white cursor-pointer">
+              <span className="font-medium text-slate-900 mr-2">파일 선택</span>
+              <span className="text-sm text-slate-400 truncate">
+                {certificateFile ? certificateFile.name : "선택된 파일 없음"}
+              </span>
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
+              />
+            </label>
+          </div>
         </div>
 
         {/* Bottom Button */}
-        <div className="sticky bottom-0 bg-white py-6">
+        <div className={`py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
           <Button
             variant={isFormValid ? "primary" : "primaryDisabled"}
             size="full"
@@ -138,6 +170,7 @@ export function PayrollAccountPage() {
           >
             저장
           </Button>
+        </div>
         </div>
       </div>
     </div>

@@ -24,10 +24,21 @@ export function EngineerPage() {
   const handleSubmit = () => {
     const existing = JSON.parse(localStorage.getItem("engineer") || "{}")
     localStorage.setItem("engineer", JSON.stringify({ ...existing, engineerType, representativeName }))
-    navigate("/onboarding/equipments")
+    navigate("/profile/equipments")
   }
 
   const isFormValid = representativeName.trim().length > 0
+
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const handleResize = () => {
+      setKeyboardOpen(window.innerHeight - viewport.height > 150)
+    }
+    viewport.addEventListener("resize", handleResize)
+    return () => viewport.removeEventListener("resize", handleResize)
+  }, [])
 
   return (
     <div className="flex h-screen flex-col bg-white">
@@ -47,6 +58,7 @@ export function EngineerPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4">
+        <div className="flex flex-col min-h-full">
         {/* Title */}
         <h1 className="text-l font-bold text-slate-900 mb-2">장비기사 분류를 선택해주세요</h1>
         <p className="text-sm text-slate-500 mb-6">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
@@ -135,20 +147,18 @@ export function EngineerPage() {
           </div>
         </div>
 
-        {/* Bottom spacer for scroll */}
-        <div className="h-8" />
-      </div>
-
-      {/* Bottom Button */}
-      <div className="px-4 py-6 shrink-0">
-        <Button
-          variant={isFormValid ? "primary" : "primaryDisabled"}
-          size="full"
-          onClick={handleSubmit}
-          disabled={!isFormValid}
-        >
-          다음
-        </Button>
+        {/* Bottom Button */}
+        <div className={`py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
+          <Button
+            variant={isFormValid ? "primary" : "primaryDisabled"}
+            size="full"
+            onClick={handleSubmit}
+            disabled={!isFormValid}
+          >
+            다음
+          </Button>
+        </div>
+        </div>
       </div>
     </div>
   )

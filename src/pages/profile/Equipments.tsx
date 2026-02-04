@@ -108,6 +108,17 @@ export function EquipmentsPage() {
 
   const isFormValid = selectedEquipment !== ""
 
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const handleResize = () => {
+      setKeyboardOpen(window.innerHeight - viewport.height > 150)
+    }
+    viewport.addEventListener("resize", handleResize)
+    return () => viewport.removeEventListener("resize", handleResize)
+  }, [])
+
   return (
     <div className="flex h-screen flex-col bg-white">
       {/* Header */}
@@ -119,6 +130,7 @@ export function EquipmentsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4">
+        <div className="flex flex-col min-h-full">
         {/* Title */}
         <h1 className="text-l font-bold text-slate-900 mb-2">장비 정보를 등록해주세요</h1>
         <p className="text-sm text-slate-500 mb-6">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
@@ -184,7 +196,7 @@ export function EquipmentsPage() {
         </div>
 
         {/* Bottom Button */}
-        <div className="sticky bottom-0 bg-white py-6">
+        <div className={`py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
           <Button
             variant={isFormValid ? "primary" : "primaryDisabled"}
             size="full"
@@ -193,6 +205,7 @@ export function EquipmentsPage() {
           >
             저장
           </Button>
+        </div>
         </div>
       </div>
     </div>

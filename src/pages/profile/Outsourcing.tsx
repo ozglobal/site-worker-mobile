@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
@@ -26,6 +26,17 @@ export function OutsourcingPage() {
 
   const isFormValid = selectedCompany !== ""
 
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const handleResize = () => {
+      setKeyboardOpen(window.innerHeight - viewport.height > 150)
+    }
+    viewport.addEventListener("resize", handleResize)
+    return () => viewport.removeEventListener("resize", handleResize)
+  }, [])
+
   return (
     <div className="flex h-screen flex-col bg-white">
       {/* Header */}
@@ -44,6 +55,7 @@ export function OutsourcingPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4">
+        <div className="flex flex-col min-h-full">
         {/* Title */}
         <h1 className="text-l font-bold text-slate-900 mb-2">용역회사 정보를 입력해주세요</h1>
         <p className="text-sm text-slate-500 mb-6">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
@@ -80,18 +92,19 @@ export function OutsourcingPage() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Bottom Button */}
-      <div className="px-4 py-6 shrink-0">
-        <Button
-          variant={isFormValid ? "primary" : "primaryDisabled"}
-          size="full"
-          onClick={handleSubmit}
-          disabled={!isFormValid}
-        >
-          저장
-        </Button>
+        {/* Bottom Button */}
+        <div className={`py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
+          <Button
+            variant={isFormValid ? "primary" : "primaryDisabled"}
+            size="full"
+            onClick={handleSubmit}
+            disabled={!isFormValid}
+          >
+            저장
+          </Button>
+        </div>
+        </div>
       </div>
     </div>
   )

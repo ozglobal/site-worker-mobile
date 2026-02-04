@@ -48,11 +48,11 @@ export function AffiliationPage() {
   const handleSelect = (id: string) => {
     setSelected(id)
     if (id === "general" || id === "specialty") {
-      navigate("/onboarding/payroll-account")
+      navigate("/profile/payroll-account")
     } else if (id === "service") {
-      navigate("/onboarding/outsourcing")
+      navigate("/profile/outsourcing")
     } else if (id === "equipment") {
-      navigate("/onboarding/engineer")
+      navigate("/profile/engineer")
     }
   }
 

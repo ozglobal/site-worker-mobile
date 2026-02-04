@@ -36,7 +36,7 @@ export function AppTopBar({
         <div className="h-10 w-10" />
       )}
 
-      <h1 className="text-base font-medium">{title}</h1>
+      <h1 className="text-base font-bold">{title}</h1>
 
       {onForward ? (
         <Button

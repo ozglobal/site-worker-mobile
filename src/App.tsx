@@ -12,10 +12,12 @@ import { ProfilePage } from './pages/profile';
 import { AffiliationPage } from './pages/profile/Affiliation';
 import { MyInfoPage } from './pages/profile/MyInfo';
 import { OnboardingPage } from './pages/onboarding';
-import { PayrollAccountPage } from './pages/onboarding/PayrollAccount';
-import { OutsourcingPage } from './pages/onboarding/Outsourcing';
-import { EngineerPage } from './pages/onboarding/Engineer';
-import { EquipmentsPage } from './pages/onboarding/Equipments';
+import { PayrollAccountPage } from './pages/profile/PayrollAccount';
+import { OutsourcingPage } from './pages/profile/Outsourcing';
+import { EngineerPage } from './pages/profile/Engineer';
+import { EquipmentsPage } from './pages/profile/Equipments';
+import { FamilyAccountPage } from './pages/profile/FamilyAccount';
+import { ChangePasswordPage } from './pages/profile/ChangePassword';
 import { CalendarPage, ListPage } from './pages/attendance';
 import { ContractPage } from './pages/contract';
 import { QrGeneratorPage } from './pages/qr-generator';
@@ -45,10 +47,11 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/onboarding" element={<OnboardingPage />} />
-      <Route path="/onboarding/payroll-account" element={<PayrollAccountPage />} />
-      <Route path="/onboarding/outsourcing" element={<OutsourcingPage />} />
-      <Route path="/onboarding/engineer" element={<EngineerPage />} />
-      <Route path="/onboarding/equipments" element={<EquipmentsPage />} />
+      <Route path="/profile/payroll-account" element={<PayrollAccountPage />} />
+      <Route path="/profile/family-account" element={<FamilyAccountPage />} />
+      <Route path="/profile/outsourcing" element={<OutsourcingPage />} />
+      <Route path="/profile/engineer" element={<EngineerPage />} />
+      <Route path="/profile/equipments" element={<EquipmentsPage />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
       <Route path="/signup/step2" element={<PublicRoute><SignUpStep2Page /></PublicRoute>} />
@@ -62,6 +65,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/profile/affiliation" element={<AffiliationPage />} />
       <Route path="/profile/myinfo" element={<MyInfoPage />} />
+      <Route path="/change-password" element={<ChangePasswordPage />} />
       <Route path="/" element={<Home />} />
       {/* Catch-all: redirect unknown routes to home or login */}
       <Route path="*" element={<CatchAllRedirect />} />

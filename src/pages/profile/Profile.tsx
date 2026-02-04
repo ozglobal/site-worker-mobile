@@ -61,7 +61,7 @@ export function ProfilePage() {
               title="계좌 정보"
               subtitle="급여 받을 계좌"
               status="incomplete"
-              onClick={() => navigate("/profile/account")}
+              onClick={() => navigate("/profile/payroll-account")}
             />
             <StatusListItem
               title="신분증"
