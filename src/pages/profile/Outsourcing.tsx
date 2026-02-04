@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { AppTopBar } from "@/components/layout/AppTopBar"
+import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { Button } from "@/components/ui/button"
 
@@ -14,10 +15,6 @@ const companies = [
 export function OutsourcingPage() {
   const navigate = useNavigate()
   const [selectedCompany, setSelectedCompany] = useState("")
-
-  const handleBack = () => {
-    navigate(-1)
-  }
 
   const handleSubmit = () => {
     // TODO: Save outsourcing info
@@ -37,31 +34,25 @@ export function OutsourcingPage() {
     return () => viewport.removeEventListener("resize", handleResize)
   }, [])
 
+  const handleNavigation = (item: NavItem) => {
+    if (item === "home") {
+      navigate("/home")
+    } else if (item === "attendance") {
+      navigate("/attendance")
+    } else if (item === "contract") {
+      navigate("/contract")
+    } else if (item === "profile") {
+      navigate("/profile")
+    }
+  }
+
   return (
-    <div className="flex h-screen flex-col bg-white">
-      {/* Header */}
-      <div className="flex items-center px-4 py-4 shrink-0">
-        <button onClick={handleBack} className="p-2 -ml-2">
-          <ArrowBackIcon className="h-6 w-6 text-slate-900" />
-        </button>
-      </div>
+    <div className="flex h-screen flex-col overflow-hidden bg-white">
+      <AppTopBar title="용역회사" onBack={() => navigate(-1)} className="shrink-0" />
 
-      {/* Progress Bar */}
-      <div className="px-4 mb-6">
-        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-          <div className="h-full w-1/3 bg-primary rounded-full" />
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4">
+      <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
-        {/* Title */}
-        <h1 className="text-l font-bold text-slate-900 mb-2">용역회사 정보를 입력해주세요</h1>
-        <p className="text-sm text-slate-500 mb-6">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
-
-        {/* Form */}
-        <div className="space-y-5">
+        <div className="px-4 py-6 space-y-5">
           {/* Company Name */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -93,19 +84,25 @@ export function OutsourcingPage() {
           </div>
         </div>
 
-        {/* Bottom Button */}
-        <div className={`py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
-          <Button
-            variant={isFormValid ? "primary" : "primaryDisabled"}
-            size="full"
-            onClick={handleSubmit}
-            disabled={!isFormValid}
-          >
-            저장
-          </Button>
+          {/* Save Button */}
+          <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
+            <Button
+              variant={isFormValid ? "primary" : "primaryDisabled"}
+              size="full"
+              disabled={!isFormValid}
+              onClick={handleSubmit}
+            >
+              저장
+            </Button>
+          </div>
         </div>
-        </div>
-      </div>
+      </main>
+
+      <AppBottomNav
+        active="profile"
+        onNavigate={handleNavigation}
+        className="shrink-0"
+      />
     </div>
   )
 }

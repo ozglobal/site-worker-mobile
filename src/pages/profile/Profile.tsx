@@ -6,9 +6,18 @@ import { AffiliationCard } from "@/components/ui/affiliation-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
 import { handleLogout } from "@/lib/auth"
+import { profileStorage } from "@/lib/storage"
 
-export function ProfilePage() {
+export function MyInfoPage() {
   const navigate = useNavigate()
+  const profile = profileStorage.get()
+  const isMyInfoComplete = !!(
+    profile?.workerName &&
+    profile?.ssnFirst &&
+    profile?.ssnSecond &&
+    profile?.phone &&
+    profile?.address
+  )
 
   const handleNavigation = (item: NavItem) => {
     if (item === "home") {
@@ -54,14 +63,14 @@ export function ProfilePage() {
             <StatusListItem
               title="내 프로필"
               subtitle="연락처 및 기본 정보"
-              status="complete"
+              status={isMyInfoComplete ? "complete" : "incomplete"}
               onClick={() => navigate("/profile/myinfo")}
             />
             <StatusListItem
               title="계좌 정보"
               subtitle="급여 받을 계좌"
               status="incomplete"
-              onClick={() => navigate("/profile/payroll-account")}
+              onClick={() => navigate("/profile/my-account")}
             />
             <StatusListItem
               title="신분증"

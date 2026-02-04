@@ -4,6 +4,7 @@ import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { changePassword } from "@/lib/profile"
 
 export function ChangePasswordPage() {
   const navigate = useNavigate()
@@ -34,8 +35,25 @@ export function ChangePasswordPage() {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
   }
 
-  const handleSave = () => {
-    // TODO: Call password change API
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSave = async () => {
+    if (!isFormValid || submitting) return
+    setSubmitting(true)
+
+    const res = await changePassword({
+      currentPassword: formData.currentPassword,
+      newPassword: formData.newPassword,
+    })
+
+    setSubmitting(false)
+
+    if (res.success) {
+      alert("비밀번호가 변경되었습니다.")
+      navigate("/profile")
+    } else {
+      alert(res.error || "비밀번호 변경에 실패했습니다.")
+    }
   }
 
   const handleNavigation = (item: NavItem) => {
@@ -98,12 +116,12 @@ export function ChangePasswordPage() {
           {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={isFormValid ? "primary" : "primaryDisabled"}
+              variant={isFormValid && !submitting ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!isFormValid}
+              disabled={!isFormValid || submitting}
               onClick={handleSave}
             >
-              변경
+              {submitting ? "변경 중..." : "변경"}
             </Button>
           </div>
         </div>

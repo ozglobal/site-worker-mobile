@@ -48,7 +48,7 @@ export function AffiliationPage() {
   const handleSelect = (id: string) => {
     setSelected(id)
     if (id === "general" || id === "specialty") {
-      navigate("/profile/payroll-account")
+      navigate("/profile/my-account")
     } else if (id === "service") {
       navigate("/profile/outsourcing")
     } else if (id === "equipment") {

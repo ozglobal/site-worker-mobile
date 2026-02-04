@@ -1,23 +1,44 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { profileStorage } from "@/lib/storage"
+import { fetchWorkerMe } from "@/lib/profile"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
-  const profile = profileStorage.get()
 
   const [formData, setFormData] = useState({
-    name: profile?.workerName || "",
-    ssnFirst: "990123",
-    ssnSecond: "1234567",
-    phone: "01012345678",
-    address: "서울특별시 강남구 논현로 646 포시에스빌딩",
+    name: "",
+    ssnFirst: "",
+    ssnSecond: "",
+    phone: "",
+    address: "",
   })
-  const [originalData] = useState({ ...formData })
+  const [originalData, setOriginalData] = useState({ ...formData })
+  const [loading, setLoading] = useState(true)
+  const hasFetched = useRef(false)
+
+  useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+
+    fetchWorkerMe().then((res) => {
+      if (res.success && res.data) {
+        const loaded = {
+          name: res.data.workerName,
+          ssnFirst: res.data.ssnFirst,
+          ssnSecond: res.data.ssnSecond,
+          phone: res.data.phone,
+          address: res.data.address,
+        }
+        setFormData(loaded)
+        setOriginalData(loaded)
+      }
+      setLoading(false)
+    })
+  }, [])
 
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData)
 
@@ -57,6 +78,11 @@ export function MyInfoPage() {
       <AppTopBar title="내 정보" onBack={() => navigate(-1)} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
         <div className="flex flex-col min-h-full">
         <div className="px-4 py-6 space-y-6">
           {/* 이름 */}
@@ -127,6 +153,7 @@ export function MyInfoPage() {
             </Button>
           </div>
         </div>
+        )}
       </main>
 
       <AppBottomNav

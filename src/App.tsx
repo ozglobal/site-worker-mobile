@@ -8,11 +8,11 @@ import { SignUpStep2Page } from './pages/signup/step2';
 import { SignUpStep3Page } from './pages/signup/step3';
 import { SignUpCompletePage } from './pages/signup/complete';
 import { Home } from './pages/home';
-import { ProfilePage } from './pages/profile';
+import { MyInfoPage } from './pages/profile';
 import { AffiliationPage } from './pages/profile/Affiliation';
-import { MyInfoPage } from './pages/profile/MyInfo';
+import { MyInfoPage as MyInfoDetailPage } from './pages/profile/MyInfo';
 import { OnboardingPage } from './pages/onboarding';
-import { PayrollAccountPage } from './pages/profile/PayrollAccount';
+import { MyAccountPage } from './pages/profile/MyAccount';
 import { OutsourcingPage } from './pages/profile/Outsourcing';
 import { EngineerPage } from './pages/profile/Engineer';
 import { EquipmentsPage } from './pages/profile/Equipments';
@@ -47,7 +47,7 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/onboarding" element={<OnboardingPage />} />
-      <Route path="/profile/payroll-account" element={<PayrollAccountPage />} />
+      <Route path="/profile/my-account" element={<MyAccountPage />} />
       <Route path="/profile/family-account" element={<FamilyAccountPage />} />
       <Route path="/profile/outsourcing" element={<OutsourcingPage />} />
       <Route path="/profile/engineer" element={<EngineerPage />} />
@@ -62,9 +62,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/attendance/list" element={<ListPage />} />
       <Route path="/contract" element={<ContractPage />} />
       <Route path="/qr-generator" element={<QrGeneratorPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/profile" element={<MyInfoPage />} />
       <Route path="/profile/affiliation" element={<AffiliationPage />} />
-      <Route path="/profile/myinfo" element={<MyInfoPage />} />
+      <Route path="/profile/myinfo" element={<MyInfoDetailPage />} />
       <Route path="/change-password" element={<ChangePasswordPage />} />
       <Route path="/" element={<Home />} />
       {/* Catch-all: redirect unknown routes to home or login */}

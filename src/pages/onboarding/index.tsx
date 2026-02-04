@@ -49,7 +49,7 @@ export function OnboardingPage() {
 
   const handleComplete = () => {
     localStorage.setItem("onboarding_completed", "true")
-    navigate("/profile/payroll-account")
+    navigate("/profile/my-account")
   }
 
   const slide = slides[currentSlide]

@@ -31,6 +31,10 @@ export interface ProfileData {
   workerName: string
   username?: string
   relatedSiteId?: string
+  ssnFirst?: string
+  ssnSecond?: string
+  phone?: string
+  address?: string
 }
 
 export interface CheckInData {
