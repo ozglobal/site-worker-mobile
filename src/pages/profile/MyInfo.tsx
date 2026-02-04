@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
@@ -20,6 +20,17 @@ export function MyInfoPage() {
   const [originalData] = useState({ ...formData })
 
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData)
+
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const handleResize = () => {
+      setKeyboardOpen(window.innerHeight - viewport.height > 150)
+    }
+    viewport.addEventListener("resize", handleResize)
+    return () => viewport.removeEventListener("resize", handleResize)
+  }, [])
 
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
@@ -105,7 +116,7 @@ export function MyInfoPage() {
         </div>
 
           {/* Save Button */}
-          <div className="mt-auto px-4 py-6">
+          <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
               variant={hasChanges ? "primary" : "primaryDisabled"}
               size="full"
