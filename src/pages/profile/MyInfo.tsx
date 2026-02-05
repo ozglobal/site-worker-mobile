@@ -108,7 +108,6 @@ export function MyInfoPage() {
               />
               <span className="text-slate-400">-</span>
               <Input
-                type="password"
                 inputMode="numeric"
                 maxLength={7}
                 value={formData.ssnSecond}
