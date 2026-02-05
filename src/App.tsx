@@ -21,7 +21,6 @@ import { ChangePasswordPage } from './pages/profile/ChangePassword';
 import { CalendarPage, ListPage } from './pages/attendance';
 import { ContractPage } from './pages/contract';
 import { QrGeneratorPage } from './pages/qr-generator';
-import { PWAUpdatePrompt } from './components/ui/PWAUpdatePrompt';
 
 // Public route - redirect to home if already authenticated
 const PublicRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
@@ -79,7 +78,6 @@ const App: React.FC = () => {
     <AuthProvider>
       <Router>
         <AppRoutes />
-        <PWAUpdatePrompt />
       </Router>
     </AuthProvider>
   );

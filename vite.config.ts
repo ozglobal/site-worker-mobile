@@ -10,12 +10,12 @@ export default defineConfig({
     react(),
 
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "icons/*.png"],
       manifest: false, // use public/manifest.json
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallbackDenylist: [/^\/api/, /\.pdf$/],
+        navigateFallbackDenylist: [/\.pdf$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
