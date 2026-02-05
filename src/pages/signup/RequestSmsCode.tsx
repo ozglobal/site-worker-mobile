@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledInput } from "@/components/ui/labeled-input"
+import { Button } from "@/components/ui/button"
 import { useHoneypot } from "@/hooks/useHoneypot"
 
 function formatPhoneNumber(value: string): string {
@@ -46,45 +47,63 @@ export function RequestSmsCodePage() {
         className="shrink-0"
       />
 
-      <main className="flex-1 overflow-y-auto px-4">
-        <div className="mt-4">
-          <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
-            현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
-          </p>
+      <main className="flex-1 overflow-y-auto">
+        <div className="flex flex-col min-h-full">
+          <div className="px-4 py-6">
+            <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
+              현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
+            </p>
 
-          <input {...honeypotProps} />
+            <input {...honeypotProps} />
 
-          <div className="flex items-end gap-2">
-            <LabeledInput
-              label="휴대폰 번호"
-              type="tel"
-              placeholder="010-0000-0000"
-              value={phoneNumber}
-              onChange={handlePhoneChange}
-              className="w-[190px]"
-            />
-            <button
-              onClick={handleRequestCode}
-              disabled={!isPhoneComplete}
-              className={`h-12 w-[190px] rounded-lg font-medium transition-colors whitespace-nowrap ${
-                isPhoneComplete
-                  ? "bg-primary text-white hover:bg-primary/90"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              인증번호 받기
-            </button>
+            <div className="flex items-end gap-2">
+              <LabeledInput
+                label="휴대폰 번호"
+                type="tel"
+                placeholder="010-0000-0000"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                className="w-[190px]"
+              />
+              <button
+                onClick={handleRequestCode}
+                disabled={!isPhoneComplete}
+                className={`h-12 w-[190px] rounded-lg font-medium transition-colors whitespace-nowrap ${
+                  isPhoneComplete
+                    ? "bg-primary text-white hover:bg-primary/90"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
+              >
+                인증번호 받기
+              </button>
+            </div>
+
+            {showVerificationInput && (
+              <div className="mt-4">
+                <LabeledInput
+                  label="인증번호"
+                  type="text"
+                  placeholder="인증번호 입력"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           {showVerificationInput && (
-            <div className="mt-4">
-              <LabeledInput
-                label="인증번호"
-                type="text"
-                placeholder="인증번호 입력"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-              />
+            <div className="px-4 py-6 mt-auto">
+              <Button
+                variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
+                size="full"
+                disabled={verificationCode.length !== 6}
+                onClick={() => {
+                  sessionStorage.setItem("signup_phone", phoneNumber)
+                  navigate("/signup/agreement")
+                }}
+              >
+                다음
+              </Button>
             </div>
           )}
         </div>

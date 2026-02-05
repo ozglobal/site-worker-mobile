@@ -27,7 +27,7 @@ export function SignUpPage() {
           <div className="space-y-3">
             {/* Option 1: Own phone */}
             <button
-              onClick={() => navigate("/signup/step2")}
+              onClick={() => alert("Backend에 NICE 휴대폰본인확인 API 요청")}
               className="w-full p-4 rounded-lg border-2 transition-colors text-left border-gray-200 hover:border-gray-300"
             >
               <p className="font-bold text-slate-900">내 명의 휴대폰이 있어요</p>
@@ -38,7 +38,7 @@ export function SignUpPage() {
 
             {/* Option 2: Other's phone */}
             <button
-              onClick={() => navigate("/signup/step2", { state: { phoneType: "other" } })}
+              onClick={() => navigate("/signup/request-sms-code", { state: { phoneType: "other" } })}
               className="w-full p-4 rounded-lg border-2 transition-colors text-left border-gray-200 hover:border-gray-300"
             >
               <p className="font-bold text-slate-900">타인 명의 휴대폰이 있어요</p>

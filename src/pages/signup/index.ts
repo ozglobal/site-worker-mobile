@@ -1,1 +1,6 @@
 export { SignUpPage } from './Signup'
+export { AgreementPage } from './Agreement'
+export { DomesticForeignPage } from './DomesticForeign'
+export { DomesticInfoPage } from './DomesticInfo'
+export { ForeignInfoPage } from './ForeignInfo'
+export { PassportInfoPage } from './PassportInfo'
