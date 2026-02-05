@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
 
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["favicon.ico", "icons/*.png"],
       manifest: false, // use public/manifest.json
       workbox: {
