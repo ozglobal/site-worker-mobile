@@ -15,7 +15,7 @@ export default defineConfig({
       manifest: false, // use public/manifest.json
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallbackDenylist: [/\.pdf$/],
+        navigateFallbackDenylist: [/^\/api/, /\.pdf$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
