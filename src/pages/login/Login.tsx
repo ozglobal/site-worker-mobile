@@ -10,14 +10,19 @@ export function LoginPage() {
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState("")
   const navigate = useNavigate()
   const { login } = useAuth()
   const { honeypotProps, isBotDetected } = useHoneypot()
 
   const handleLogin = async () => {
     if (isBotDetected) return
-    if (!phone || !password) return
+    if (!phone || !password) {
+      setError("휴대폰 번호와 비밀번호를 입력해주세요")
+      return
+    }
 
+    setError("")
     const result = await login({
       username: phone,
       password: password,
@@ -26,7 +31,7 @@ export function LoginPage() {
     if (result.success) {
       navigate('/')
     } else {
-      console.error('Login failed:', result.error)
+      setError(result.error || "로그인에 실패했습니다")
     }
   }
 
@@ -80,6 +85,11 @@ export function LoginPage() {
 
         {/* Honeypot */}
         <input {...honeypotProps} />
+
+        {/* Error Message */}
+        {error && (
+          <p className="text-sm text-red-500 text-center">{error}</p>
+        )}
 
         {/* Login Button - Figma style */}
         <Button
