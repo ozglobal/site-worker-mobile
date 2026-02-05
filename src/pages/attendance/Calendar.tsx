@@ -171,28 +171,28 @@ export function CalendarPage() {
                 <span className="text-sm text-slate-600">총 공수</span>
                 <span className="text-sm font-semibold text-slate-900">{totalWorkEffort}공수</span>
               </div>
-              <div className="mt-3 space-y-2">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-start gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#007DCA] mt-1.5 shrink-0" />
-                    <span className="text-sm text-slate-600">무안성면개발사업</span>
-                  </div>
-                  <span className="text-sm text-slate-600 shrink-0 ml-2">15공수</span>
+              {sites.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {sites.map((site) => (
+                    <div key={site.id} className="flex justify-between items-start">
+                      <div className="flex items-start gap-2">
+                        <span
+                          className="w-2 h-2 rounded-full mt-1.5 shrink-0"
+                          style={{ backgroundColor: site.color }}
+                        />
+                        <span className="text-sm text-slate-600">{site.name}</span>
+                      </div>
+                      <span className="text-sm text-slate-600 shrink-0 ml-2">공수</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between items-start">
-                  <div className="flex items-start gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#F59E0B] mt-1.5 shrink-0" />
-                    <span className="text-sm text-slate-600">용인성파라곤건축</span>
-                  </div>
-                  <span className="text-sm text-slate-600 shrink-0 ml-2">3공수</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* 예상 노임 */}
             <div className="flex justify-between items-center pt-4">
               <span className="text-sm text-slate-600">예상 노임</span>
-              <span className="text-sm font-semibold text-slate-900">2,746,000원</span>
+              <span className="text-sm font-semibold text-slate-900">원</span>
             </div>
           </div>
         </div>

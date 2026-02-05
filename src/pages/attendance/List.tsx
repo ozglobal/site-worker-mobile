@@ -233,7 +233,7 @@ export function ListPage() {
                         />
                         <span className="text-sm text-slate-600">{site.name}</span>
                       </div>
-                      <span className="text-sm text-slate-600 shrink-0 ml-2">{site.effort}공수</span>
+                      <span className="text-sm text-slate-600 shrink-0 ml-2">공수</span>
                     </div>
                   ))}
                 </div>
@@ -243,7 +243,7 @@ export function ListPage() {
             {/* 예상 노임 */}
             <div className="flex justify-between items-center pt-4">
               <span className="text-sm text-slate-600">예상 노임</span>
-              <span className="text-sm font-semibold text-slate-900">{formatCurrency(totalExpectedWage)}</span>
+              <span className="text-sm font-semibold text-slate-900">원</span>
             </div>
           </div>
         </div>

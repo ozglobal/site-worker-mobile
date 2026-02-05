@@ -182,67 +182,6 @@ export const checkOut = async (request: CheckOutRequest): Promise<CheckOutRespon
 }
 
 /**
- * Delete attendance API response
- */
-export interface DeleteAttendanceResponse {
-  success: boolean
-  error?: string
-}
-
-/**
- * Delete attendance record by ID
- */
-export const deleteAttendance = async (id: string): Promise<DeleteAttendanceResponse> => {
-  try {
-    devLogRequestRaw(`/system/attendance/${id}`, { method: 'DELETE' })
-    const response = await authFetch(`${API_BASE_URL}/system/attendance/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'accept': '*/*',
-        'X-Tenant-Id': X_TENANT_ID,
-      },
-    })
-
-    const data = await response.json().catch(() => ({}))
-    devLogApiRaw(`/system/attendance/${id}`, { status: response.status, data })
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.message || data.error || `Delete failed (${response.status})`,
-      }
-    }
-
-    return { success: true }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Network error',
-    }
-  }
-}
-
-/**
- * Delete multiple attendance records by IDs
- */
-export const deleteAttendanceRecords = async (ids: string[]): Promise<{ success: boolean; errors: string[] }> => {
-  const errors: string[] = []
-
-  for (const id of ids) {
-    if (!id) continue
-    const result = await deleteAttendance(id)
-    if (!result.success && result.error) {
-      errors.push(`ID ${id}: ${result.error}`)
-    }
-  }
-
-  return {
-    success: errors.length === 0,
-    errors,
-  }
-}
-
-/**
  * Build check-out request from site ID and GPS location
  */
 export const buildCheckOutRequest = (params: {
@@ -338,59 +277,6 @@ export interface TodayAttendanceItem {
 }
 
 /**
- * Today's attendance API response
- */
-export interface TodayAttendanceResponse {
-  success: boolean
-  data?: TodayAttendanceItem[]
-  error?: string
-}
-
-/**
- * Fetch today's attendance records from API and sync to localStorage
- */
-export const fetchTodayAttendance = async (workerId?: string): Promise<TodayAttendanceResponse> => {
-  const id = workerId || profileStorage.getWorkerId()
-  if (!id) {
-    return { success: false, error: 'No worker ID' }
-  }
-
-  try {
-    devLogRequestRaw(`/system/attendance/my/today/${id}`, { method: 'GET' })
-    const response = await authFetch(`${API_BASE_URL}/system/attendance/my/today`, {
-      method: 'GET',
-      headers: {
-        'accept': '*/*',
-        'X-Tenant-Id': X_TENANT_ID,
-      },
-    })
-
-    const data = await response.json()
-    devLogApiRaw(`/system/attendance/my/today/${id}`, { status: response.status, data })
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.message || data.error || `Failed to fetch attendance (${response.status})`,
-      }
-    }
-
-    // Extract records from response
-    const records: TodayAttendanceItem[] = data.data || data.result || data || []
-
-    // Sync to localStorage
-    syncTodayAttendanceToStorage(records)
-
-    return { success: true, data: records }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Network error',
-    }
-  }
-}
-
-/**
  * Weekly attendance record item
  */
 export interface WeeklyAttendanceRecord {
@@ -409,70 +295,6 @@ export interface WeeklyAttendanceRecord {
   hasCheckedIn: boolean
   hasCheckedOut: boolean
   complete: boolean
-}
-
-/**
- * Weekly attendance API response
- */
-export interface WeeklyAttendanceResponse {
-  success: boolean
-  data?: {
-    records: WeeklyAttendanceRecord[]
-    attendanceDays: number
-    totalWorkHours: number
-    totalWorkEffort: number
-    startDate: string
-    endDate: string
-  }
-  error?: string
-}
-
-/**
- * Fetch weekly attendance records from API
- * @param offset - Week offset (0 = current week, 1 = last week, etc.)
- */
-export const fetchWeeklyAttendance = async (offset: number = 0): Promise<WeeklyAttendanceResponse> => {
-  try {
-    const endpoint = `/system/attendance/my/week?offset=${offset}`
-    devLogRequestRaw(endpoint, { method: 'GET', offset })
-
-    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'GET',
-      headers: {
-        'accept': '*/*',
-        'X-Tenant-Id': X_TENANT_ID,
-      },
-    })
-
-    const data = await response.json()
-    devLogApiRaw(endpoint, { status: response.status, data })
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.message || data.error || `Failed to fetch weekly attendance (${response.status})`,
-      }
-    }
-
-    const payload = data.data || data
-    return {
-      success: true,
-      data: {
-        records: payload.records || [],
-        attendanceDays: payload.attendanceDays || 0,
-        totalWorkHours: payload.totalWorkHours || 0,
-        totalWorkEffort: payload.totalWorkEffort || 0,
-        startDate: payload.startDate || '',
-        endDate: payload.endDate || '',
-      },
-    }
-  } catch (error) {
-    console.error('[WEEKLY] Error:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Network error',
-    }
-  }
 }
 
 // ============================================

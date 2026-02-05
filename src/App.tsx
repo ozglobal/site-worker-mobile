@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginPage } from './pages/login';
 import { SignUpPage } from './pages/signup';
-import { SignUpStep2Page } from './pages/signup/step2';
+import { RequestSmsCodePage } from './pages/signup/RequestSmsCode';
 import { SignUpStep3Page } from './pages/signup/step3';
 import { SignUpCompletePage } from './pages/signup/complete';
 import { Home } from './pages/home';
@@ -54,7 +54,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/profile/equipments" element={<EquipmentsPage />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
-      <Route path="/signup/step2" element={<PublicRoute><SignUpStep2Page /></PublicRoute>} />
+      <Route path="/signup/step2" element={<PublicRoute><RequestSmsCodePage /></PublicRoute>} />
       <Route path="/signup/step3" element={<PublicRoute><SignUpStep3Page /></PublicRoute>} />
       <Route path="/signup/complete" element={<PublicRoute><SignUpCompletePage /></PublicRoute>} />
       <Route path="/home" element={<Home />} />
