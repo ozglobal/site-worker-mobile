@@ -85,7 +85,6 @@ export function SetPasswordPage() {
               <label className="text-sm font-medium text-slate-700">비밀번호</label>
               <Input
                 type="password"
-                maxLength={64}
                 value={formData.newPassword}
                 onChange={handleChange("newPassword")}
                 placeholder=""
@@ -94,6 +93,9 @@ export function SetPasswordPage() {
                 name="reset-pw"
                 className="bg-white"
               />
+              {formData.newPassword.length > 64 && (
+                <p className="text-sm text-red-500">패스워드는 최대 64자까지 설정할 수 있습니다.</p>
+              )}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                 <span className={`text-xs ${formData.newPassword.length >= 8 ? "text-green-500" : "text-slate-400"}`}>
                   {formData.newPassword.length >= 8 ? "\u2713" : "\u2022"} 8자 이상
@@ -125,6 +127,9 @@ export function SetPasswordPage() {
                 disabled={!isPasswordValid}
                 className={isPasswordValid ? "bg-white" : "bg-gray-100"}
               />
+              {formData.confirmPassword.length > 64 && (
+                <p className="text-sm text-red-500">패스워드는 최대 64자까지 설정할 수 있습니다.</p>
+              )}
               {formData.confirmPassword.length > 0 && formData.confirmPassword.length >= formData.newPassword.length && formData.newPassword !== formData.confirmPassword && (
                 <p className="text-sm text-red-500">비밀번호가 일치하지 않습니다.</p>
               )}
