@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginPage, SmsVerificationPage, LoginSetPasswordPage } from './pages/login';
 import { SignUpPage, AgreementPage, DomesticForeignPage, DomesticInfoPage, ForeignInfoPage, PassportInfoPage, SetPasswordPage } from './pages/signup';
-import { RequestSmsCodePage } from './pages/signup/RequestSmsCode';
+import { SmsVerificationPage as SignupSmsVerificationPage } from './pages/signup/SmsVerification';
 import { SignUpStep3Page } from './pages/signup/step3';
 import { SignUpCompletePage } from './pages/signup/SignupComplete';
 import { NiceApiPage } from './pages/signup/NiceApiPage';
@@ -57,7 +57,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/login/sms-verification" element={<PublicRoute><SmsVerificationPage /></PublicRoute>} />
       <Route path="/login/set-password" element={<PublicRoute><LoginSetPasswordPage /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
-      <Route path="/signup/request-sms-code" element={<PublicRoute><RequestSmsCodePage /></PublicRoute>} />
+      <Route path="/signup/sms-verification" element={<PublicRoute><SignupSmsVerificationPage /></PublicRoute>} />
       <Route path="/signup/nice-api" element={<PublicRoute><NiceApiPage /></PublicRoute>} />
       <Route path="/signup/agreement" element={<PublicRoute><AgreementPage /></PublicRoute>} />
       <Route path="/signup/domestic-foreign" element={<PublicRoute><DomesticForeignPage /></PublicRoute>} />

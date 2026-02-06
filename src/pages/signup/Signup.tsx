@@ -38,7 +38,7 @@ export function SignUpPage() {
 
             {/* Option 2: Other's phone */}
             <button
-              onClick={() => navigate("/signup/request-sms-code", { state: { phoneType: "other" } })}
+              onClick={() => navigate("/signup/sms-verification", { state: { phoneType: "other" } })}
               className="w-full p-4 rounded-lg border-2 transition-colors text-left border-gray-200 hover:border-gray-300"
             >
               <p className="font-bold text-slate-900">타인 명의 휴대폰이 있어요</p>

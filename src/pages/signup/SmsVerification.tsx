@@ -12,7 +12,7 @@ function formatPhoneNumber(value: string): string {
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
 }
 
-export function RequestSmsCodePage() {
+export function SmsVerificationPage() {
   const navigate = useNavigate()
   const { honeypotProps, isBotDetected } = useHoneypot()
   const [phoneNumber, setPhoneNumber] = useState("")
