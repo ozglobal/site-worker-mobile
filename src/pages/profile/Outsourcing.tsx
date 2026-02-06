@@ -18,7 +18,7 @@ export function OutsourcingPage() {
 
   const handleSubmit = () => {
     // TODO: Save outsourcing info
-    navigate("/profile")
+    navigate("/profile/payroll-account")
   }
 
   const isFormValid = selectedCompany !== ""
@@ -92,7 +92,7 @@ export function OutsourcingPage() {
               disabled={!isFormValid}
               onClick={handleSubmit}
             >
-              저장
+              다음
             </Button>
           </div>
         </div>
