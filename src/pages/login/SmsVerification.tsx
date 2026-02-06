@@ -99,7 +99,7 @@ export function SmsVerificationPage() {
                 size="full"
                 disabled={verificationCode.length !== 6}
                 onClick={() => {
-                  navigate("/signup/set-password")
+                  navigate("/login/set-password")
                 }}
               >
                 다음

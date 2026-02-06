@@ -2,7 +2,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { LoginPage, SmsVerificationPage } from './pages/login';
+import { LoginPage, SmsVerificationPage, LoginSetPasswordPage } from './pages/login';
 import { SignUpPage, AgreementPage, DomesticForeignPage, DomesticInfoPage, ForeignInfoPage, PassportInfoPage, SetPasswordPage } from './pages/signup';
 import { RequestSmsCodePage } from './pages/signup/RequestSmsCode';
 import { SignUpStep3Page } from './pages/signup/step3';
@@ -55,6 +55,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/profile/equipments" element={<EquipmentsPage />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/login/sms-verification" element={<PublicRoute><SmsVerificationPage /></PublicRoute>} />
+      <Route path="/login/set-password" element={<PublicRoute><LoginSetPasswordPage /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
       <Route path="/signup/request-sms-code" element={<PublicRoute><RequestSmsCodePage /></PublicRoute>} />
       <Route path="/signup/nice-api" element={<PublicRoute><NiceApiPage /></PublicRoute>} />
