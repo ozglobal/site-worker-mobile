@@ -12,7 +12,7 @@ function formatPhoneNumber(value: string): string {
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
 }
 
-export function RequestSmsCodePage() {
+export function NiceApiPage() {
   const navigate = useNavigate()
   const { honeypotProps, isBotDetected } = useHoneypot()
   const [phoneNumber, setPhoneNumber] = useState("")
@@ -51,33 +51,14 @@ export function RequestSmsCodePage() {
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
           <div className="px-4 py-6">
-            <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
-              현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
+            <p className="text-xl font-bold text-slate-900 mb-6 leading-tight">
+              Backend API call이 보내준 <br></br>NICE 휴대폰 본인확인 서비스 페이지
             </p>
 
-            <input {...honeypotProps} />
-
-            <div className="flex items-end gap-2">
-              <LabeledInput
-                label="휴대폰 번호"
-                type="tel"
-                placeholder="010-0000-0000"
-                value={phoneNumber}
-                onChange={handlePhoneChange}
-                className="w-[190px]"
-              />
-              <button
-                onClick={handleRequestCode}
-                disabled={!isPhoneComplete}
-                className={`h-12 w-[190px] rounded-lg font-medium transition-colors whitespace-nowrap ${
-                  isPhoneComplete
-                    ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                인증번호 받기
-              </button>
-            </div>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Backend는 NICE API 로부터 성명, 성별, 생년월일, 내/외국인, 휴대폰번호, 주민등록번호 값을 받아 frontend로 보내준다.
+              <br></br>Frontend는 받은 정보를 서비스 이용약관 동의 페이지 다음에 나올 회원정보 입력 페이지에 표시한다.
+            </p>
 
             {showVerificationInput && (
               <div className="mt-4">
@@ -92,21 +73,15 @@ export function RequestSmsCodePage() {
             )}
           </div>
 
-          {showVerificationInput && (
-            <div className="px-4 py-6 mt-auto">
-              <Button
-                variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
-                size="full"
-                disabled={verificationCode.length !== 6}
-                onClick={() => {
-                  sessionStorage.setItem("signup_phone", phoneNumber)
-                  navigate("/signup/agreement")
-                }}
-              >
-                다음
-              </Button>
-            </div>
-          )}
+          <div className="px-4 py-6 mt-auto">
+            <Button
+              variant="primary"
+              size="full"
+              onClick={() => navigate("/signup/agreement")}
+            >
+              다음
+            </Button>
+          </div>
         </div>
       </main>
     </div>

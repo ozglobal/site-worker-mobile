@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
@@ -15,9 +15,12 @@ export function DomesticInfoPage() {
     phone: savedPhone,
     address: "",
   })
-  const [originalData, setOriginalData] = useState({ ...formData })
-
-  const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData)
+  const allFieldsFilled =
+    formData.name.trim() !== "" &&
+    formData.ssnFirst.trim().length === 6 &&
+    formData.ssnSecond.trim().length === 7 &&
+    formData.phone.trim() !== "" &&
+    formData.address.trim() !== ""
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -30,12 +33,21 @@ export function DomesticInfoPage() {
     return () => viewport.removeEventListener("resize", handleResize)
   }, [])
 
+  const ssnSecondRef = useRef<HTMLInputElement>(null)
+  const addressRef = useRef<HTMLInputElement>(null)
+
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
+    if (field === "ssnFirst" && e.target.value.length === 6) {
+      ssnSecondRef.current?.focus()
+    }
+    if (field === "ssnSecond" && e.target.value.length === 7) {
+      addressRef.current?.focus()
+    }
   }
 
   const handleSave = () => {
-    // Do nothing
+    navigate("/signup/set-password")
   }
 
   return (
@@ -71,11 +83,15 @@ export function DomesticInfoPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">이름</label>
               <Input
+                maxLength={6}
                 value={formData.name}
                 onChange={handleChange("name")}
                 placeholder="이름"
                 className="bg-white"
               />
+              {formData.name.length >= 6 && (
+                <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다</p>
+              )}
             </div>
 
             {/* 주민등록번호 */}
@@ -92,6 +108,7 @@ export function DomesticInfoPage() {
                 />
                 <span className="text-slate-400">-</span>
                 <Input
+                  ref={ssnSecondRef}
                   inputMode="numeric"
                   maxLength={7}
                   value={formData.ssnSecond}
@@ -106,6 +123,7 @@ export function DomesticInfoPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">주소</label>
               <Input
+                ref={addressRef}
                 value={formData.address}
                 onChange={handleChange("address")}
                 placeholder="주소"
@@ -118,9 +136,9 @@ export function DomesticInfoPage() {
           {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={hasChanges ? "primary" : "primaryDisabled"}
+              variant={allFieldsFilled ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!hasChanges}
+              disabled={!allFieldsFilled}
               onClick={handleSave}
             >
               다음

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ export function PassportInfoPage() {
   const savedPhone = sessionStorage.getItem("signup_phone") || ""
   const [formData, setFormData] = useState({
     name: "",
+    englishName: "",
     ssnFirst: "",
     ssnSecond: "",
     phone: savedPhone,
@@ -18,9 +19,13 @@ export function PassportInfoPage() {
     passport: "",
     birthdate: "",
   })
-  const [originalData, setOriginalData] = useState({ ...formData })
-
-  const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData)
+  const allFieldsFilled =
+    formData.name.trim() !== "" &&
+    formData.phone.trim() !== "" &&
+    formData.gender.trim() !== "" &&
+    formData.passport.trim() !== "" &&
+    formData.birthdate.trim() !== "" &&
+    formData.address.trim() !== ""
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -33,12 +38,24 @@ export function PassportInfoPage() {
     return () => viewport.removeEventListener("resize", handleResize)
   }, [])
 
+  const [birthdateTouched, setBirthdateTouched] = useState(false)
+  const birthdateRef = useRef<HTMLInputElement>(null)
+
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
+    if (field === "birthdate") setBirthdateTouched(false)
+  }
+
+  const handleBirthdateBlur = () => {
+    const len = formData.birthdate.length
+    if (len > 0 && len < 8) {
+      setBirthdateTouched(true)
+      birthdateRef.current?.focus()
+    }
   }
 
   const handleSave = () => {
-    // Do nothing
+    navigate("/signup/set-password")
   }
 
   return (
@@ -75,19 +92,23 @@ export function PassportInfoPage() {
               <label className="text-sm font-medium text-slate-700">한글 이름</label>
               <p className="text-sm text-slate-500">현장에서 사용할 짧은 한글 이름을 입력해 주세요.</p>
               <Input
+                maxLength={6}
                 value={formData.name}
                 onChange={handleChange("name")}
                 placeholder="한글 이름"
                 className="bg-white"
               />
+              {formData.name.length >= 6 && (
+                <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다</p>
+              )}
             </div>
 
             {/* 영문 이름 */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">영문 이름</label>
               <Input
-                value={formData.name}
-                onChange={handleChange("name")}
+                value={formData.englishName}
+                onChange={handleChange("englishName")}
                 placeholder="영문 이름"
                 className="bg-white"
               />
@@ -151,11 +172,18 @@ export function PassportInfoPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">생년월일</label>
               <Input
+                ref={birthdateRef}
+                inputMode="numeric"
+                maxLength={8}
                 value={formData.birthdate}
                 onChange={handleChange("birthdate")}
-                placeholder="생년월일"
+                onBlur={handleBirthdateBlur}
+                placeholder="8자리 (예: 19901231)"
                 className="bg-white"
               />
+              {birthdateTouched && formData.birthdate.length > 0 && formData.birthdate.length < 8 && (
+                <p className="text-sm text-red-500">생년월일을 8자리로 입력해주세요 (예: 19901231)</p>
+              )}
             </div>
 
             {/* 주소 */}
@@ -174,9 +202,9 @@ export function PassportInfoPage() {
           {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={hasChanges ? "primary" : "primaryDisabled"}
+              variant={allFieldsFilled ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!hasChanges}
+              disabled={!allFieldsFilled}
               onClick={handleSave}
             >
               다음

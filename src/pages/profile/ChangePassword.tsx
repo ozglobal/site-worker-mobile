@@ -15,9 +15,17 @@ export function ChangePasswordPage() {
     confirmPassword: "",
   })
 
+  const hasAlphabet = /[a-zA-Z]/.test(formData.newPassword)
+  const hasNumeric = /[0-9]/.test(formData.newPassword)
+  const hasSpecial = /[^a-zA-Z0-9]/.test(formData.newPassword)
+  const isPasswordValid =
+    formData.newPassword.length >= 8 &&
+    formData.newPassword.length <= 64 &&
+    hasAlphabet && hasNumeric && hasSpecial
+
   const isFormValid =
     formData.currentPassword.length > 0 &&
-    formData.newPassword.length >= 6 &&
+    isPasswordValid &&
     formData.newPassword === formData.confirmPassword
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
@@ -92,11 +100,26 @@ export function ChangePasswordPage() {
             <label className="text-sm font-medium text-slate-700">새 비밀번호</label>
             <Input
               type="password"
+              maxLength={64}
               value={formData.newPassword}
               onChange={handleChange("newPassword")}
-              placeholder="6자 이상 입력"
+              placeholder=""
               className="bg-white"
             />
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+              <span className={`text-xs ${formData.newPassword.length >= 8 ? "text-green-500" : "text-slate-400"}`}>
+                {formData.newPassword.length >= 8 ? "\u2713" : "\u2022"} 8자 이상
+              </span>
+              <span className={`text-xs ${hasAlphabet ? "text-green-500" : "text-slate-400"}`}>
+                {hasAlphabet ? "\u2713" : "\u2022"} 영문 포함
+              </span>
+              <span className={`text-xs ${hasNumeric ? "text-green-500" : "text-slate-400"}`}>
+                {hasNumeric ? "\u2713" : "\u2022"} 숫자 포함
+              </span>
+              <span className={`text-xs ${hasSpecial ? "text-green-500" : "text-slate-400"}`}>
+                {hasSpecial ? "\u2713" : "\u2022"} 특수문자 포함
+              </span>
+            </div>
           </div>
 
           {/* 새 비밀번호 확인 */}
@@ -109,6 +132,9 @@ export function ChangePasswordPage() {
               placeholder="새 비밀번호 재입력"
               className="bg-white"
             />
+            {formData.confirmPassword.length > 0 && formData.confirmPassword.length >= formData.newPassword.length && formData.newPassword !== formData.confirmPassword && (
+              <p className="text-sm text-red-500">비밀번호가 일치하지 않습니다.</p>
+            )}
           </div>
 
         </div>

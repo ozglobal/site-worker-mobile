@@ -2,11 +2,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { LoginPage } from './pages/login';
-import { SignUpPage, AgreementPage, DomesticForeignPage, DomesticInfoPage, ForeignInfoPage, PassportInfoPage } from './pages/signup';
+import { LoginPage, SmsVerificationPage } from './pages/login';
+import { SignUpPage, AgreementPage, DomesticForeignPage, DomesticInfoPage, ForeignInfoPage, PassportInfoPage, SetPasswordPage } from './pages/signup';
 import { RequestSmsCodePage } from './pages/signup/RequestSmsCode';
 import { SignUpStep3Page } from './pages/signup/step3';
-import { SignUpCompletePage } from './pages/signup/complete';
+import { SignUpCompletePage } from './pages/signup/SignupComplete';
+import { NiceApiPage } from './pages/signup/NiceApiPage';
 import { Home } from './pages/home';
 import { MyInfoPage } from './pages/profile';
 import { AffiliationPage } from './pages/profile/Affiliation';
@@ -53,13 +54,16 @@ const AppRoutes: React.FC = () => {
       <Route path="/profile/engineer" element={<EngineerPage />} />
       <Route path="/profile/equipments" element={<EquipmentsPage />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/login/sms-verification" element={<PublicRoute><SmsVerificationPage /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
       <Route path="/signup/request-sms-code" element={<PublicRoute><RequestSmsCodePage /></PublicRoute>} />
+      <Route path="/signup/nice-api" element={<PublicRoute><NiceApiPage /></PublicRoute>} />
       <Route path="/signup/agreement" element={<PublicRoute><AgreementPage /></PublicRoute>} />
       <Route path="/signup/domestic-foreign" element={<PublicRoute><DomesticForeignPage /></PublicRoute>} />
       <Route path="/signup/domestic-info" element={<PublicRoute><DomesticInfoPage /></PublicRoute>} />
       <Route path="/signup/foreign-info" element={<PublicRoute><ForeignInfoPage /></PublicRoute>} />
       <Route path="/signup/passport-info" element={<PublicRoute><PassportInfoPage /></PublicRoute>} />
+      <Route path="/signup/set-password" element={<PublicRoute><SetPasswordPage /></PublicRoute>} />
       <Route path="/signup/step3" element={<PublicRoute><SignUpStep3Page /></PublicRoute>} />
       <Route path="/signup/complete" element={<PublicRoute><SignUpCompletePage /></PublicRoute>} />
       <Route path="/home" element={<Home />} />

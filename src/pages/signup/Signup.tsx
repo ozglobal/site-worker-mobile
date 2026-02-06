@@ -27,12 +27,12 @@ export function SignUpPage() {
           <div className="space-y-3">
             {/* Option 1: Own phone */}
             <button
-              onClick={() => alert("Backend에 NICE 휴대폰본인확인 API 요청")}
+              onClick={() => navigate("/signup/nice-api")}
               className="w-full p-4 rounded-lg border-2 transition-colors text-left border-gray-200 hover:border-gray-300"
             >
               <p className="font-bold text-slate-900">내 명의 휴대폰이 있어요</p>
               <p className="text-sm text-slate-500 mt-1">
-                내 명의로 가입된 휴대폰 번호로 가입합니다.
+                내 명의 휴대폰 번호로 가입합니다.
               </p>
             </button>
 
@@ -43,7 +43,7 @@ export function SignUpPage() {
             >
               <p className="font-bold text-slate-900">타인 명의 휴대폰이 있어요</p>
               <p className="text-sm text-slate-500 mt-1">
-                타인 명의로 가입된 휴대폰 번호로 가입합니다.
+                타인 명의 휴대폰 번호로 가입합니다.
               </p>
             </button>
           </div>

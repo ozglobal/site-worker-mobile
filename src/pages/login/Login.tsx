@@ -108,7 +108,7 @@ export function LoginPage() {
           회원 가입
         </button>
         <span>·</span>
-        <button type="button" className="hover:underline">
+        <button type="button" className="hover:underline" onClick={() => navigate("/login/sms-verification")}>
           비밀번호 재설정
         </button>
       </div>
