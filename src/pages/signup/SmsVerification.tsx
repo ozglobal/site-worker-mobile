@@ -50,6 +50,7 @@ export function SmsVerificationPage() {
       />
 
       <main className="flex-1 overflow-hidden">
+        <div className="flex flex-col min-h-full">
           <div className="px-4 py-6 space-y-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
               현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
@@ -79,37 +80,41 @@ export function SmsVerificationPage() {
               </div>
             </div>
 
-            {/* 인증번호 + 다음 */}
+            {/* 인증번호 */}
             {showVerificationInput && (
-              <div className="space-y-4">
-                <LabeledInput
-                  label="인증번호"
-                  type="text"
-                  placeholder="인증번호 입력"
-                  value={verificationCode}
-                  maxLength={6}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, "").slice(0, 6)
-                    setVerificationCode(value)
-                    if (value.length === 6) {
-                      e.target.blur()
-                    }
-                  }}
-                />
-                <Button
-                  variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
-                  size="full"
-                  disabled={verificationCode.length !== 6}
-                  onClick={() => {
-                    signupStorage.setPhone(phoneNumber)
-                    navigate("/signup/agreement")
-                  }}
-                >
-                  다음
-                </Button>
-              </div>
+              <LabeledInput
+                label="인증번호"
+                type="text"
+                placeholder="인증번호 입력"
+                value={verificationCode}
+                maxLength={6}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                  setVerificationCode(value)
+                  if (value.length === 6) {
+                    e.target.blur()
+                  }
+                }}
+              />
             )}
           </div>
+
+          {showVerificationInput && (
+            <div className="px-4 py-6 mt-auto">
+              <Button
+                variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
+                size="full"
+                disabled={verificationCode.length !== 6}
+                onClick={() => {
+                  signupStorage.setPhone(phoneNumber)
+                  navigate("/signup/agreement")
+                }}
+              >
+                다음
+              </Button>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   )

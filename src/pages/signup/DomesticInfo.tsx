@@ -51,6 +51,7 @@ export function DomesticInfoPage() {
       />
 
       <main className="flex-1 overflow-y-auto">
+        <div className="flex flex-col min-h-full">
           <div className="px-4 py-6 space-y-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
               회원 정보를 입력해주세요
@@ -120,7 +121,9 @@ export function DomesticInfoPage() {
               />
             </div>
 
-            {/* Save Button */}
+          </div>
+
+          <div className="px-4 py-6 mt-auto">
             <Button
               variant={allFieldsFilled ? "primary" : "primaryDisabled"}
               size="full"
@@ -130,6 +133,7 @@ export function DomesticInfoPage() {
               다음
             </Button>
           </div>
+        </div>
       </main>
     </div>
   )
