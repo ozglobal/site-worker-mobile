@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 
 interface Bank {
@@ -70,12 +71,11 @@ export function FamilyAccountPage() {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               예금주
             </label>
-            <input
+            <Input
               type="text"
               value={familyName}
               onChange={(e) => setFamilyName(e.target.value)}
               placeholder="예금주 이름"
-              className="w-full h-12 px-4 rounded-lg border border-gray-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
 
@@ -97,13 +97,12 @@ export function FamilyAccountPage() {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               계좌번호
             </label>
-            <input
+            <Input
               type="text"
               inputMode="numeric"
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
               placeholder="- 없이 숫자만 입력"
-              className="w-full h-12 px-4 rounded-lg border border-gray-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
 

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { OptionCard } from "@/components/ui/option-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
@@ -173,13 +174,12 @@ export function SosokPage() {
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 {engineerType === "representative" ? "대표자명" : "소속 법인명"}
               </label>
-              <input
+              <Input
                 type="text"
                 ref={engineerInputRef}
                 value={representativeName}
                 onChange={(e) => setRepresentativeName(e.target.value)}
                 placeholder={engineerType === "representative" ? "대표자명 입력" : "소속 법인명 입력"}
-                className="w-full h-12 px-4 rounded-lg border border-gray-200 text-slate-900 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
 

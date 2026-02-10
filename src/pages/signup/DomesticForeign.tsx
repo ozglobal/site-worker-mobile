@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { Button } from "@/components/ui/button"
 
 export function DomesticForeignPage() {
   const navigate = useNavigate()
@@ -26,18 +27,14 @@ export function DomesticForeignPage() {
             </p>
 
             <div className="flex gap-3">
-              <button
-                onClick={() => navigate("/signup/domestic-info")}
-                className="flex-1 py-4 rounded-lg font-bold transition-colors bg-white text-slate-700 border border-gray-200 shadow-sm"
-              >
+              <Button variant="outline" className="flex-1 py-4 font-bold shadow-sm text-slate-700 border-gray-200"
+                onClick={() => navigate("/signup/domestic-info")}>
                 내국인
-              </button>
-              <button
-                onClick={() => navigate("/signup/foreign-info")}
-                className="flex-1 py-4 rounded-lg font-bold transition-colors bg-white text-slate-700 border border-gray-200 shadow-sm"
-              >
+              </Button>
+              <Button variant="outline" className="flex-1 py-4 font-bold shadow-sm text-slate-700 border-gray-200"
+                onClick={() => navigate("/signup/foreign-info")}>
                 외국인
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import QRCodeScanner from "@/components/ui/QrScanner"
 import { LocationPermissionPopup } from "@/components/ui/LocationPermissionPopup"
 import { formatKstTime } from "@/utils/time"
+import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { useHomeAgent } from "./useHomeAgent"
 import { WeeklyCalendar } from "./components"
@@ -103,21 +104,13 @@ export function Home() {
 
                 {/* Action Button */}
                 {attendance.isCheckedIn ? (
-                  <button
-                    onClick={actions.clockOut}
-                    disabled={attendance.isProcessing}
-                    className="w-full py-4 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                  <Button variant="dark" size="full" onClick={actions.clockOut} disabled={attendance.isProcessing}>
                     {attendance.isProcessing ? "처리 중..." : "퇴근하기"}
-                  </button>
+                  </Button>
                 ) : attendance.canCheckIn && (
-                  <button
-                    onClick={actions.clockIn}
-                    disabled={attendance.isProcessing}
-                    className="w-full py-4 bg-primary hover:bg-primary-active text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                  <Button variant="primary" size="full" onClick={actions.clockIn} disabled={attendance.isProcessing}>
                     {attendance.isProcessing ? "처리 중..." : "출근하기"}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -204,14 +197,12 @@ export function Home() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={scanner.close} />
           <div className="relative z-10 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-xl">
-            <button
-              onClick={scanner.close}
-              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors"
-            >
+            <Button variant="ghost" size="icon" onClick={scanner.close}
+              className="absolute top-4 right-4 z-20 rounded-full bg-slate-100 hover:bg-slate-200">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
-            </button>
+            </Button>
             <QRCodeScanner
               onScanSuccess={scanner.onSuccess}
               onScanError={(error) => console.error("QR error:", error)}
@@ -311,14 +302,12 @@ export function Home() {
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-4">
               <h2 className="text-lg font-bold text-slate-900">퇴근하기</h2>
-              <button
-                onClick={checkoutPopup.close}
-                className="w-6 h-6 flex items-center justify-center text-slate-900"
-              >
+              <Button variant="ghost" size="icon" onClick={checkoutPopup.close}
+                className="w-6 h-6 hover:bg-transparent text-slate-900">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
-              </button>
+              </Button>
             </div>
 
             {/* Content */}
@@ -357,18 +346,12 @@ export function Home() {
 
               {/* Buttons */}
               <div className="space-y-2">
-                <button
-                  onClick={checkoutPopup.close}
-                  className="w-full py-3.5 bg-slate-100 text-slate-600 font-medium rounded-lg"
-                >
+                <Button variant="secondary" size="full" onClick={checkoutPopup.close}>
                   정정 요청
-                </button>
-                <button
-                  onClick={checkoutPopup.close}
-                  className="w-full py-3.5 bg-primary text-white font-medium rounded-lg"
-                >
+                </Button>
+                <Button variant="primary" size="full" onClick={checkoutPopup.close}>
                   확인 완료
-                </button>
+                </Button>
               </div>
             </div>
           </div>

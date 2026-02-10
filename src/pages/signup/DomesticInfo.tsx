@@ -36,6 +36,21 @@ export function DomesticInfoPage() {
 
   const ssnSecondRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLInputElement>(null)
+  const buttonRef = useRef<HTMLDivElement>(null)
+
+  const handleFieldFocus = (e: React.FocusEvent) => {
+    const target = e.target as HTMLElement
+    if (target.tagName !== "INPUT" || target.hasAttribute("disabled")) return
+
+    setTimeout(() => {
+      if (target === addressRef.current) {
+        buttonRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+      } else {
+        const wrapper = target.closest(".space-y-2") as HTMLElement
+        wrapper?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }
+    }, 300)
+  }
 
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
@@ -61,7 +76,7 @@ export function DomesticInfoPage() {
         className="shrink-0"
       />
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto" onFocus={handleFieldFocus}>
         <div className="flex flex-col min-h-full">
           <div className="px-4 py-6 space-y-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
@@ -135,7 +150,7 @@ export function DomesticInfoPage() {
           </div>
 
           {/* Save Button */}
-          <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
+          <div ref={buttonRef} className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
               variant={allFieldsFilled ? "primary" : "primaryDisabled"}
               size="full"

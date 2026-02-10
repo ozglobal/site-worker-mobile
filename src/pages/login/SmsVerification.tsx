@@ -66,17 +66,14 @@ export function SmsVerificationPage() {
                 onChange={handlePhoneChange}
                 className="w-[190px]"
               />
-              <button
+              <Button
+                variant={isPhoneComplete ? "primary" : "primaryDisabled"}
                 onClick={handleRequestCode}
                 disabled={!isPhoneComplete}
-                className={`h-12 w-[190px] rounded-lg font-medium transition-colors whitespace-nowrap ${
-                  isPhoneComplete
-                    ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
+                className="h-12 w-[190px] whitespace-nowrap"
               >
                 인증번호 받기
-              </button>
+              </Button>
             </div>
 
             {showVerificationInput && (

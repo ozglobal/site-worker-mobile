@@ -40,7 +40,7 @@ export function ListPage() {
 
   // Calculate work effort by site
   const siteWorkEfforts = useMemo(() => {
-    const effortMap = new Map<string, { name: string; effort: number; color: string }>()
+    const effortMap = new Map<string, { siteId: string; name: string; effort: number; color: string }>()
     records.forEach((r) => {
       if (r.siteId) {
         const existing = effortMap.get(r.siteId)
@@ -48,6 +48,7 @@ export function ListPage() {
           existing.effort += r.workEffort || 0
         } else {
           effortMap.set(r.siteId, {
+            siteId: r.siteId,
             name: r.siteName || "",
             effort: r.workEffort || 0,
             color: getSiteColor(r.siteId, sites),
@@ -129,7 +130,7 @@ export function ListPage() {
               {siteWorkEfforts.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {siteWorkEfforts.map((site) => (
-                    <div key={site.name} className="flex justify-between items-start">
+                    <div key={site.siteId} className="flex justify-between items-start">
                       <div className="flex items-start gap-2">
                         <span
                           className="w-2 h-2 rounded-full mt-1.5 shrink-0"
@@ -175,7 +176,7 @@ export function ListPage() {
 
             {group.records.map((record, index) => (
               <div
-                key={record.id}
+                key={record.id || `${group.date}-${index}`}
                 className={`bg-white rounded-xl border border-slate-200 p-4 ${
                   index < group.records.length - 1 ? "mb-3" : ""
                 }`}

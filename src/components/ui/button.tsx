@@ -30,6 +30,7 @@ const buttonVariants = cva(
         md: "h-10 px-4",
         lg: "h-14 px-6", // 56px height as per Figma
         full: "h-14 w-full", // Full width, 56px height
+        icon: "h-8 w-8 p-0", // 32x32 icon button
       },
     },
     defaultVariants: {

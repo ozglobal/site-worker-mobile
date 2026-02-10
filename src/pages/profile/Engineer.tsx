@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { OptionCard } from "@/components/ui/option-card"
 import { engineerStorage } from "@/lib/storage"
 
@@ -85,13 +86,12 @@ export function EngineerPage() {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               {engineerType === "representative" ? "대표자명" : "소속 법인명"}
             </label>
-            <input
+            <Input
               type="text"
               value={representativeName}
               onChange={(e) => setRepresentativeName(e.target.value)}
               ref={inputRef}
               placeholder={engineerType === "representative" ? "대표자명 입력" : "소속 법인명 입력"}
-              className="w-full h-12 px-4 rounded-lg border border-gray-200 text-slate-900 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
         </div>

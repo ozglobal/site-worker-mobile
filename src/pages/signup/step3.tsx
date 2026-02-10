@@ -2,6 +2,8 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav } from "@/components/layout/AppBottomNav"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useHoneypot } from "@/hooks/useHoneypot"
 
 export function SignUpStep3Page() {
@@ -50,23 +52,21 @@ export function SignUpStep3Page() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">비밀번호</label>
-              <input
+              <Input
                 type="password"
                 value={formData.password}
                 onChange={handleChange("password")}
                 placeholder="비밀번호를 입력해주세요"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">비밀번호 확인</label>
-              <input
+              <Input
                 type="password"
                 value={formData.passwordConfirm}
                 onChange={handleChange("passwordConfirm")}
                 placeholder="비밀번호를 다시 입력해주세요"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"
               />
               {formData.passwordConfirm && formData.password !== formData.passwordConfirm && (
                 <p className="text-red-500 text-sm mt-1">비밀번호가 일치하지 않습니다</p>
@@ -74,17 +74,15 @@ export function SignUpStep3Page() {
             </div>
           </div>
 
-          <button
+          <Button
+            variant={isFormValid ? "primary" : "primaryDisabled"}
+            size="full"
             onClick={handleSubmit}
             disabled={!isFormValid}
-            className={`w-full mt-8 py-4 rounded-lg font-medium transition-colors ${
-              isFormValid
-                ? "bg-primary text-white hover:bg-primary/90"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
+            className="mt-8"
           >
             가입하기
-          </button>
+          </Button>
         </div>
       </main>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { IconMapPin, IconX, IconSettings } from '@tabler/icons-react'
 import { checkLocationPermission } from '@/utils/geolocation'
+import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { reportError } from '@/lib/errorReporter'
 
@@ -80,12 +81,10 @@ export function LocationPermissionPopup({
       {/* Popup */}
       <div className="relative z-10 w-full max-w-sm mx-4 bg-white rounded-2xl shadow-xl overflow-hidden">
         {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
-        >
+        <Button variant="ghost" size="icon" onClick={onClose}
+          className="absolute top-4 right-4 rounded-full hover:bg-slate-100">
           <IconX size={20} className="text-slate-500" />
-        </button>
+        </Button>
 
         {/* Content */}
         <div className="px-6 pt-8 pb-6">
@@ -130,30 +129,21 @@ export function LocationPermissionPopup({
           <div className="space-y-3">
             {isDenied ? (
               <>
-                <button
+                <Button variant="primary" size="full" className="rounded-xl"
                   onClick={() => {
-                    // Try to open browser settings or show guidance
                     alert('브라우저 설정에서 위치 권한을 허용해주세요.\n\n• Chrome: 주소창 왼쪽 자물쇠 아이콘 클릭 → 위치 → 허용\n• Safari: 설정 → Safari → 위치 → 허용')
-                  }}
-                  className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
-                >
+                  }}>
                   설정 방법 보기
-                </button>
-                <button
-                  onClick={handleRequestPermission}
-                  disabled={isRequesting}
-                  className="w-full py-3 px-4 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50"
-                >
+                </Button>
+                <Button variant="secondary" size="full" className="rounded-xl"
+                  onClick={handleRequestPermission} disabled={isRequesting}>
                   {isRequesting ? '확인 중...' : '다시 시도'}
-                </button>
+                </Button>
               </>
             ) : (
               <>
-                <button
-                  onClick={handleRequestPermission}
-                  disabled={isRequesting}
-                  className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
+                <Button variant="primary" size="full" className="rounded-xl"
+                  onClick={handleRequestPermission} disabled={isRequesting}>
                   {isRequesting ? (
                     <span className="flex items-center justify-center gap-2">
                       <Spinner size="sm" className="border-white" />
@@ -162,13 +152,10 @@ export function LocationPermissionPopup({
                   ) : (
                     '위치 권한 허용'
                   )}
-                </button>
-                <button
-                  onClick={onClose}
-                  className="w-full py-3 px-4 text-slate-500 font-medium rounded-xl hover:bg-slate-100 transition-colors"
-                >
+                </Button>
+                <Button variant="ghost" size="full" className="rounded-xl text-slate-500" onClick={onClose}>
                   취소
-                </button>
+                </Button>
               </>
             )}
           </div>
