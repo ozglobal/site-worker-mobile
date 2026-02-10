@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledInput } from "@/components/ui/labeled-input"
@@ -21,19 +21,28 @@ export function SmsVerificationPage() {
   const [verificationCode, setVerificationCode] = useState("")
 
   const mainRef = useRef<HTMLElement>(null)
-  const buttonRef = useRef<HTMLDivElement>(null)
 
-  const handleFieldFocus = (e: React.FocusEvent) => {
-    const target = e.target as HTMLElement
-    if (target.tagName !== "INPUT" || target.hasAttribute("disabled")) return
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
 
-    setTimeout(() => {
+    const onResize = () => {
       const main = mainRef.current
-      if (main) {
-        main.scrollTo({ top: main.scrollHeight, behavior: "smooth" })
+      if (!main) return
+      const keyboardHeight = window.innerHeight - vv.height
+      if (keyboardHeight > 50) {
+        main.style.paddingBottom = `${keyboardHeight}px`
+        requestAnimationFrame(() => {
+          main.scrollTo({ top: main.scrollHeight, behavior: "smooth" })
+        })
+      } else {
+        main.style.paddingBottom = "0"
       }
-    }, 300)
-  }
+    }
+
+    vv.addEventListener("resize", onResize)
+    return () => vv.removeEventListener("resize", onResize)
+  }, [])
 
   const handleBack = () => {
     navigate(-1)
@@ -64,7 +73,7 @@ export function SmsVerificationPage() {
         className="shrink-0"
       />
 
-      <main ref={mainRef} className="flex-1 overflow-y-auto" onFocus={handleFieldFocus}>
+      <main ref={mainRef} className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
           <div className="px-4 py-6 space-y-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
@@ -95,9 +104,9 @@ export function SmsVerificationPage() {
               </div>
             </div>
 
-            {/* 인증번호 */}
+            {/* 인증번호 + 다음 */}
             {showVerificationInput && (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <LabeledInput
                   label="인증번호"
                   type="text"
@@ -112,26 +121,20 @@ export function SmsVerificationPage() {
                     }
                   }}
                 />
+                <Button
+                  variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
+                  size="full"
+                  disabled={verificationCode.length !== 6}
+                  onClick={() => {
+                    signupStorage.setPhone(phoneNumber)
+                    navigate("/signup/agreement")
+                  }}
+                >
+                  다음
+                </Button>
               </div>
             )}
           </div>
-
-          {/* Save Button */}
-          {showVerificationInput && (
-            <div ref={buttonRef} className="px-4 py-6 mt-auto">
-              <Button
-                variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
-                size="full"
-                disabled={verificationCode.length !== 6}
-                onClick={() => {
-                  signupStorage.setPhone(phoneNumber)
-                  navigate("/signup/agreement")
-                }}
-              >
-                다음
-              </Button>
-            </div>
-          )}
         </div>
       </main>
     </div>
