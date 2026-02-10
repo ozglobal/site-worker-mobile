@@ -43,11 +43,26 @@ export function DomesticInfoPage() {
     if (target.tagName !== "INPUT" || target.hasAttribute("disabled")) return
 
     setTimeout(() => {
+      const scrollContainer = target.closest("main") as HTMLElement
+      if (!scrollContainer) return
+      const visibleBottom = window.visualViewport?.height ?? window.innerHeight
+
       if (target === addressRef.current) {
-        buttonRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
-      } else {
-        const wrapper = target.closest(".space-y-2") as HTMLElement
-        wrapper?.scrollIntoView({ behavior: "smooth", block: "start" })
+        // Last field: scroll button into view above keyboard
+        if (buttonRef.current) {
+          const gap = buttonRef.current.getBoundingClientRect().bottom - visibleBottom
+          if (gap > 0) scrollContainer.scrollBy({ top: gap + 16, behavior: "smooth" })
+        }
+        return
+      }
+
+      // Other fields: scroll enough so the next field is visible above keyboard
+      const wrapper = target.closest(".space-y-2") as HTMLElement
+      if (!wrapper) return
+      const nextWrapper = wrapper.nextElementSibling as HTMLElement
+      if (nextWrapper) {
+        const gap = nextWrapper.getBoundingClientRect().bottom - visibleBottom
+        if (gap > 0) scrollContainer.scrollBy({ top: gap + 16, behavior: "smooth" })
       }
     }, 300)
   }
