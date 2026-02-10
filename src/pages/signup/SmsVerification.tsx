@@ -50,63 +50,68 @@ export function SmsVerificationPage() {
       />
 
       <main className="flex-1 overflow-y-auto">
-        <div className="flex flex-col min-h-full">
-          <div className="px-4 py-6">
-            <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
-              현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
-            </p>
+        <div className="px-4 py-6">
+          <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
+            현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
+          </p>
 
-            <input {...honeypotProps} />
+          <input {...honeypotProps} />
 
-            <div className="flex items-end gap-2">
-              <LabeledInput
-                label="휴대폰 번호"
-                type="tel"
-                placeholder="010-0000-0000"
-                value={phoneNumber}
-                onChange={handlePhoneChange}
-                className="w-[190px]"
-              />
-              <Button
-                variant={isPhoneComplete ? "primary" : "primaryDisabled"}
-                onClick={handleRequestCode}
-                disabled={!isPhoneComplete}
-                className="h-12 w-[190px] whitespace-nowrap"
-              >
-                인증번호 받기
-              </Button>
-            </div>
-
-            {showVerificationInput && (
-              <div className="mt-4">
-                <LabeledInput
-                  label="인증번호"
-                  type="text"
-                  placeholder="인증번호 입력"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                />
-              </div>
-            )}
+          <div className="flex items-end gap-2">
+            <LabeledInput
+              label="휴대폰 번호"
+              type="tel"
+              placeholder="010-0000-0000"
+              value={phoneNumber}
+              onChange={handlePhoneChange}
+              className="w-[190px]"
+            />
+            <Button
+              variant={isPhoneComplete ? "primary" : "primaryDisabled"}
+              onClick={handleRequestCode}
+              disabled={!isPhoneComplete}
+              className="h-12 w-[190px] whitespace-nowrap"
+            >
+              인증번호 받기
+            </Button>
           </div>
 
           {showVerificationInput && (
-            <div className="px-4 py-6 mt-auto">
-              <Button
-                variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
-                size="full"
-                disabled={verificationCode.length !== 6}
-                onClick={() => {
-                  signupStorage.setPhone(phoneNumber)
-                  navigate("/signup/agreement")
+            <div className="mt-4">
+              <LabeledInput
+                label="인증번호"
+                type="text"
+                placeholder="인증번호 입력"
+                value={verificationCode}
+                maxLength={6}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                  setVerificationCode(value)
+                  if (value.length === 6) {
+                    e.target.blur()
+                  }
                 }}
-              >
-                다음
-              </Button>
+              />
             </div>
           )}
         </div>
       </main>
+
+      {showVerificationInput && (
+        <div className="px-4 py-6 shrink-0">
+          <Button
+            variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
+            size="full"
+            disabled={verificationCode.length !== 6}
+            onClick={() => {
+              signupStorage.setPhone(phoneNumber)
+              navigate("/signup/agreement")
+            }}
+          >
+            다음
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
