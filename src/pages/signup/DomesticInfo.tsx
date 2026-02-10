@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
@@ -23,39 +23,47 @@ export function DomesticInfoPage() {
     formData.phone.trim() !== "" &&
     formData.address.trim() !== ""
 
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  const mainRef = useRef<HTMLElement>(null)
+  const ssnSecondRef = useRef<HTMLInputElement>(null)
+  const addressRef = useRef<HTMLInputElement>(null)
+
+  // Shrink <main> via DOM when keyboard opens so content overflows and becomes scrollable.
+  // Direct DOM manipulation avoids React state re-render delay.
   useEffect(() => {
     const viewport = window.visualViewport
     if (!viewport) return
     const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
+      const main = mainRef.current
+      if (!main) return
+      const kbHeight = window.innerHeight - viewport.height
+      if (kbHeight > 150) {
+        const headerHeight = main.getBoundingClientRect().top
+        main.style.maxHeight = `${viewport.height - headerHeight}px`
+      } else {
+        main.style.maxHeight = ""
+      }
     }
     viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
+    return () => {
+      viewport.removeEventListener("resize", handleResize)
+      if (mainRef.current) mainRef.current.style.maxHeight = ""
+    }
   }, [])
-
-  const ssnSecondRef = useRef<HTMLInputElement>(null)
-  const addressRef = useRef<HTMLInputElement>(null)
-  const buttonRef = useRef<HTMLDivElement>(null)
 
   const handleFieldFocus = (e: React.FocusEvent) => {
     const target = e.target as HTMLElement
     if (target.tagName !== "INPUT" || target.hasAttribute("disabled")) return
 
     setTimeout(() => {
-      const scrollContainer = target.closest("main") as HTMLElement
-      if (!scrollContainer) return
-
-      // Scroll the field wrapper to the top of the scroll area.
-      // This maximizes visible space below for the next field/button,
-      // without needing to know the keyboard height.
+      const main = mainRef.current
+      if (!main) return
       const wrapper = target.closest(".space-y-2") as HTMLElement
       if (!wrapper) return
-      const containerTop = scrollContainer.getBoundingClientRect().top
+      const containerTop = main.getBoundingClientRect().top
       const wrapperTop = wrapper.getBoundingClientRect().top
       const scrollDelta = wrapperTop - containerTop - 8
       if (scrollDelta > 10) {
-        scrollContainer.scrollBy({ top: scrollDelta, behavior: "smooth" })
+        main.scrollBy({ top: scrollDelta, behavior: "smooth" })
       }
     }, 300)
   }
@@ -84,7 +92,7 @@ export function DomesticInfoPage() {
         className="shrink-0"
       />
 
-      <main className="flex-1 overflow-y-auto" onFocus={handleFieldFocus}>
+      <main ref={mainRef} className="flex-1 overflow-y-auto" onFocus={handleFieldFocus}>
         <div className="flex flex-col min-h-full">
           <div className="px-4 py-6 space-y-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
@@ -158,7 +166,7 @@ export function DomesticInfoPage() {
           </div>
 
           {/* Save Button */}
-          <div ref={buttonRef} className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
+          <div className="px-4 py-6 mt-auto">
             <Button
               variant={allFieldsFilled ? "primary" : "primaryDisabled"}
               size="full"
@@ -168,9 +176,6 @@ export function DomesticInfoPage() {
               다음
             </Button>
           </div>
-
-          {/* Keyboard spacer: creates scrollable overflow so fields can scroll above keyboard */}
-          {keyboardOpen && <div className="h-[40vh] shrink-0" />}
         </div>
       </main>
     </div>
