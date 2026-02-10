@@ -21,21 +21,15 @@ export function SmsVerificationPage() {
   const [verificationCode, setVerificationCode] = useState("")
 
   const mainRef = useRef<HTMLElement>(null)
+  const buttonRef = useRef<HTMLDivElement>(null)
 
   const handleFieldFocus = (e: React.FocusEvent) => {
     const target = e.target as HTMLElement
     if (target.tagName !== "INPUT" || target.hasAttribute("disabled")) return
 
     setTimeout(() => {
-      const main = mainRef.current
-      if (!main) return
-      const wrapper = target.closest(".space-y-2") as HTMLElement
-      if (!wrapper) return
-      const containerTop = main.getBoundingClientRect().top
-      const wrapperTop = wrapper.getBoundingClientRect().top
-      const scrollDelta = wrapperTop - containerTop - 8 + 100
-      if (scrollDelta > 10) {
-        main.scrollBy({ top: scrollDelta, behavior: "smooth" })
+      if (buttonRef.current) {
+        buttonRef.current.scrollIntoView({ behavior: "smooth", block: "end" })
       }
     }, 300)
   }
@@ -123,7 +117,7 @@ export function SmsVerificationPage() {
 
           {/* Save Button */}
           {showVerificationInput && (
-            <div className="px-4 py-6 mt-auto">
+            <div ref={buttonRef} className="px-4 py-6 mt-auto">
               <Button
                 variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
                 size="full"
