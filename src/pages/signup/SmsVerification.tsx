@@ -31,27 +31,39 @@ export function SmsVerificationPage() {
 
   const isPhoneComplete = phoneNumber.replace(/\D/g, "").length === 11
 
-  // Shrink <main> via DOM when keyboard opens so content overflows and becomes scrollable.
-  // Same approach as DomesticInfo — maxHeight on <main>, not height on root.
-  const mainRef = useRef<HTMLElement>(null)
+  // Position the button fixed above keyboard when it opens.
+  // On Android, 100vh doesn't shrink with keyboard, so flex/mt-auto can't reach visible bottom.
+  // Instead, detect keyboard via visualViewport and fix-position the button above it.
+  const buttonRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
     const sync = () => {
-      const main = mainRef.current
-      if (!main) return
+      const btn = buttonRef.current
+      if (!btn) return
       const kbHeight = window.innerHeight - vv.height
       if (kbHeight > 150) {
-        const headerHeight = main.getBoundingClientRect().top
-        main.style.maxHeight = `${vv.height - headerHeight}px`
+        const bottomOffset = window.innerHeight - vv.offsetTop - vv.height
+        btn.style.position = "fixed"
+        btn.style.left = "0"
+        btn.style.right = "0"
+        btn.style.bottom = `${bottomOffset}px`
+        btn.style.zIndex = "50"
+        btn.style.backgroundColor = "white"
       } else {
-        main.style.maxHeight = ""
+        btn.style.position = ""
+        btn.style.left = ""
+        btn.style.right = ""
+        btn.style.bottom = ""
+        btn.style.zIndex = ""
+        btn.style.backgroundColor = ""
       }
     }
     vv.addEventListener("resize", sync)
+    vv.addEventListener("scroll", sync)
     return () => {
       vv.removeEventListener("resize", sync)
-      if (mainRef.current) mainRef.current.style.maxHeight = ""
+      vv.removeEventListener("scroll", sync)
     }
   }, [])
 
@@ -73,7 +85,7 @@ export function SmsVerificationPage() {
         className="shrink-0"
       />
 
-      <main ref={mainRef} className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
           <div className="px-4 py-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
@@ -115,7 +127,7 @@ export function SmsVerificationPage() {
           </div>
 
           {showVerificationInput && (
-            <div className="px-4 py-6 mt-auto">
+            <div ref={buttonRef} className="px-4 py-6 mt-auto">
               <Button
                 variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
                 size="full"
