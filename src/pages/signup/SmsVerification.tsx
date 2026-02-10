@@ -50,8 +50,7 @@ export function SmsVerificationPage() {
       />
 
       <main className="flex-1 overflow-y-auto">
-        <div className="flex flex-col min-h-full">
-          <div className="px-4 py-6">
+        <div className="px-4 py-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
               현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
             </p>
@@ -88,23 +87,22 @@ export function SmsVerificationPage() {
                 />
               </div>
             )}
-          </div>
 
-          {showVerificationInput && (
-            <div className="px-4 py-6 mt-auto">
-              <Button
-                variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
-                size="full"
-                disabled={verificationCode.length !== 6}
-                onClick={() => {
-                  signupStorage.setPhone(phoneNumber)
-                  navigate("/signup/agreement")
-                }}
-              >
-                다음
-              </Button>
-            </div>
-          )}
+            {showVerificationInput && (
+              <div className="mt-6">
+                <Button
+                  variant={verificationCode.length === 6 ? "primary" : "primaryDisabled"}
+                  size="full"
+                  disabled={verificationCode.length !== 6}
+                  onClick={() => {
+                    signupStorage.setPhone(phoneNumber)
+                    navigate("/signup/agreement")
+                  }}
+                >
+                  다음
+                </Button>
+              </div>
+            )}
         </div>
       </main>
     </div>
