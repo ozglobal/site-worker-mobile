@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
@@ -26,29 +26,6 @@ export function DomesticInfoPage() {
   const mainRef = useRef<HTMLElement>(null)
   const ssnSecondRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLInputElement>(null)
-
-  // Shrink <main> via DOM when keyboard opens so content overflows and becomes scrollable.
-  // Direct DOM manipulation avoids React state re-render delay.
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      const main = mainRef.current
-      if (!main) return
-      const kbHeight = window.innerHeight - viewport.height
-      if (kbHeight > 150) {
-        const headerHeight = main.getBoundingClientRect().top
-        main.style.maxHeight = `${viewport.height - headerHeight}px`
-      } else {
-        main.style.maxHeight = ""
-      }
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => {
-      viewport.removeEventListener("resize", handleResize)
-      if (mainRef.current) mainRef.current.style.maxHeight = ""
-    }
-  }, [])
 
   const handleFieldFocus = (e: React.FocusEvent) => {
     const target = e.target as HTMLElement
