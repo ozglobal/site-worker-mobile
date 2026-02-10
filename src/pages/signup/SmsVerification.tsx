@@ -33,7 +33,7 @@ export function SmsVerificationPage() {
       if (!wrapper) return
       const containerTop = main.getBoundingClientRect().top
       const wrapperTop = wrapper.getBoundingClientRect().top
-      const scrollDelta = wrapperTop - containerTop - 8
+      const scrollDelta = wrapperTop - containerTop - 8 + 100
       if (scrollDelta > 10) {
         main.scrollBy({ top: scrollDelta, behavior: "smooth" })
       }

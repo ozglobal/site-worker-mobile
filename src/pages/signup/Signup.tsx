@@ -36,11 +36,6 @@ export function SignUpPage() {
               description="타인 명의 휴대폰 번호로 가입합니다."
               onClick={() => navigate("/signup/sms-verification", { state: { phoneType: "other" } })}
             />
-            <OptionCard
-              title="SMS 테스트"
-              description="키보드 스크롤 테스트 페이지"
-              onClick={() => navigate("/signup/sms")}
-            />
           </div>
         </div>
       </main>

@@ -19,7 +19,6 @@ const queryClient = new QueryClient({
 import { LoginPage, SmsVerificationPage, LoginSetPasswordPage } from './pages/login';
 import { SignUpPage, AgreementPage, DomesticForeignPage, DomesticInfoPage, ForeignInfoPage, PassportInfoPage, SetPasswordPage } from './pages/signup';
 import { SmsVerificationPage as SignupSmsVerificationPage } from './pages/signup/SmsVerification';
-import { SmsPage } from './pages/signup/Sms';
 import { SignUpStep3Page } from './pages/signup/step3';
 import { SignUpCompletePage } from './pages/signup/SignupComplete';
 import { NiceApiPage } from './pages/signup/NiceApiPage';
@@ -81,7 +80,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/signup/agreement" element={<PublicRoute><AgreementPage /></PublicRoute>} />
       <Route path="/signup/domestic-foreign" element={<PublicRoute><DomesticForeignPage /></PublicRoute>} />
       <Route path="/signup/domestic-info" element={<PublicRoute><DomesticInfoPage /></PublicRoute>} />
-      <Route path="/signup/sms" element={<PublicRoute><SmsPage /></PublicRoute>} />
       <Route path="/signup/foreign-info" element={<PublicRoute><ForeignInfoPage /></PublicRoute>} />
       <Route path="/signup/passport-info" element={<PublicRoute><PassportInfoPage /></PublicRoute>} />
       <Route path="/signup/set-password" element={<PublicRoute><SetPasswordPage /></PublicRoute>} />
