@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledInput } from "@/components/ui/labeled-input"
@@ -31,6 +31,24 @@ export function SmsVerificationPage() {
 
   const isPhoneComplete = phoneNumber.replace(/\D/g, "").length === 11
 
+  // Shrink root container to visualViewport height when keyboard opens.
+  // Replaces h-screen (100vh, which doesn't shrink on Android) with actual visible height.
+  // mt-auto on button then naturally positions it above the keyboard.
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const sync = () => {
+      if (!rootRef.current) return
+      rootRef.current.style.height = `${vv.height}px`
+    }
+    vv.addEventListener("resize", sync)
+    return () => {
+      vv.removeEventListener("resize", sync)
+      if (rootRef.current) rootRef.current.style.height = ""
+    }
+  }, [])
+
   const handleRequestCode = () => {
     if (isBotDetected) return
     if (isPhoneComplete) {
@@ -40,7 +58,7 @@ export function SmsVerificationPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white">
+    <div ref={rootRef} className="flex h-screen flex-col overflow-hidden bg-white">
       <AppHeader
         showLeftAction={true}
         title=""
