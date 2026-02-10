@@ -45,24 +45,17 @@ export function DomesticInfoPage() {
     setTimeout(() => {
       const scrollContainer = target.closest("main") as HTMLElement
       if (!scrollContainer) return
-      const visibleBottom = window.visualViewport?.height ?? window.innerHeight
 
-      if (target === addressRef.current) {
-        // Last field: scroll button into view above keyboard
-        if (buttonRef.current) {
-          const gap = buttonRef.current.getBoundingClientRect().bottom - visibleBottom
-          if (gap > 0) scrollContainer.scrollBy({ top: gap + 16, behavior: "smooth" })
-        }
-        return
-      }
-
-      // Other fields: scroll enough so the next field is visible above keyboard
+      // Scroll the field wrapper to the top of the scroll area.
+      // This maximizes visible space below for the next field/button,
+      // without needing to know the keyboard height.
       const wrapper = target.closest(".space-y-2") as HTMLElement
       if (!wrapper) return
-      const nextWrapper = wrapper.nextElementSibling as HTMLElement
-      if (nextWrapper) {
-        const gap = nextWrapper.getBoundingClientRect().bottom - visibleBottom
-        if (gap > 0) scrollContainer.scrollBy({ top: gap + 16, behavior: "smooth" })
+      const containerTop = scrollContainer.getBoundingClientRect().top
+      const wrapperTop = wrapper.getBoundingClientRect().top
+      const scrollDelta = wrapperTop - containerTop - 8
+      if (scrollDelta > 10) {
+        scrollContainer.scrollBy({ top: scrollDelta, behavior: "smooth" })
       }
     }, 300)
   }
