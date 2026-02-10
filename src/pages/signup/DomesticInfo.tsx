@@ -23,27 +23,8 @@ export function DomesticInfoPage() {
     formData.phone.trim() !== "" &&
     formData.address.trim() !== ""
 
-  const mainRef = useRef<HTMLElement>(null)
   const ssnSecondRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLInputElement>(null)
-
-  const handleFieldFocus = (e: React.FocusEvent) => {
-    const target = e.target as HTMLElement
-    if (target.tagName !== "INPUT" || target.hasAttribute("disabled")) return
-
-    setTimeout(() => {
-      const main = mainRef.current
-      if (!main) return
-      const wrapper = target.closest(".space-y-2") as HTMLElement
-      if (!wrapper) return
-      const containerTop = main.getBoundingClientRect().top
-      const wrapperTop = wrapper.getBoundingClientRect().top
-      const scrollDelta = wrapperTop - containerTop - 8
-      if (scrollDelta > 10) {
-        main.scrollBy({ top: scrollDelta, behavior: "smooth" })
-      }
-    }, 300)
-  }
 
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
@@ -69,8 +50,7 @@ export function DomesticInfoPage() {
         className="shrink-0"
       />
 
-      <main ref={mainRef} className="flex-1 overflow-y-auto" onFocus={handleFieldFocus}>
-        <div className="flex flex-col min-h-full">
+      <main className="flex-1 overflow-y-auto">
           <div className="px-4 py-6 space-y-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
               회원 정보를 입력해주세요
@@ -140,10 +120,7 @@ export function DomesticInfoPage() {
               />
             </div>
 
-          </div>
-
-          {/* Save Button */}
-          <div className="px-4 py-6 mt-auto">
+            {/* Save Button */}
             <Button
               variant={allFieldsFilled ? "primary" : "primaryDisabled"}
               size="full"
@@ -153,7 +130,6 @@ export function DomesticInfoPage() {
               다음
             </Button>
           </div>
-        </div>
       </main>
     </div>
   )

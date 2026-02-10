@@ -49,7 +49,7 @@ export function SmsVerificationPage() {
         className="shrink-0"
       />
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-hidden">
           <div className="px-4 py-6 space-y-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
               현재 이용중인 휴대폰 번호를<br /> 인증해주세요.

@@ -48,10 +48,9 @@ export function NiceApiPage() {
         className="shrink-0"
       />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="flex flex-col min-h-full">
-          <div className="px-4 py-6">
-            <p className="text-xl font-bold text-slate-900 mb-6 leading-tight">
+      <main className="flex-1 overflow-hidden">
+          <div className="px-4 py-6 space-y-6">
+            <p className="text-xl font-bold text-slate-900 leading-tight">
               Backend API call이 보내준 <br></br>NICE 휴대폰 본인확인 서비스 페이지
             </p>
 
@@ -61,19 +60,15 @@ export function NiceApiPage() {
             </p>
 
             {showVerificationInput && (
-              <div className="mt-4">
-                <LabeledInput
-                  label="인증번호"
-                  type="text"
-                  placeholder="인증번호 입력"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                />
-              </div>
+              <LabeledInput
+                label="인증번호"
+                type="text"
+                placeholder="인증번호 입력"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+              />
             )}
-          </div>
 
-          <div className="px-4 py-6 mt-auto">
             <Button
               variant="primary"
               size="full"
@@ -82,7 +77,6 @@ export function NiceApiPage() {
               다음
             </Button>
           </div>
-        </div>
       </main>
     </div>
   )
