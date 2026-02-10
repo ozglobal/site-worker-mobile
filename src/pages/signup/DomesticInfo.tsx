@@ -168,6 +168,9 @@ export function DomesticInfoPage() {
               다음
             </Button>
           </div>
+
+          {/* Keyboard spacer: creates scrollable overflow so fields can scroll above keyboard */}
+          {keyboardOpen && <div className="h-[40vh] shrink-0" />}
         </div>
       </main>
     </div>
