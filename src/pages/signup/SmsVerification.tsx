@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledInput } from "@/components/ui/labeled-input"
@@ -19,30 +19,6 @@ export function SmsVerificationPage() {
   const [phoneNumber, setPhoneNumber] = useState("")
   const [showVerificationInput, setShowVerificationInput] = useState(false)
   const [verificationCode, setVerificationCode] = useState("")
-
-  const mainRef = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-
-    const onResize = () => {
-      const main = mainRef.current
-      if (!main) return
-      const keyboardHeight = window.innerHeight - vv.height
-      if (keyboardHeight > 50) {
-        main.style.paddingBottom = `${keyboardHeight}px`
-        requestAnimationFrame(() => {
-          main.scrollTo({ top: main.scrollHeight, behavior: "smooth" })
-        })
-      } else {
-        main.style.paddingBottom = "0"
-      }
-    }
-
-    vv.addEventListener("resize", onResize)
-    return () => vv.removeEventListener("resize", onResize)
-  }, [])
 
   const handleBack = () => {
     navigate(-1)
@@ -73,8 +49,7 @@ export function SmsVerificationPage() {
         className="shrink-0"
       />
 
-      <main ref={mainRef} className="flex-1 overflow-y-auto">
-        <div className="flex flex-col min-h-full">
+      <main className="flex-1 overflow-y-auto">
           <div className="px-4 py-6 space-y-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
               현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
@@ -135,7 +110,6 @@ export function SmsVerificationPage() {
               </div>
             )}
           </div>
-        </div>
       </main>
     </div>
   )
