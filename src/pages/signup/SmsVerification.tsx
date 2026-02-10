@@ -31,21 +31,27 @@ export function SmsVerificationPage() {
 
   const isPhoneComplete = phoneNumber.replace(/\D/g, "").length === 11
 
-  // Shrink root container to visualViewport height when keyboard opens.
-  // Replaces h-screen (100vh, which doesn't shrink on Android) with actual visible height.
-  // mt-auto on button then naturally positions it above the keyboard.
-  const rootRef = useRef<HTMLDivElement>(null)
+  // Shrink <main> via DOM when keyboard opens so content overflows and becomes scrollable.
+  // Same approach as DomesticInfo — maxHeight on <main>, not height on root.
+  const mainRef = useRef<HTMLElement>(null)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
     const sync = () => {
-      if (!rootRef.current) return
-      rootRef.current.style.height = `${vv.height}px`
+      const main = mainRef.current
+      if (!main) return
+      const kbHeight = window.innerHeight - vv.height
+      if (kbHeight > 150) {
+        const headerHeight = main.getBoundingClientRect().top
+        main.style.maxHeight = `${vv.height - headerHeight}px`
+      } else {
+        main.style.maxHeight = ""
+      }
     }
     vv.addEventListener("resize", sync)
     return () => {
       vv.removeEventListener("resize", sync)
-      if (rootRef.current) rootRef.current.style.height = ""
+      if (mainRef.current) mainRef.current.style.maxHeight = ""
     }
   }, [])
 
@@ -58,7 +64,7 @@ export function SmsVerificationPage() {
   }
 
   return (
-    <div ref={rootRef} className="flex h-screen flex-col overflow-hidden bg-white">
+    <div className="flex h-screen flex-col overflow-hidden bg-white">
       <AppHeader
         showLeftAction={true}
         title=""
@@ -67,7 +73,7 @@ export function SmsVerificationPage() {
         className="shrink-0"
       />
 
-      <main className="flex-1 overflow-y-auto">
+      <main ref={mainRef} className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
           <div className="px-4 py-6">
             <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
