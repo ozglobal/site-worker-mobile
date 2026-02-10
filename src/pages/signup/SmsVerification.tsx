@@ -28,8 +28,9 @@ export function SmsVerificationPage() {
     if (target.tagName !== "INPUT" || target.hasAttribute("disabled")) return
 
     setTimeout(() => {
-      if (buttonRef.current) {
-        buttonRef.current.scrollIntoView({ behavior: "smooth", block: "end" })
+      const main = mainRef.current
+      if (main) {
+        main.scrollTo({ top: main.scrollHeight, behavior: "smooth" })
       }
     }, 300)
   }
