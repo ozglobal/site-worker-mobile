@@ -43,7 +43,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white px-5">
+    <div className="flex min-h-dvh flex-col bg-white px-5">
 
       {/* Logo */}
       <div className="mt-[180px]">

@@ -5,7 +5,7 @@ export function SignUpCompletePage() {
   const navigate = useNavigate()
 
   return (
-    <div className="flex h-screen flex-col bg-white">
+    <div className="flex h-dvh flex-col bg-white">
       <main className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-6">
           <svg

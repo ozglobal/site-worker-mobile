@@ -34,7 +34,7 @@ export function SignUpStep3Page() {
     formData.password === formData.passwordConfirm
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <AppHeader
         showLeftAction={true}
         title=""

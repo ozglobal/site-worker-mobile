@@ -10,7 +10,7 @@ export function SignUpPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white">
+    <div className="flex h-dvh flex-col overflow-hidden bg-white">
       <AppHeader
         showLeftAction={true}
         title=""
