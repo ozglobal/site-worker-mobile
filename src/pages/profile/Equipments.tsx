@@ -4,7 +4,8 @@ import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { Button } from "@/components/ui/button"
-import { fileStorage } from "@/lib/storage"
+import { Select } from "@/components/ui/select"
+import { fileStorage, engineerStorage } from "@/lib/storage"
 
 const equipmentTypes = [
   { id: "bulldozer", name: "1. 불도저" },
@@ -41,7 +42,7 @@ const CERT_FILE_KEY = "equipment-cert"
 
 export function EquipmentsPage() {
   const navigate = useNavigate()
-  const engineer = JSON.parse(localStorage.getItem("engineer") || "null")
+  const engineer = engineerStorage.get()
   const [selectedEquipment, setSelectedEquipment] = useState(engineer?.machine || "")
   const [certFile, setCertFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -67,8 +68,7 @@ export function EquipmentsPage() {
   }, [])
 
   const handleSubmit = async () => {
-    const existing = JSON.parse(localStorage.getItem("engineer") || "{}")
-    localStorage.setItem("engineer", JSON.stringify({ ...existing, machine: selectedEquipment }))
+    engineerStorage.update({ machine: selectedEquipment })
 
     if (certFile) {
       try {
@@ -140,18 +140,12 @@ export function EquipmentsPage() {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               장비 종류
             </label>
-            <select
+            <Select
+              options={equipmentTypes.map((t) => ({ value: t.id, label: t.name }))}
               value={selectedEquipment}
-              onChange={(e) => setSelectedEquipment(e.target.value)}
-              className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
-            >
-              <option value="" disabled>장비 선택</option>
-              {equipmentTypes.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedEquipment}
+              placeholder="장비 선택"
+            />
           </div>
 
           {/* Info Box */}

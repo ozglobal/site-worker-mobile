@@ -1,7 +1,21 @@
 // App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { ToastProvider } from './contexts/ToastContext';
+import { ToastContainer } from './components/ui/toast';
+import { Spinner } from '@/components/ui/spinner';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 import { LoginPage, SmsVerificationPage, LoginSetPasswordPage } from './pages/login';
 import { SignUpPage, AgreementPage, DomesticForeignPage, DomesticInfoPage, ForeignInfoPage, PassportInfoPage, SetPasswordPage } from './pages/signup';
 import { SmsVerificationPage as SignupSmsVerificationPage } from './pages/signup/SmsVerification';
@@ -32,7 +46,7 @@ const PublicRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+        <Spinner />
       </div>
     );
   }
@@ -89,11 +103,18 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <AuthProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </AuthProvider>
+          <ToastContainer />
+        </ToastProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

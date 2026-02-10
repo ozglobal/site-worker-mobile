@@ -1,7 +1,8 @@
 import { authFetch } from './auth'
 import { devLogApiRaw, devLogRequestRaw } from '../utils/devLog'
-import { profileStorage } from './storage'
+import { safeJson } from './api-result'
 import { API_BASE_URL, X_TENANT_ID } from './config'
+import { reportError } from './errorReporter'
 
 export interface WorkerMeResponse {
   success: boolean
@@ -35,42 +36,34 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
       },
     })
 
-    const json = await response.json()
+    const json = await safeJson(response) as Record<string, unknown> | null
     devLogApiRaw('/system/worker/me', { status: response.status, data: json })
+
+    if (!json) {
+      return { success: false, error: 'Invalid server response' }
+    }
 
     if (!response.ok) {
       return { success: false, error: `API error: ${response.status}` }
     }
 
-    const payload = json.data || json.result || json
+    const payload = (json.data || json.result || json) as Record<string, unknown>
 
     const data: WorkerMeData = {
-      workerName: payload.nameKo || '',
-      ssnFirst: payload.ssnFirst || payload.residentFirst || '',
-      ssnSecond: payload.ssnSecond || payload.residentSecond || '',
-      phone: payload.mobilePhone || '',
-      address: payload.address || '',
-      accountHolder: payload.accountHolder || '',
-      bankName: payload.bankName || '',
-      bankAccountMasked: payload.bankAccountMasked || '',
-    }
-
-    // Sync to profileStorage
-    const existing = profileStorage.get()
-    if (existing) {
-      profileStorage.set({
-        ...existing,
-        workerName: data.workerName || existing.workerName,
-        ssnFirst: data.ssnFirst,
-        ssnSecond: data.ssnSecond,
-        phone: data.phone,
-        address: data.address,
-      })
+      workerName: (payload.nameKo as string) || '',
+      ssnFirst: (payload.ssnFirst as string) || (payload.residentFirst as string) || '',
+      ssnSecond: (payload.ssnSecond as string) || (payload.residentSecond as string) || '',
+      phone: (payload.mobilePhone as string) || '',
+      address: (payload.address as string) || '',
+      accountHolder: (payload.accountHolder as string) || '',
+      bankName: (payload.bankName as string) || '',
+      bankAccountMasked: (payload.bankAccountMasked as string) || '',
     }
 
     return { success: true, data }
   } catch (error) {
     console.error('[PROFILE] fetchWorkerMe error:', error)
+    reportError('PROFILE_FETCH_FAIL', 'Network error', { endpoint: '/system/worker/me' })
     return { success: false, error: 'Network error' }
   }
 }
@@ -105,16 +98,21 @@ export const changePassword = async (params: ChangePasswordRequest): Promise<Cha
       body: JSON.stringify(body),
     })
 
-    const json = await response.json()
+    const json = await safeJson(response) as Record<string, unknown> | null
     devLogApiRaw('/user/profile/password', { status: response.status, data: json })
 
+    if (!json) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
     if (!response.ok) {
-      return { success: false, error: json.message || `API error: ${response.status}` }
+      return { success: false, error: (json.message as string) || `API error: ${response.status}` }
     }
 
     return { success: true }
   } catch (error) {
     console.error('[PROFILE] changePassword error:', error)
+    reportError('PROFILE_PASSWORD_FAIL', 'Network error', { endpoint: '/user/profile/password' })
     return { success: false, error: 'Network error' }
   }
 }

@@ -2,13 +2,8 @@
  * Time utility functions
  */
 
-/**
- * Convert serverTimestamp (UTC) to KST formatted string
- * Handles string (ISO format), number (Unix ms), or Date object
- */
-export const formatKstTime = (timestamp: string | number | Date | null | undefined): string => {
-  if (!timestamp) return ''
-
+/** Parse a timestamp (string/number/Date) into a KST Date (UTC+9) */
+function toSeoulDate(timestamp: string | number | Date): Date | null {
   let date: Date
 
   if (timestamp instanceof Date) {
@@ -17,26 +12,50 @@ export const formatKstTime = (timestamp: string | number | Date | null | undefin
     date = new Date(timestamp)
   } else if (typeof timestamp === 'string') {
     if (timestamp.includes('T')) {
-      // Only add 'Z' if it doesn't already end with 'Z'
       date = new Date(timestamp.endsWith('Z') ? timestamp : timestamp + 'Z')
     } else {
       const ms = Number(timestamp)
-      if (!Number.isFinite(ms)) {
-        return timestamp
-      }
+      if (!Number.isFinite(ms)) return null
       date = new Date(ms)
     }
   } else {
-    return ''
+    return null
   }
 
-  const seoulDate = new Date(date.getTime() + 9 * 60 * 60 * 1000)
+  return new Date(date.getTime() + 9 * 60 * 60 * 1000)
+}
+
+/**
+ * Convert serverTimestamp (UTC) to KST time string (HH:MM:SS)
+ * Handles string (ISO format), number (Unix ms), or Date object
+ */
+export const formatKstTime = (timestamp: string | number | Date | null | undefined): string => {
+  if (!timestamp) return ''
+  const seoulDate = toSeoulDate(timestamp)
+  if (!seoulDate) return typeof timestamp === 'string' ? timestamp : ''
 
   const hours = String(seoulDate.getUTCHours()).padStart(2, '0')
   const minutes = String(seoulDate.getUTCMinutes()).padStart(2, '0')
   const seconds = String(seoulDate.getUTCSeconds()).padStart(2, '0')
 
   return `${hours}:${minutes}:${seconds}`
+}
+
+/**
+ * Convert serverTimestamp (UTC) to KST date-time string (YYYY-MM-DD HH:MM)
+ */
+export const formatKstDateTime = (timestamp: string | number | Date | null | undefined): string => {
+  if (!timestamp) return ''
+  const seoulDate = toSeoulDate(timestamp)
+  if (!seoulDate) return typeof timestamp === 'string' ? timestamp : ''
+
+  const year = seoulDate.getUTCFullYear()
+  const month = String(seoulDate.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(seoulDate.getUTCDate()).padStart(2, '0')
+  const hours = String(seoulDate.getUTCHours()).padStart(2, '0')
+  const minutes = String(seoulDate.getUTCMinutes()).padStart(2, '0')
+
+  return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
 /**

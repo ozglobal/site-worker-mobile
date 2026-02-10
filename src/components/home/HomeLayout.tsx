@@ -1,4 +1,5 @@
 import { WeeklyCalendar } from "@/components/calendar/WeeklyCalendar"
+import { formatDateKorean, formatKstDateTime } from "@/utils/time"
 
 interface WorkSite {
   id: string
@@ -38,44 +39,6 @@ export function HomeLayout({
   onClockOut,
   onSelectDate,
 }: HomeLayoutProps) {
-  const formatDate = (date: Date) => {
-    const month = date.getMonth() + 1
-    const day = date.getDate()
-    const dayNames = ["일", "월", "화", "수", "목", "금", "토"]
-    const dayOfWeek = dayNames[date.getDay()]
-    return `${month}월 ${day}일 (${dayOfWeek})`
-  }
-
-  // Convert serverTimestamp (UTC) to KST formatted string
-  // Handles both ISO string (2026-01-15T09:53:11.259798085) and Unix ms
-  const formatCheckInTime = (timestamp: string): string => {
-    let date: Date
-
-    // Check if it's an ISO string format (contains 'T')
-    if (timestamp.includes('T')) {
-      // Parse ISO string as UTC
-      date = new Date(timestamp + 'Z')
-    } else {
-      // Handle Unix milliseconds
-      const ms = Number(timestamp)
-      if (!Number.isFinite(ms)) {
-        return timestamp
-      }
-      date = new Date(ms)
-    }
-
-    // Convert to Seoul timezone (UTC+9)
-    const seoulDate = new Date(date.getTime() + 9 * 60 * 60 * 1000)
-
-    const year = seoulDate.getUTCFullYear()
-    const month = String(seoulDate.getUTCMonth() + 1).padStart(2, '0')
-    const day = String(seoulDate.getUTCDate()).padStart(2, '0')
-    const hours = String(seoulDate.getUTCHours()).padStart(2, '0')
-    const minutes = String(seoulDate.getUTCMinutes()).padStart(2, '0')
-
-    return `${year}-${month}-${day} ${hours}:${minutes}`
-  }
-
   return (
     <div className="flex flex-col flex-1 bg-slate-100 overflow-hidden">
       {/* Header - Greeting */}
@@ -93,7 +56,7 @@ export function HomeLayout({
             <h2 className="text-lg font-bold text-slate-900">
               오늘의 근무{" "}
               <span className="text-base font-normal text-slate-500">
-                {formatDate(currentDate)}
+                {formatDateKorean(currentDate)}
               </span>
             </h2>
           </div>
@@ -146,7 +109,7 @@ export function HomeLayout({
                     <span className="text-sm font-medium text-green-700">출근 완료</span>
                   </div>
                   {checkInTime && (
-                    <span className="text-sm text-green-600">{formatCheckInTime(checkInTime)}</span>
+                    <span className="text-sm text-green-600">{formatKstDateTime(checkInTime)}</span>
                   )}
                 </div>
                 <button

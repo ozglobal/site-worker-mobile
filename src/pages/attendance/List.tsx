@@ -1,97 +1,16 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { MonthSelector, ViewMode } from "@/components/ui/MonthSelector"
 import { SiteCombobox } from "@/components/ui/SiteCombobox"
-import { fetchMonthlyAttendance, type WeeklyAttendanceRecord } from "@/lib/attendance"
+import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
+import { QueryErrorState } from "@/components/ui/query-error-state"
+import { recordsToSiteLegend, groupRecordsByDate, getSiteColor } from "@/utils/attendance"
+import { formatTimestamp, formatCurrency } from "@/utils/format"
 
 const currentYear = new Date().getFullYear()
 const currentMonth = new Date().getMonth() + 1
-
-const SITE_COLORS = ["#007DCA", "#F59E0B", "#10B981", "#EF4444"]
-const DAY_NAMES = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]
-
-interface SiteLegendItem {
-  id: string
-  name: string
-  color: string
-}
-
-interface DayGroup {
-  date: string
-  dayOfMonth: number
-  dayName: string
-  totalExpectedWage: number
-  records: WeeklyAttendanceRecord[]
-}
-
-function recordsToSiteLegend(records: WeeklyAttendanceRecord[]): SiteLegendItem[] {
-  const seen = new Map<string, SiteLegendItem>()
-  records
-    .filter((r) => r.hasCheckedIn && r.siteId)
-    .forEach((r) => {
-      if (r.siteId && !seen.has(r.siteId)) {
-        const index = seen.size
-        seen.set(r.siteId, {
-          id: r.siteId,
-          name: r.siteName || "",
-          color: SITE_COLORS[index % SITE_COLORS.length],
-        })
-      }
-    })
-  return Array.from(seen.values())
-}
-
-function formatTimestamp(timestamp: number | undefined): string {
-  if (!timestamp) return "--:--"
-  const date = new Date(timestamp)
-  const hours = String(date.getHours()).padStart(2, "0")
-  const minutes = String(date.getMinutes()).padStart(2, "0")
-  return `${hours}:${minutes}`
-}
-
-function formatCurrency(amount: number | undefined): string {
-  if (amount === undefined || amount === null) return "0원"
-  return amount.toLocaleString("ko-KR") + "원"
-}
-
-function groupRecordsByDate(records: WeeklyAttendanceRecord[]): DayGroup[] {
-  // Filter records with valid siteId
-  const validRecords = records.filter((r) => r.siteId)
-
-  // Group by effectiveDate
-  const groupMap = new Map<string, WeeklyAttendanceRecord[]>()
-  validRecords.forEach((record) => {
-    const date = record.effectiveDate
-    if (!groupMap.has(date)) {
-      groupMap.set(date, [])
-    }
-    groupMap.get(date)!.push(record)
-  })
-
-  // Convert to array and sort by date descending
-  const groups: DayGroup[] = []
-  groupMap.forEach((dayRecords, date) => {
-    const dateObj = new Date(date)
-    const dayOfMonth = dateObj.getDate()
-    const dayName = DAY_NAMES[dateObj.getDay()]
-    const totalExpectedWage = dayRecords.reduce((sum, r) => sum + (r.expectedWage || 0), 0)
-
-    groups.push({
-      date,
-      dayOfMonth,
-      dayName,
-      totalExpectedWage,
-      records: dayRecords,
-    })
-  })
-
-  // Sort by date descending
-  groups.sort((a, b) => b.date.localeCompare(a.date))
-
-  return groups
-}
 
 export function ListPage() {
   const navigate = useNavigate()
@@ -99,21 +18,11 @@ export function ListPage() {
   const [month, setMonth] = useState(currentMonth)
   const viewMode: ViewMode = "list"
   const [selectedSite, setSelectedSite] = useState("")
-  const [sites, setSites] = useState<SiteLegendItem[]>([])
-  const [records, setRecords] = useState<WeeklyAttendanceRecord[]>([])
-  const [attendanceDays, setAttendanceDays] = useState(0)
-  const [totalWorkEffort, setTotalWorkEffort] = useState(0)
-
-  useEffect(() => {
-    fetchMonthlyAttendance(year, month).then((res) => {
-      if (res.success && res.data) {
-        setSites(recordsToSiteLegend(res.data.records))
-        setRecords(res.data.records)
-        setAttendanceDays(res.data.attendanceDays || 0)
-        setTotalWorkEffort(res.data.totalWorkEffort || 0)
-      }
-    })
-  }, [year, month])
+  const { data, isError, refetch } = useMonthlyAttendance(year, month)
+  const records = data?.records || []
+  const sites = useMemo(() => recordsToSiteLegend(records), [records])
+  const attendanceDays = data?.attendanceDays || 0
+  const totalWorkEffort = data?.totalWorkEffort || 0
 
   // Filter records by selected site
   const filteredRecords = useMemo(() => {
@@ -138,11 +47,10 @@ export function ListPage() {
         if (existing) {
           existing.effort += r.workEffort || 0
         } else {
-          const siteIndex = sites.findIndex((s) => s.id === r.siteId)
           effortMap.set(r.siteId, {
             name: r.siteName || "",
             effort: r.workEffort || 0,
-            color: SITE_COLORS[siteIndex >= 0 ? siteIndex % SITE_COLORS.length : 0],
+            color: getSiteColor(r.siteId, sites),
           })
         }
       }
@@ -184,11 +92,7 @@ export function ListPage() {
     }
   }
 
-  // Get border color for a card based on its siteId (matching the legend color)
-  const getBorderColor = (siteId: string): string => {
-    const siteIndex = sites.findIndex((s) => s.id === siteId)
-    return siteIndex >= 0 ? sites[siteIndex].color : SITE_COLORS[0]
-  }
+  const getBorderColor = (siteId: string) => getSiteColor(siteId, sites)
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -303,8 +207,13 @@ export function ListPage() {
           </div>
         ))}
 
+        {/* Error state */}
+        {isError && (
+          <QueryErrorState onRetry={() => refetch()} message="출역 기록을 불러오지 못했습니다." />
+        )}
+
         {/* Empty state */}
-        {dayGroups.length === 0 && (
+        {!isError && dayGroups.length === 0 && (
           <div className="px-4 py-8 text-center text-slate-500">
             출역 기록이 없습니다.
           </div>

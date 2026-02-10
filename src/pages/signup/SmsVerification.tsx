@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledInput } from "@/components/ui/labeled-input"
 import { Button } from "@/components/ui/button"
 import { useHoneypot } from "@/hooks/useHoneypot"
+import { signupStorage } from "@/lib/storage"
 
 function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11)
@@ -99,7 +100,7 @@ export function SmsVerificationPage() {
                 size="full"
                 disabled={verificationCode.length !== 6}
                 onClick={() => {
-                  sessionStorage.setItem("signup_phone", phoneNumber)
+                  signupStorage.setPhone(phoneNumber)
                   navigate("/signup/agreement")
                 }}
               >

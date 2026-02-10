@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { Button } from "@/components/ui/button"
-import { fetchWorkerMe } from "@/lib/profile"
+import { Select } from "@/components/ui/select"
+import { Spinner } from "@/components/ui/spinner"
+import { QueryErrorState } from "@/components/ui/query-error-state"
+import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 
 interface Bank {
   id: string
@@ -24,26 +27,19 @@ const banks: Bank[] = [
 
 export function MyAccountPage() {
   const navigate = useNavigate()
+  const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
   const [accountHolder, setAccountHolder] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
   const [certificateFile, setCertificateFile] = useState<File | null>(null)
-  const [loading, setLoading] = useState(true)
-  const hasFetched = useRef(false)
 
   useEffect(() => {
-    if (hasFetched.current) return
-    hasFetched.current = true
-
-    fetchWorkerMe().then((res) => {
-      if (res.success && res.data) {
-        setAccountHolder(res.data.accountHolder)
-        setSelectedBank(res.data.bankName)
-        setAccountNumber(res.data.bankAccountMasked)
-      }
-      setLoading(false)
-    })
-  }, [])
+    if (profile) {
+      setAccountHolder(profile.accountHolder)
+      setSelectedBank(profile.bankName)
+      setAccountNumber(profile.bankAccountMasked)
+    }
+  }, [profile])
 
   const handleSubmit = () => {
     // TODO: Save account info
@@ -86,8 +82,10 @@ export function MyAccountPage() {
       <main className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+            <Spinner />
           </div>
+        ) : isError ? (
+          <QueryErrorState onRetry={() => refetch()} message="계좌 정보를 불러오지 못했습니다." />
         ) : (
         <div className="flex flex-col min-h-full">
         <div className="px-4 py-6 space-y-5">
@@ -123,18 +121,12 @@ export function MyAccountPage() {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               은행명
             </label>
-            <select
+            <Select
+              options={banks.map((b) => ({ value: b.id, label: b.name }))}
               value={selectedBank}
-              onChange={(e) => setSelectedBank(e.target.value)}
-              className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
-            >
-              <option value="" disabled>은행 선택</option>
-              {banks.map((bank) => (
-                <option key={bank.id} value={bank.id}>
-                  {bank.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedBank}
+              placeholder="은행 선택"
+            />
           </div>
 
           {/* Account Number */}

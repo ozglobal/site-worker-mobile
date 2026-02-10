@@ -3,17 +3,23 @@ sequenceDiagram
     participant User
     participant App
     participant AuthProvider
+    participant Memory as In-Memory (auth.ts)
     participant localStorage
 
     User->>App: Open app
     App->>AuthProvider: mount()
-    AuthProvider->>localStorage: read accessToken\nread refreshToken\nread expiresAt
-    localStorage-->>AuthProvider: tokens
-    alt tokens exist
-        AuthProvider->>AuthProvider: restore token state
-        AuthProvider->>AuthProvider: user = null
-    else tokens missing
-        AuthProvider->>AuthProvider: unauthenticated state
+    AuthProvider->>localStorage: read refreshToken, expiresIn, issuedAt
+    localStorage-->>AuthProvider: auth metadata
+    alt refreshToken exists
+        AuthProvider->>API: POST /auth/refresh (X-Refresh-Token header)
+        API-->>AuthProvider: new accessToken, refreshToken, expiresIn
+        AuthProvider->>Memory: store accessToken (in-memory only)
+        AuthProvider->>localStorage: update refreshToken, expiresIn, issuedAt
+        AuthProvider->>API: GET /auth/user/info
+        API-->>AuthProvider: workerInfo
+        AuthProvider->>Memory: store workerInfo (in-memory only)
+    else refreshToken missing
+        AuthProvider->>AuthProvider: unauthenticated → redirect to login
     end
     AuthProvider-->>App: app ready
 
@@ -22,99 +28,89 @@ sequenceDiagram
     participant User
     participant LoginPage
     participant API
-    participant AuthProvider
+    participant Memory as In-Memory (auth.ts)
     participant localStorage
 
     User->>LoginPage: Enter credentials
     LoginPage->>API: POST /auth/login
-    API-->>LoginPage: accessToken\nrefreshToken\nexpiresIn\nworkerInfo
-    LoginPage->>AuthProvider: login(payload)
-    AuthProvider->>localStorage: store accessToken\nstore refreshToken\nstore expiresAt
-    AuthProvider->>AuthProvider: set user (memory)
-    AuthProvider-->>LoginPage: login success
+    API-->>LoginPage: accessToken, refreshToken, expiresIn, workerInfo
+    LoginPage->>Memory: store accessToken (in-memory only)
+    LoginPage->>Memory: store workerInfo (in-memory only)
+    LoginPage->>localStorage: store refreshToken, expiresIn, issuedAt
+    LoginPage-->>User: redirect to home
 
 Authenticated API Request
 sequenceDiagram
     participant Component
-    participant AuthProvider
-    participant APIClient
+    participant authFetch
+    participant Memory as In-Memory (auth.ts)
     participant Backend
 
-    Component->>AuthProvider: request accessToken
-    AuthProvider-->>Component: accessToken
-    Component->>APIClient: attach Authorization
-    APIClient->>Backend: API request
-    Backend-->>APIClient: response
-    APIClient-->>Component: response
-
-Token Expiry Check & Refresh
-sequenceDiagram
-    participant Component
-    participant AuthProvider
-    participant APIClient
-    participant Backend
-    participant localStorage
-
-    Component->>AuthProvider: API request
-    AuthProvider->>AuthProvider: check expiresAt
+    Component->>authFetch: request(url, options)
+    authFetch->>Memory: getAccessToken()
+    Memory-->>authFetch: accessToken
+    authFetch->>authFetch: check isTokenExpired()
     alt token valid
-        AuthProvider->>APIClient: proceed request
-        APIClient->>Backend: API request
-        Backend-->>APIClient: response
-        APIClient-->>Component: response
+        authFetch->>Backend: API request (Authorization: Bearer token)
+        Backend-->>authFetch: response
+        authFetch-->>Component: response
     else token expired
-        AuthProvider->>APIClient: POST /auth/refresh
-        APIClient->>Backend: refreshToken
-        Backend-->>APIClient: new accessToken\nexpiresIn
-        APIClient-->>AuthProvider: refreshed token
-        AuthProvider->>localStorage: update accessToken\nupdate expiresAt
-        AuthProvider->>APIClient: retry original request
-        APIClient->>Backend: API request
-        Backend-->>APIClient: response
-        APIClient-->>Component: response
+        authFetch->>authFetch: refreshAccessToken() (see below)
+        authFetch->>Backend: retry with new token
+        Backend-->>authFetch: response
+        authFetch-->>Component: response
+    end
+
+Token Refresh (deduplicated)
+sequenceDiagram
+    participant authFetch
+    participant refreshAccessToken
+    participant Memory as In-Memory (auth.ts)
+    participant localStorage
+    participant Backend
+
+    authFetch->>refreshAccessToken: call
+    refreshAccessToken->>refreshAccessToken: check refreshInFlight (dedup)
+    alt already in-flight
+        refreshAccessToken-->>authFetch: return existing promise
+    else new request
+        refreshAccessToken->>localStorage: getRefreshToken()
+        localStorage-->>refreshAccessToken: refreshToken
+        refreshAccessToken->>Backend: POST /auth/refresh (X-Refresh-Token header)
+        Backend-->>refreshAccessToken: new accessToken, refreshToken, expiresIn
+        refreshAccessToken->>Memory: store new accessToken
+        refreshAccessToken->>localStorage: update refreshToken, expiresIn, issuedAt
+        refreshAccessToken-->>authFetch: new accessToken
     end
 
 Refresh Failure → Logout
 sequenceDiagram
     participant Component
-    participant AuthProvider
-    participant APIClient
+    participant authFetch
     participant Backend
+    participant Memory as In-Memory (auth.ts)
     participant localStorage
 
-    Component->>AuthProvider: API request
-    AuthProvider->>APIClient: POST /auth/refresh
-    APIClient->>Backend: refreshToken
-    Backend-->>APIClient: 401 / 403
-    APIClient-->>AuthProvider: refresh failed
-    AuthProvider->>localStorage: clear tokens
-    AuthProvider->>AuthProvider: clear memory state
-    AuthProvider-->>Component: logout + redirect
+    Component->>authFetch: API request
+    authFetch->>Backend: POST /auth/refresh
+    Backend-->>authFetch: 401 / network error
+    authFetch->>reportError: AUTH_SESSION_EXPIRED
+    authFetch->>Memory: clear accessToken, workerInfo
+    authFetch->>localStorage: clear auth data
+    authFetch-->>Component: redirect to /login
 
 Logout Flow
 sequenceDiagram
     participant User
     participant Component
-    participant AuthProvider
+    participant handleLogout
+    participant Memory as In-Memory (auth.ts)
     participant localStorage
+    participant IndexedDB
 
     User->>Component: Click logout
-    Component->>AuthProvider: logout()
-    AuthProvider->>localStorage: clear all auth keys
-    AuthProvider->>AuthProvider: clear memory state
-    AuthProvider-->>Component: redirect to login
-
-Role-Based Route Guard
-sequenceDiagram
-    participant User
-    participant Router
-    participant AuthProvider
-
-    User->>Router: Navigate to route
-    Router->>AuthProvider: check auth + role
-    AuthProvider-->>Router: allow / deny
-    alt allowed
-        Router-->>User: render page
-    else denied
-        Router-->>User: redirect
-    end
+    Component->>handleLogout: call
+    handleLogout->>localStorage: clear auth data
+    handleLogout->>IndexedDB: clear file storage
+    handleLogout->>Memory: (cleared on page reload)
+    handleLogout-->>Component: redirect to /login

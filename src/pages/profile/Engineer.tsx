@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Button } from "@/components/ui/button"
+import { OptionCard } from "@/components/ui/option-card"
+import { engineerStorage } from "@/lib/storage"
 
 type EngineerType = "representative" | "employee"
 
 export function EngineerPage() {
   const navigate = useNavigate()
-  const saved = JSON.parse(localStorage.getItem("engineer") || "null")
+  const saved = engineerStorage.get()
   const [engineerType, setEngineerType] = useState<EngineerType>(saved?.engineerType || "representative")
   const [representativeName, setRepresentativeName] = useState(saved?.representativeName || "")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -19,8 +21,7 @@ export function EngineerPage() {
   }, [engineerType])
 
   const handleSubmit = () => {
-    const existing = JSON.parse(localStorage.getItem("engineer") || "{}")
-    localStorage.setItem("engineer", JSON.stringify({ ...existing, engineerType, representativeName }))
+    engineerStorage.update({ engineerType, representativeName })
     navigate("/profile/equipments")
   }
 
@@ -62,63 +63,20 @@ export function EngineerPage() {
               구분
             </label>
             <div className="space-y-3">
-              {/* Representative Option */}
-              <button
-                type="button"
+              <OptionCard
+                title="대표자"
+                description="사업자등록증 보유"
+                selected={engineerType === "representative"}
+                showRadio
                 onClick={() => setEngineerType("representative")}
-                className={`w-full p-4 rounded-xl border-2 text-left transition-colors ${
-                  engineerType === "representative"
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-200 bg-white"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                      engineerType === "representative"
-                        ? "border-primary"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {engineerType === "representative" && (
-                      <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900">대표자</p>
-                    <p className="text-sm text-slate-500 mt-0.5">사업자등록증 보유</p>
-                  </div>
-                </div>
-              </button>
-
-              {/* Employee Option */}
-              <button
-                type="button"
+              />
+              <OptionCard
+                title="직원"
+                description="법인 소속 직원"
+                selected={engineerType === "employee"}
+                showRadio
                 onClick={() => setEngineerType("employee")}
-                className={`w-full p-4 rounded-xl border-2 text-left transition-colors ${
-                  engineerType === "employee"
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-200 bg-white"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                      engineerType === "employee"
-                        ? "border-primary"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {engineerType === "employee" && (
-                      <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900">직원</p>
-                    <p className="text-sm text-slate-500 mt-0.5">법인 소속 직원</p>
-                  </div>
-                </div>
-              </button>
+              />
             </div>
           </div>
 

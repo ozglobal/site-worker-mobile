@@ -1,11 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import {
   login as loginApi,
-  getAccessToken,
+  getRefreshToken,
+  refreshAccessToken,
   getWorkerInfo,
+  fetchUserInfo,
   clearTokens,
   clearWorkerInfo,
-  isAuthenticated as checkAuth,
   checkAndRefreshToken,
   type LoginParams,
 } from '@/lib/auth'
@@ -32,22 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [worker, setWorker] = useState<WorkerInfo | null>(null)
 
-  // Restore auth state from localStorage on mount
+  // PR 1: In-memory token is lost on reload. Restore via /refresh endpoint.
   useEffect(() => {
     const restoreAuth = async () => {
-      const hasToken = checkAuth()
+      const refreshToken = getRefreshToken()
 
-      if (hasToken) {
-        // Verify token is still valid
-        const isValid = await checkAndRefreshToken()
+      if (refreshToken) {
+        const newToken = await refreshAccessToken()
 
-        if (isValid) {
+        if (newToken) {
+          // PR 7: Restore in-memory worker info from API
+          await fetchUserInfo()
           setIsAuthenticated(true)
           setWorker(getWorkerInfo())
-        } else {
-          // Token invalid, clear state
-          setIsAuthenticated(false)
-          setWorker(null)
         }
       }
 

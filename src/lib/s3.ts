@@ -3,6 +3,8 @@
  * Fetches file lists from public S3 buckets
  */
 
+import { reportError } from './errorReporter'
+
 const S3_BUCKET = "cworker-bucket"
 const S3_REGION = "ap-northeast-2"
 const S3_BASE_URL = `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com`
@@ -68,6 +70,7 @@ export async function listS3Files(prefix: string): Promise<ListS3FilesResult> {
 
     return { success: true, files }
   } catch (error) {
+    reportError('S3_LIST_FAIL', error instanceof Error ? error.message : 'Failed to list files')
     return {
       success: false,
       files: [],

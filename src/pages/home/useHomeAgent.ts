@@ -8,8 +8,8 @@
  * - NotificationAgent: Toast notifications
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react"
-import { profileStorage } from "@/lib/storage"
+import { useState, useCallback, useMemo } from "react"
+import { getWorkerName } from "@/lib/auth"
 import { useAttendanceAgent } from "./agents/attendance"
 import { useLocationAgent } from "./agents/location"
 import { useCalendarAgent } from "./agents/calendar"
@@ -111,14 +111,6 @@ export function useHomeAgent(): HomeAgentReturn {
   const calendar = useCalendarAgent() // Sites will be computed from attendance records
   const notifications = useNotificationAgent()
 
-  // Refresh attendance records after calendar loads (syncs today's records from server)
-  useEffect(() => {
-    if (!calendar.isLoading) {
-      attendance.refreshRecords()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendar.isLoading])
-
   // ============================================
   // Local UI State
   // ============================================
@@ -129,7 +121,7 @@ export function useHomeAgent(): HomeAgentReturn {
   // ============================================
   // User Info
   // ============================================
-  const userName = profileStorage.getWorkerName() || "사용자"
+  const userName = getWorkerName() || "사용자"
   const currentDate = new Date()
 
   // ============================================
@@ -160,12 +152,11 @@ export function useHomeAgent(): HomeAgentReturn {
 
     if (result.success) {
       setShowCheckoutPopup(true)
-      calendar.refresh()
     } else {
       notifications.showError("퇴근 실패", result.error)
     }
     setPendingAction(null)
-  }, [attendance, notifications, calendar])
+  }, [attendance, notifications])
 
   /**
    * Handle successful QR scan
@@ -185,14 +176,12 @@ export function useHomeAgent(): HomeAgentReturn {
       )
 
       if (result.success) {
-        // Refresh calendar from API to show updated attendance
-        calendar.refresh()
         notifications.showSuccess("출근 완료", `${result.data.siteName}에 출근하였습니다.`)
       } else {
         notifications.showError("출근 실패", result.error)
       }
     },
-    [attendance, location, notifications, calendar]
+    [attendance, location, notifications]
   )
 
   /**
@@ -249,15 +238,15 @@ export function useHomeAgent(): HomeAgentReturn {
     (n) => n.type === "error"
   )
 
-  // Map completed attendance records to TodayWorkRecord format (only show after checkout)
+  // PR 5: todayRecords now comes from WeeklyAttendanceRecord (API type, timestamps are numbers)
   const todayWorkRecords: TodayWorkRecord[] = useMemo(
     () =>
       attendance.todayRecords
-        .filter((record) => !!record.checkOutTime)
+        .filter((record) => record.hasCheckedOut)
         .map((record) => ({
           siteName: record.siteName || "",
-          checkInTime: record.checkInTime,
-          checkOutTime: record.checkOutTime,
+          checkInTime: record.checkInTime ? new Date(record.checkInTime).toISOString() : "",
+          checkOutTime: record.checkOutTime ? new Date(record.checkOutTime).toISOString() : undefined,
         })),
     [attendance.todayRecords]
   )

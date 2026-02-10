@@ -11,22 +11,25 @@ export function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
   const { login } = useAuth()
   const { honeypotProps, isBotDetected } = useHoneypot()
 
   const handleLogin = async () => {
-    if (isBotDetected) return
+    if (isBotDetected || isSubmitting) return
     if (!phone || !password) {
       setError("휴대폰 번호와 비밀번호를 입력해주세요")
       return
     }
 
     setError("")
+    setIsSubmitting(true)
     const result = await login({
       username: phone,
       password: password,
     })
+    setIsSubmitting(false)
 
     if (result.success) {
       navigate('/')
@@ -93,12 +96,13 @@ export function LoginPage() {
 
         {/* Login Button - Figma style */}
         <Button
-          variant="primary"
+          variant={isSubmitting ? "primaryDisabled" : "primary"}
           size="full"
           className="mt-3"
+          disabled={isSubmitting}
           onClick={handleLogin}
         >
-          로그인
+          {isSubmitting ? "로그인 중..." : "로그인"}
         </Button>
       </div>
 

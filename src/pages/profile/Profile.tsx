@@ -6,11 +6,11 @@ import { AffiliationCard } from "@/components/ui/affiliation-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
 import { handleLogout } from "@/lib/auth"
-import { profileStorage } from "@/lib/storage"
+import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
-  const profile = profileStorage.get()
+  const { data: profile } = useWorkerProfile()
   const isMyInfoComplete = !!(
     profile?.workerName &&
     profile?.ssnFirst &&

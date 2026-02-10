@@ -1,24 +1,22 @@
 /**
  * Unified Attendance Agent
  * Manages attendance state, storage, and API operations
- * Replaces useAttendanceStateAgent + useAttendanceWorkflowAgent
+ *
+ * PR 5: Uses React Query (useDailyAttendance) instead of todayAttendanceStorage
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { todayAttendanceStorage, type AttendanceRecord } from "@/lib/storage"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   buildCheckInRequest,
   buildCheckOutRequest,
   checkIn,
   checkOut,
+  type WeeklyAttendanceRecord,
 } from "@/lib/attendance"
+import { useDailyAttendance } from "@/lib/queries/useDailyAttendance"
 
 // Import skills
-import {
-  loadTodayAttendance,
-  persistCheckIn,
-  persistCheckOut,
-} from "./skills/attendance-storage.skill"
 import {
   executeCheckInApi,
   executeCheckOutApi,
@@ -47,7 +45,7 @@ export interface AttendanceAgentState {
   completedCount: number
   isProcessing: boolean
   // Today's records (for "오늘 근무 현황" card)
-  todayRecords: AttendanceRecord[]
+  todayRecords: WeeklyAttendanceRecord[]
   // Derived state
   checkInStatus: CheckInStatus
   canCheckIn: boolean
@@ -73,11 +71,23 @@ export interface AttendanceAgentActions {
 }
 
 // ============================================
+// Helpers
+// ============================================
+
+function timestampToIso(time: number | undefined): string {
+  if (!time) return ""
+  return new Date(time).toISOString()
+}
+
+// ============================================
 // Agent Hook
 // ============================================
 
 export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActions {
-  // Core state
+  const queryClient = useQueryClient()
+  const { todayRecords: serverRecords, currentCheckIn: serverCheckIn, completedCount: serverCompletedCount, isLoading } = useDailyAttendance()
+
+  // Core state — local for immediate UI feedback
   const [checkedInSiteId, setCheckedInSiteId] = useState<string | null>(null)
   const [siteName, setSiteName] = useState("")
   const [siteAddress, setSiteAddress] = useState("")
@@ -85,22 +95,29 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
   const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
   const [completedCount, setCompletedCount] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([])
 
-  // Load initial state from storage using skill
+  // Sync local state from server data (on initial load and after refetch)
   useEffect(() => {
-    const summary = loadTodayAttendance(todayAttendanceStorage)
+    if (isLoading) return
 
-    if (summary.currentCheckIn) {
-      setCheckedInSiteId(summary.currentCheckIn.siteId)
-      setSiteName(summary.currentCheckIn.siteName)
-      setSiteAddress(summary.currentCheckIn.siteAddress)
-      setCheckInTime(summary.currentCheckIn.serverTimestamp)
+    if (serverCheckIn) {
+      setCheckedInSiteId(serverCheckIn.siteId)
+      setSiteName(serverCheckIn.siteName)
+      setSiteAddress("")
+      setCheckInTime(timestampToIso(serverCheckIn.checkInTime))
+    } else {
+      // Only clear if we had data from server (not during initial load)
+      if (!isProcessing) {
+        setCheckedInSiteId((prev) => {
+          // Don't clear if we just checked in locally (optimistic)
+          if (prev && serverRecords.length === 0) return prev
+          return null
+        })
+      }
     }
 
-    setCompletedCount(summary.completedCount)
-    setTodayRecords(todayAttendanceStorage.getRecords())
-  }, [])
+    setCompletedCount(serverCompletedCount)
+  }, [serverCheckIn, serverCompletedCount, serverRecords.length, isLoading, isProcessing])
 
   // Derive state using skill
   const derivedState = useMemo(
@@ -113,7 +130,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     [checkedInSiteId, completedCount]
   )
 
-  // Check-in action - uses skills for API and storage
+  // Check-in action
   const doCheckIn = useCallback(
     async (
       siteId: string,
@@ -122,7 +139,6 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     ): Promise<CheckInResult> => {
       setIsProcessing(true)
 
-      // Convert string to Date if needed
       const qrDate = typeof qrTimestamp === "string" ? new Date(qrTimestamp) : qrTimestamp
 
       try {
@@ -132,25 +148,15 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
         )
 
         if (result.success) {
-          // Update local state
+          // Update local state immediately (optimistic)
           setCheckedInSiteId(siteId)
           setSiteName(result.data.siteName)
           setSiteAddress(result.data.siteAddress)
           setCheckInTime(result.data.serverTimestamp)
-          // Clear previous check-out time on new check-in
           setCheckOutTime(null)
 
-          // Persist using skill
-          persistCheckIn(todayAttendanceStorage, {
-            id: result.data.id,
-            siteId,
-            siteName: result.data.siteName,
-            siteAddress: result.data.siteAddress,
-            serverTimestamp: result.data.serverTimestamp,
-          })
-
-          // Refresh records after check-in (calendar.refresh will sync with server)
-          setTodayRecords(todayAttendanceStorage.getRecords())
+          // Invalidate query so calendar and other consumers get fresh data
+          queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
 
           return { success: true, data: result.data }
         }
@@ -160,10 +166,10 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
         setIsProcessing(false)
       }
     },
-    []
+    [queryClient]
   )
 
-  // Check-out action - uses skills for API and storage
+  // Check-out action
   const doCheckOut = useCallback(
     async (location?: Location): Promise<CheckOutResult> => {
       if (!checkedInSiteId) {
@@ -183,21 +189,13 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
         )
 
         if (result.success) {
-          // Record check-out time
           const now = new Date().toISOString()
-
-          // Persist to storage with checkout time
-          persistCheckOut(todayAttendanceStorage, now)
-
           setCheckOutTime(now)
-
-          // Update local state - keep checkInTime for display
           setCheckedInSiteId(null)
-          // Don't clear siteName, siteAddress, checkInTime - keep them for display
           setCompletedCount((prev) => prev + 1)
 
-          // Refresh records after check-out (calendar.refresh will sync with server)
-          setTodayRecords(todayAttendanceStorage.getRecords())
+          // Invalidate query so calendar and other consumers get fresh data
+          queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
 
           return { success: true }
         }
@@ -207,26 +205,13 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
         setIsProcessing(false)
       }
     },
-    [checkedInSiteId, checkInTime]
+    [checkedInSiteId, checkInTime, queryClient]
   )
 
-  // Refresh records from storage (called after calendar sync)
+  // Refresh records — now triggers a React Query refetch
   const refreshRecords = useCallback(() => {
-    const summary = loadTodayAttendance(todayAttendanceStorage)
-    setCompletedCount(summary.completedCount)
-    setTodayRecords(todayAttendanceStorage.getRecords())
-
-    // Also update current check-in state if changed
-    if (summary.currentCheckIn) {
-      setCheckedInSiteId(summary.currentCheckIn.siteId)
-      setSiteName(summary.currentCheckIn.siteName)
-      setSiteAddress(summary.currentCheckIn.siteAddress)
-      setCheckInTime(summary.currentCheckIn.serverTimestamp)
-    } else if (checkedInSiteId && !summary.currentCheckIn) {
-      // Clear check-in state if no longer checked in
-      setCheckedInSiteId(null)
-    }
-  }, [checkedInSiteId])
+    queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
+  }, [queryClient])
 
   return {
     // State
@@ -237,7 +222,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     checkOutTime,
     completedCount,
     isProcessing,
-    todayRecords,
+    todayRecords: serverRecords,
 
     // Derived (from skill)
     ...derivedState,

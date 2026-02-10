@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Button } from "@/components/ui/button"
+import { Select } from "@/components/ui/select"
+import { OptionCard } from "@/components/ui/option-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 
@@ -126,54 +128,22 @@ export function SosokPage() {
 
         <div className="mb-6">
           <label className="block text-sm font-medium text-slate-700 mb-2">소속 선택</label>
-          <div className="relative">
-            <select
-              value={selected}
-              onChange={(e) => setSelected(e.target.value)}
-              className="w-full h-12 px-4 pr-10 rounded-lg border border-gray-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
-            >
-              {affiliationTypes.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.icon} {type.title} - {type.subtitle}
-                </option>
-              ))}
-            </select>
-            <svg
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+          <Select
+            options={affiliationTypes.map((t) => ({ value: t.id, label: `${t.icon} ${t.title} - ${t.subtitle}` }))}
+            value={selected}
+            onChange={setSelected}
+          />
         </div>
 
         {selected === "service" && (
           <div className="mb-6">
             <label className="block text-sm font-medium text-slate-700 mb-2">용역회사 선택</label>
-            <div className="relative">
-              <select
-                value={selectedCompany}
-                onChange={(e) => setSelectedCompany(e.target.value)}
-                className="w-full h-12 px-4 pr-10 rounded-lg border border-gray-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
-              >
-                <option value="" disabled>용역회사 선택</option>
-                {companies.map((company) => (
-                  <option key={company.id} value={company.id}>
-                    {company.name}
-                  </option>
-                ))}
-              </select>
-              <svg
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+            <Select
+              options={companies.map((c) => ({ value: c.id, label: c.name }))}
+              value={selectedCompany}
+              onChange={setSelectedCompany}
+              placeholder="용역회사 선택"
+            />
           </div>
         )}
 
@@ -182,53 +152,20 @@ export function SosokPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-3">구분</label>
               <div className="space-y-3">
-                <button
-                  type="button"
+                <OptionCard
+                  title="대표자"
+                  description="사업자등록증 보유"
+                  selected={engineerType === "representative"}
+                  showRadio
                   onClick={() => setEngineerType("representative")}
-                  className={`w-full p-4 rounded-xl border-2 text-left transition-colors ${
-                    engineerType === "representative"
-                      ? "border-primary bg-primary/5"
-                      : "border-gray-200 bg-white"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                      engineerType === "representative" ? "border-primary" : "border-gray-300"
-                    }`}>
-                      {engineerType === "representative" && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-slate-900">대표자</p>
-                      <p className="text-sm text-slate-500 mt-0.5">사업자등록증 보유</p>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
+                />
+                <OptionCard
+                  title="직원"
+                  description="법인 소속 직원"
+                  selected={engineerType === "employee"}
+                  showRadio
                   onClick={() => setEngineerType("employee")}
-                  className={`w-full p-4 rounded-xl border-2 text-left transition-colors ${
-                    engineerType === "employee"
-                      ? "border-primary bg-primary/5"
-                      : "border-gray-200 bg-white"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                      engineerType === "employee" ? "border-primary" : "border-gray-300"
-                    }`}>
-                      {engineerType === "employee" && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-slate-900">직원</p>
-                      <p className="text-sm text-slate-500 mt-0.5">법인 소속 직원</p>
-                    </div>
-                  </div>
-                </button>
+                />
               </div>
             </div>
 
@@ -249,28 +186,12 @@ export function SosokPage() {
             {/* Equipment Type */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">장비 종류</label>
-              <div className="relative">
-                <select
-                  value={selectedEquipment}
-                  onChange={(e) => setSelectedEquipment(e.target.value)}
-                  className="w-full h-12 px-4 pr-10 rounded-lg border border-gray-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
-                >
-                  <option value="" disabled>장비 선택</option>
-                  {equipmentTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-                <svg
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              <Select
+                options={equipmentTypes.map((t) => ({ value: t.id, label: t.name }))}
+                value={selectedEquipment}
+                onChange={setSelectedEquipment}
+                placeholder="장비 선택"
+              />
             </div>
 
             {/* Info Box */}

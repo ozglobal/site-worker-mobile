@@ -1,66 +1,25 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Badge } from "@/components/ui/badge"
-import { listS3Files, type S3File } from "@/lib/s3"
+import { useContracts } from "@/lib/queries/useContracts"
+import { QueryErrorState } from "@/components/ui/query-error-state"
+import type { ContractItem } from "@/lib/contract"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 
-interface ContractItem {
-  id: string
-  name: string
-  month: number | null
-  status: "signed" | "unsigned"
-  url: string
-}
-
 const currentYear = new Date().getFullYear()
 const currentMonth = new Date().getMonth() + 1
-
-// Extract month from filename (e.g., "일용근로계약서_일반_김철수_1월.pdf" -> 1)
-function extractMonthFromFilename(filename: string): number | null {
-  const match = filename.match(/(\d+)월/)
-  return match ? parseInt(match[1], 10) : null
-}
-
-// Parse S3 files into contract items
-function parseS3FilesToContracts(files: S3File[]): ContractItem[] {
-  return files
-    .filter((file) => file.name.endsWith(".pdf"))
-    .map((file) => ({
-      id: file.key,
-      name: file.name.replace(".pdf", ""),
-      month: extractMonthFromFilename(file.name),
-      status: "signed" as const,
-      url: file.url,
-    }))
-    .sort((a, b) => (b.month || 0) - (a.month || 0))
-}
 
 export function ContractPage() {
   const navigate = useNavigate()
   const [year, setYear] = useState(currentYear)
   const [yearOpen, setYearOpen] = useState(false)
-  const [s3Contracts, setS3Contracts] = useState<ContractItem[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+
+  const { data: s3Contracts = [], isLoading, isError, refetch } = useContracts(year)
 
   const years = Array.from({ length: 2 }, (_, i) => currentYear - i)
-
-  // Fetch S3 files when year changes
-  useEffect(() => {
-    async function loadContracts() {
-      setIsLoading(true)
-      const result = await listS3Files(`eformsign-documents/${year}/`)
-      if (result.success) {
-        setS3Contracts(parseS3FilesToContracts(result.files))
-      } else {
-        setS3Contracts([])
-      }
-      setIsLoading(false)
-    }
-    loadContracts()
-  }, [year])
 
   // Build contract list: current month (unsigned) + S3 files (signed)
   const contracts: ContractItem[] = []
@@ -136,6 +95,8 @@ export function ContractPage() {
         <div className="px-4 py-2 space-y-3">
           {isLoading ? (
             <div className="text-center py-8 text-slate-500">로딩 중...</div>
+          ) : isError ? (
+            <QueryErrorState onRetry={() => refetch()} message="계약서를 불러오지 못했습니다." />
           ) : contracts.length === 0 ? (
             <div className="text-center py-8 text-slate-500">계약서가 없습니다.</div>
           ) : (

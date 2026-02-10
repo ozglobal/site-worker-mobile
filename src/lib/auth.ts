@@ -1,6 +1,22 @@
 import { devLogApiRaw, devLogRequestRaw } from '../utils/devLog'
 import { API_BASE_URL, X_TENANT_ID } from './config'
-import { authStorage, profileStorage, clearAllStorage } from './storage'
+import { authStorage, clearAllStorage } from './storage'
+import { safeJson } from './api-result'
+import { reportError } from './errorReporter'
+
+// PR 1: Access token lives in memory only (not localStorage)
+// On page reload, restored via /refresh endpoint
+let inMemoryAccessToken: string | null = null
+
+// PR 7: Worker info lives in memory only (not localStorage)
+// On page reload, restored via /auth/user/info endpoint
+interface InMemoryWorkerInfo {
+  workerId: string
+  workerName: string
+  relatedSiteId?: string
+  username?: string
+}
+let inMemoryWorkerInfo: InMemoryWorkerInfo | null = null
 
 export interface LoginParams {
   username: string
@@ -30,8 +46,8 @@ const mockLogin = async (params: LoginParams): Promise<LoginResult> => {
 
     setTokens(mockAccessToken, mockRefreshToken, 3600, issuedAt)
     setWorkerInfo({
-      workerId: 'mock_worker_001',
-      workerName: params.username,
+      id: 'mock_worker_001',
+      nameKo: params.username,
       relatedSiteId: 'site_001',
     })
 
@@ -65,20 +81,25 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
       body: JSON.stringify(requestBody),
     })
 
-    const responseData = await response.json()
+    const responseData = await safeJson(response) as Record<string, unknown> | null
     devLogApiRaw('/auth/login', { status: response.status, data: responseData })
 
+    if (!responseData) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
     if (!response.ok) {
-      return { success: false, error: responseData.message || 'Login failed' }
+      reportError('AUTH_LOGIN_REJECTED', (responseData.message as string) || 'Login failed', { endpoint: '/auth/login', httpStatus: response.status })
+      return { success: false, error: (responseData.message as string) || 'Login failed' }
     }
 
     // Unwrap response: API returns { code, message, data: { ... } }
-    const payload = responseData.data || responseData
+    const payload = (responseData.data || responseData) as Record<string, unknown>
 
     // Store auth tokens
-    const accessToken = payload.accessToken
-    const refreshToken = payload.refreshToken
-    const expiresIn = payload.expiresIn
+    const accessToken = payload.accessToken as string | undefined
+    const refreshToken = payload.refreshToken as string | undefined
+    const expiresIn = payload.expiresIn as number | undefined
 
     if (!accessToken) {
       return { success: false, error: 'No access token received' }
@@ -90,25 +111,26 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
 
     // Store worker info from login response
     if (payload.workerInfo) {
-      setWorkerInfo(payload.workerInfo)
+      setWorkerInfo(payload.workerInfo as Record<string, unknown>)
     }
 
-    // Save username from login request to profile
-    const profile = profileStorage.get()
-    if (profile) {
-      profileStorage.set({ ...profile, username: params.username })
+    // Save username to in-memory worker info
+    if (inMemoryWorkerInfo) {
+      inMemoryWorkerInfo.username = params.username
     } else {
-      profileStorage.set({ workerId: '', workerName: '', username: params.username })
+      inMemoryWorkerInfo = { workerId: '', workerName: '', username: params.username }
     }
 
     return { success: true }
   } catch (error) {
     console.error('[LOGIN] Error:', error)
+    reportError('AUTH_LOGIN_FAIL', 'Network error', { endpoint: '/auth/login' })
     return { success: false, error: 'Network error' }
   }
 }
 
-export const getAccessToken = () => authStorage.getToken()
+// PR 1: read access token from memory only
+export const getAccessToken = () => inMemoryAccessToken
 export const getRefreshToken = () => authStorage.getRefreshToken()
 export const getExpiresIn = () => {
   const val = authStorage.getExpiresIn()
@@ -119,35 +141,43 @@ export const getIssuedAt = () => {
   return val !== null ? String(val) : null
 }
 
+// PR 1: access token stored in memory, refresh token + metadata in localStorage
 export const setTokens = (accessToken: string, refreshToken?: string, expiresIn?: number, timestamp?: number) => {
-  authStorage.setTokens(accessToken, refreshToken, expiresIn, timestamp)
+  inMemoryAccessToken = accessToken
+  authStorage.setTokens(refreshToken, expiresIn, timestamp)
 }
 
 export const clearTokens = () => {
+  inMemoryAccessToken = null
   authStorage.clear()
 }
 
 export const setWorkerInfo = (workerInfo: Record<string, unknown>) => {
-  profileStorage.setFromWorkerInfo(workerInfo)
+  const info: InMemoryWorkerInfo = {
+    workerId: String(workerInfo.id ?? workerInfo.workerId ?? ''),
+    workerName: String(workerInfo.nameKo ?? workerInfo.workerName ?? ''),
+  }
+  if (workerInfo.relatedSiteId) {
+    info.relatedSiteId = String(workerInfo.relatedSiteId)
+  }
+  if (inMemoryWorkerInfo?.username) {
+    info.username = inMemoryWorkerInfo.username
+  }
+  inMemoryWorkerInfo = info
 }
 
-export const getWorkerInfo = () => {
-  const profile = profileStorage.get()
-  return {
-    workerId: profile?.workerId ?? null,
-    workerName: profile?.workerName ?? null,
-    relatedSiteId: profile?.relatedSiteId ?? null,
-  }
-}
+export const getWorkerInfo = () => ({
+  workerId: inMemoryWorkerInfo?.workerId ?? null,
+  workerName: inMemoryWorkerInfo?.workerName ?? null,
+  relatedSiteId: inMemoryWorkerInfo?.relatedSiteId ?? null,
+})
+
+export const getWorkerId = () => inMemoryWorkerInfo?.workerId ?? null
+export const getWorkerName = () => inMemoryWorkerInfo?.workerName ?? null
 
 export const clearWorkerInfo = () => {
-  profileStorage.clear()
+  inMemoryWorkerInfo = null
 }
-
-// Legacy user info functions (for backward compatibility)
-export const setUserInfo = setWorkerInfo
-export const getUserInfo = getWorkerInfo
-export const clearUserInfo = clearWorkerInfo
 
 // Check if token is expired
 export const isTokenExpired = (): boolean => {
@@ -169,57 +199,78 @@ export const isTokenExpired = (): boolean => {
 export const isAuthenticated = () => !!getAccessToken()
 
 // Refresh the access token using refresh token
+// Dedup: if a refresh is already in-flight, return the same promise
+let refreshInFlight: Promise<string | null> | null = null
+
 export const refreshAccessToken = async (): Promise<string | null> => {
-  const refreshToken = getRefreshToken()
-  if (!refreshToken) {
-    return null
-  }
+  if (refreshInFlight) return refreshInFlight
 
-  try {
-    devLogRequestRaw('/auth/refresh', { refreshToken: '***' })
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'accept': '*/*',
-        'X-Refresh-Token': refreshToken,
-      },
-    })
-
-    if (!response.ok) {
-      clearTokens()
+  refreshInFlight = (async () => {
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) {
       return null
     }
 
-    const responseData = await response.json()
-    devLogApiRaw('/auth/refresh', { status: response.status, data: responseData })
+    try {
+      devLogRequestRaw('/auth/refresh', { refreshToken: '***' })
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'accept': '*/*',
+          'X-Refresh-Token': refreshToken,
+        },
+      })
 
-    // Unwrap response: API returns { code, message, data: { ... } }
-    const payload = responseData.data || responseData
+      if (!response.ok) {
+        devLogApiRaw('/auth/refresh', { status: response.status, error: 'Refresh failed' })
+        reportError('AUTH_REFRESH_FAIL', 'Token refresh failed', { endpoint: '/auth/refresh', httpStatus: response.status })
+        clearTokens()
+        return null
+      }
 
-    const newAccessToken = payload.accessToken
-    const newRefreshToken = payload.refreshToken
-    const newExpiresIn = payload.expiresIn
+      const responseData = await safeJson(response) as Record<string, unknown> | null
+      devLogApiRaw('/auth/refresh', { status: response.status, data: responseData })
 
-    if (newAccessToken) {
-      const issuedAt = Math.floor(Date.now() / 1000)
-      setTokens(newAccessToken, newRefreshToken, newExpiresIn, issuedAt)
-      return newAccessToken
+      if (!responseData) {
+        devLogApiRaw('/auth/refresh', { error: 'Invalid response body' })
+        reportError('AUTH_REFRESH_INVALID', 'Invalid refresh response')
+        clearTokens()
+        return null
+      }
+
+      // Unwrap response: API returns { code, message, data: { ... } }
+      const payload = (responseData.data || responseData) as Record<string, unknown>
+
+      const newAccessToken = payload.accessToken as string | undefined
+      const newRefreshToken = payload.refreshToken as string | undefined
+      const newExpiresIn = payload.expiresIn as number | undefined
+
+      if (newAccessToken) {
+        const issuedAt = Math.floor(Date.now() / 1000)
+        setTokens(newAccessToken, newRefreshToken, newExpiresIn, issuedAt)
+        return newAccessToken
+      }
+
+      return null
+    } catch (err) {
+      devLogApiRaw('/auth/refresh', { error: 'Network error', detail: String(err) })
+      reportError('AUTH_REFRESH_NETWORK', 'Refresh network error', { endpoint: '/auth/refresh' })
+      clearTokens()
+      return null
     }
+  })()
 
-    return null
-  } catch {
-    clearTokens()
-    return null
-  }
+  refreshInFlight.finally(() => { refreshInFlight = null })
+  return refreshInFlight
 }
 
 // Logout - clear tokens and user info, redirect to login
-export const handleLogout = () => {
-  clearAllStorage()
+export const handleLogout = async () => {
+  await clearAllStorage()
   window.location.href = '/login'
 }
 
-// Fetch user info from API and save to localStorage
+// PR 7: Fetch user info from API and restore in-memory worker info
 export const fetchUserInfo = async (): Promise<Record<string, unknown> | null> => {
   const accessToken = getAccessToken()
   if (!accessToken) {
@@ -241,15 +292,21 @@ export const fetchUserInfo = async (): Promise<Record<string, unknown> | null> =
       return null
     }
 
-    const responseData = await response.json()
+    const responseData = await safeJson(response) as Record<string, unknown> | null
     devLogApiRaw('/auth/user/info', { status: response.status, data: responseData })
 
-    // Unwrap response: API returns { code, message, data: { ... } }
-    const userInfo = responseData.data || responseData
+    if (!responseData) {
+      return null
+    }
 
-    // Note: Do not update localStorage here - worker info is set from login response only
+    // Unwrap response: API returns { code, message, data: { ... } }
+    const userInfo = (responseData.data || responseData) as Record<string, unknown>
+
+    // Restore in-memory worker info from API response
+    setWorkerInfo(userInfo)
     return userInfo
   } catch {
+    reportError('AUTH_USERINFO_FAIL', 'Failed to fetch user info', { endpoint: '/auth/user/info' })
     return null
   }
 }
@@ -281,8 +338,9 @@ export const authFetch = async (
     if (newToken) {
       accessToken = newToken
     } else {
+      reportError('AUTH_SESSION_EXPIRED', 'Session expired — refresh failed (proactive)')
       window.location.href = '/login'
-      throw new Error('Session expired')
+      return new Response(JSON.stringify({ error: 'Session expired' }), { status: 401, headers: { 'Content-Type': 'application/json' } })
     }
   }
 
@@ -302,6 +360,7 @@ export const authFetch = async (
       response = await fetch(url, { ...options, headers })
     } else {
       // Redirect to login if refresh fails
+      reportError('AUTH_SESSION_EXPIRED', 'Session expired — refresh failed (401 retry)')
       window.location.href = '/login'
     }
   }

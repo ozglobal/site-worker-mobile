@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { IconMapPin, IconX, IconSettings } from '@tabler/icons-react'
 import { checkLocationPermission } from '@/utils/geolocation'
+import { Spinner } from '@/components/ui/spinner'
+import { reportError } from '@/lib/errorReporter'
 
 interface LocationPermissionPopupProps {
   /** Called when permission is granted with location data */
@@ -47,15 +49,19 @@ export function LocationPermissionPopup({
         // even when site has permission if system location services are disabled
         const permissionStatus = await checkLocationPermission()
         if (permissionStatus === 'denied') {
+          reportError('GEO_PERMISSION_DENIED', 'Location permission denied by user')
           onDenied()
         } else {
           // Permission is granted/prompt but geolocation still failed
           // This usually means system-level location services are disabled
+          reportError('GEO_PERMISSION_DENIED', 'Location services disabled at system level')
           setError('위치 정보를 가져올 수 없습니다.\n기기의 위치 서비스가 켜져 있는지 확인해주세요.')
         }
       } else if (geoError.code === geoError.TIMEOUT) {
+        reportError('GEO_PERMISSION_DENIED', 'Geolocation timeout')
         setError('위치 정보 요청 시간이 초과되었습니다. 다시 시도해주세요.')
       } else {
+        reportError('GEO_PERMISSION_DENIED', 'Geolocation unavailable')
         setError('위치 정보를 가져올 수 없습니다. 다시 시도해주세요.')
       }
     } finally {
@@ -150,7 +156,7 @@ export function LocationPermissionPopup({
                 >
                   {isRequesting ? (
                     <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <Spinner size="sm" className="border-white" />
                       위치 확인 중...
                     </span>
                   ) : (

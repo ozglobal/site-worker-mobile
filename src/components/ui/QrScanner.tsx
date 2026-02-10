@@ -1,20 +1,16 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser';
 import { logDebug, logError } from '@/utils/devLog';
+import { parseQRValue, type GeoLocation, type QRCodeData } from '@/lib/qr';
+import { reportError } from '@/lib/errorReporter';
+import { Spinner } from '@/components/ui/spinner';
+
+// Re-export for consumers that import from QrScanner
+export type { QRCodeData, GeoLocation } from '@/lib/qr';
 
 // ============================================================================
 // Type Definitions
 // ============================================================================
-
-/**
- * Geolocation data structure
- */
-export interface GeoLocation {
-  latitude: number;
-  longitude: number;
-  accuracy: number;
-  timestamp: number;
-}
 
 /**
  * Geolocation hook state
@@ -90,20 +86,6 @@ const useGeolocation = () => {
 };
 
 /**
- * Parsed QR code data structure
- * QR format: "version|siteId|timestamp"
- * Example: "1|d3ccf9f6-1d61-4cd0-903b-22597c7cb7ac|1736390400000"
- */
-export interface QRCodeData {
-  version: string;
-  siteId: string;
-  issuedAt: Date;
-  rawValue: string;
-  scannedAt: Date;
-  location?: GeoLocation;
-}
-
-/**
  * Props for QRCodeScanner component
  */
 export interface QRCodeScannerProps {
@@ -162,32 +144,6 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   }, [currentLocation]);
 
   /**
-   * Parse QR code value: "version|siteId|timestamp"
-   */
-  const parseQRValue = (rawValue: string, location?: GeoLocation | null): QRCodeData => {
-    const parts = rawValue.split('|');
-    if (parts.length !== 3) {
-      throw new Error('Invalid QR format. Expected: version|siteId|timestamp');
-    }
-
-    const [version, siteId, timestamp] = parts;
-
-    const parsedTimestamp = parseInt(timestamp.trim(), 10);
-    if (isNaN(parsedTimestamp)) {
-      throw new Error('Invalid timestamp format');
-    }
-
-    return {
-      version: version.trim(),
-      siteId: siteId.trim(),
-      issuedAt: new Date(parsedTimestamp),
-      rawValue,
-      scannedAt: new Date(),
-      location: location || undefined,
-    };
-  };
-
-  /**
    * Capture the current video frame as an image
    */
   const captureVideoFrame = (): string | null => {
@@ -240,19 +196,18 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     // Stop scanning after successful detection
     stopScanner();
 
-    try {
-      const parsed = parseQRValue(decodedText, locationRef.current);
+    const result = parseQRValue(decodedText, locationRef.current);
 
-      setScannedData(parsed);
+    if (result.success) {
+      setScannedData(result.data);
       setError(null);
-      onScanSuccess?.(parsed);
-    } catch (err) {
-      console.log('Parse error:', err);
+      onScanSuccess?.(result.data);
+    } else {
+      console.log('Parse error:', result.error);
       // Still show the raw text even if parsing fails
       setScannedData(null);
-      const errorMsg = err instanceof Error ? err.message : 'Failed to parse QR code';
-      setError(errorMsg);
-      onScanError?.(err instanceof Error ? err : new Error(errorMsg));
+      setError(result.error);
+      onScanError?.(new Error(result.error));
     }
   }, [scanDelay, onScanSuccess, onScanError]);
 
@@ -293,6 +248,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
       await getLocation();
     } catch (geoErr) {
       console.warn('[QRScanner] Failed to get location, continuing without it:', geoErr);
+      reportError('GEO_SCAN_FAIL', 'Geolocation failed during scan', { level: 'warn' });
       // Continue without location - don't block scanning
     }
 
@@ -322,6 +278,12 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     } catch (err) {
       console.error('Failed to start scanner:', err);
       const errorMsg = err instanceof Error ? err.message : 'Failed to start camera';
+
+      if (errorMsg.includes('Permission') || errorMsg.includes('NotAllowed')) {
+        reportError('SCANNER_CAMERA_DENIED', 'Camera access denied');
+      } else {
+        reportError('SCANNER_INIT_FAIL', errorMsg);
+      }
 
       if (mountedRef.current) {
         if (errorMsg.includes('Permission') || errorMsg.includes('NotAllowed')) {
@@ -451,7 +413,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
             {isInitializing && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/90">
                 <div className="text-center">
-                  <div className="w-10 h-10 border-3 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <Spinner size="xl" className="mx-auto mb-3" />
                   <p className="text-sm text-slate-500">
                     {isGeoLoading ? '위치 정보 확인 중...' : '카메라 시작 중...'}
                   </p>

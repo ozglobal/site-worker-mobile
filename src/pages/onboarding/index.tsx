@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { onboardingStorage } from "@/lib/storage"
 
 interface OnboardingSlide {
   id: number
@@ -48,7 +49,7 @@ export function OnboardingPage() {
   }
 
   const handleComplete = () => {
-    localStorage.setItem("onboarding_completed", "true")
+    onboardingStorage.markCompleted()
     navigate("/profile/my-account")
   }
 

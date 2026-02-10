@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { OptionCard } from "@/components/ui/option-card"
 
 export function PayrollAccountPage() {
   const navigate = useNavigate()
@@ -29,27 +30,16 @@ export function PayrollAccountPage() {
         </p>
 
         <div className="space-y-3">
-          {/* Option 1: Company */}
-          <button
+          <OptionCard
+            title="회사로 지급"
+            description="소속된 용역 업체로 급여 지급"
             onClick={() => navigate("/profile/payroll-account/company")}
-            className="w-full p-5 rounded-xl border border-gray-200 text-left hover:border-gray-300 transition-colors"
-          >
-            <p className="font-bold text-slate-900">회사로 지급</p>
-            <p className="text-sm text-slate-500 mt-1">
-              소속된 용역 업체로 급여 지급
-            </p>
-          </button>
-
-          {/* Option 2: Personal account */}
-          <button
+          />
+          <OptionCard
+            title="본인 계좌로 지급"
+            description="본인이 입력한 계좌로 직접 지급"
             onClick={() => navigate("/profile/my-account")}
-            className="w-full p-5 rounded-xl border border-gray-200 text-left hover:border-gray-300 transition-colors"
-          >
-            <p className="font-bold text-slate-900">본인 계좌로 지급</p>
-            <p className="text-sm text-slate-500 mt-1">
-              본인이 입력한 계좌로 직접 지급
-            </p>
-          </button>
+          />
         </div>
       </main>
     </div>

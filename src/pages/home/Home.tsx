@@ -5,6 +5,7 @@ import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import QRCodeScanner from "@/components/ui/QrScanner"
 import { LocationPermissionPopup } from "@/components/ui/LocationPermissionPopup"
 import { formatKstTime } from "@/utils/time"
+import { Spinner } from "@/components/ui/spinner"
 import { useHomeAgent } from "./useHomeAgent"
 import { WeeklyCalendar } from "./components"
 
@@ -234,7 +235,7 @@ export function Home() {
       {attendance.isProcessing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg px-6 py-4 flex items-center gap-3">
-            <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+            <Spinner size="md" />
             <span className="text-sm text-slate-900">처리 중...</span>
           </div>
         </div>

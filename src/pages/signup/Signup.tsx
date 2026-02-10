@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { OptionCard } from "@/components/ui/option-card"
 
 export function SignUpPage() {
   const navigate = useNavigate()
@@ -25,27 +26,16 @@ export function SignUpPage() {
           </p>
 
           <div className="space-y-3">
-            {/* Option 1: Own phone */}
-            <button
+            <OptionCard
+              title="내 명의 휴대폰이 있어요"
+              description="내 명의 휴대폰 번호로 가입합니다."
               onClick={() => navigate("/signup/nice-api")}
-              className="w-full p-4 rounded-lg border-2 transition-colors text-left border-gray-200 hover:border-gray-300"
-            >
-              <p className="font-bold text-slate-900">내 명의 휴대폰이 있어요</p>
-              <p className="text-sm text-slate-500 mt-1">
-                내 명의 휴대폰 번호로 가입합니다.
-              </p>
-            </button>
-
-            {/* Option 2: Other's phone */}
-            <button
+            />
+            <OptionCard
+              title="타인 명의 휴대폰이 있어요"
+              description="타인 명의 휴대폰 번호로 가입합니다."
               onClick={() => navigate("/signup/sms-verification", { state: { phoneType: "other" } })}
-              className="w-full p-4 rounded-lg border-2 transition-colors text-left border-gray-200 hover:border-gray-300"
-            >
-              <p className="font-bold text-slate-900">타인 명의 휴대폰이 있어요</p>
-              <p className="text-sm text-slate-500 mt-1">
-                타인 명의 휴대폰 번호로 가입합니다.
-              </p>
-            </button>
+            />
           </div>
         </div>
       </main>

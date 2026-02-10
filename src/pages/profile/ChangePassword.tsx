@@ -4,7 +4,8 @@ import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { changePassword } from "@/lib/profile"
+import { useChangePassword } from "@/lib/queries/useChangePassword"
+import { useToast } from "@/contexts/ToastContext"
 
 export function ChangePasswordPage() {
   const navigate = useNavigate()
@@ -43,25 +44,24 @@ export function ChangePasswordPage() {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
   }
 
-  const [submitting, setSubmitting] = useState(false)
+  const mutation = useChangePassword()
+  const toast = useToast()
 
-  const handleSave = async () => {
-    if (!isFormValid || submitting) return
-    setSubmitting(true)
+  const handleSave = () => {
+    if (!isFormValid || mutation.isPending) return
 
-    const res = await changePassword({
-      currentPassword: formData.currentPassword,
-      newPassword: formData.newPassword,
-    })
-
-    setSubmitting(false)
-
-    if (res.success) {
-      alert("비밀번호가 변경되었습니다.")
-      navigate("/profile")
-    } else {
-      alert(res.error || "비밀번호 변경에 실패했습니다.")
-    }
+    mutation.mutate(
+      { currentPassword: formData.currentPassword, newPassword: formData.newPassword },
+      {
+        onSuccess: () => {
+          toast.showSuccess("비밀번호 변경 완료", "비밀번호가 변경되었습니다.")
+          navigate("/profile")
+        },
+        onError: (error) => {
+          toast.showError("비밀번호 변경 실패", error.message || "비밀번호 변경에 실패했습니다.")
+        },
+      }
+    )
   }
 
   const handleNavigation = (item: NavItem) => {
@@ -147,12 +147,12 @@ export function ChangePasswordPage() {
           {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={isFormValid && !submitting ? "primary" : "primaryDisabled"}
+              variant={isFormValid && !mutation.isPending ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!isFormValid || submitting}
+              disabled={!isFormValid || mutation.isPending}
               onClick={handleSave}
             >
-              {submitting ? "변경 중..." : "변경"}
+              {mutation.isPending ? "변경 중..." : "변경"}
             </Button>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Button } from "@/components/ui/button"
+import { Select } from "@/components/ui/select"
 
 interface Bank {
   id: string
@@ -83,18 +84,12 @@ export function FamilyAccountPage() {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               은행명
             </label>
-            <select
+            <Select
+              options={banks.map((b) => ({ value: b.id, label: b.name }))}
               value={selectedBank}
-              onChange={(e) => setSelectedBank(e.target.value)}
-              className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
-            >
-              <option value="" disabled>은행 선택</option>
-              {banks.map((bank) => (
-                <option key={bank.id} value={bank.id}>
-                  {bank.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedBank}
+              placeholder="은행 선택"
+            />
           </div>
 
           {/* Account Number */}

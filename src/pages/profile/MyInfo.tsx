@@ -1,13 +1,16 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { fetchWorkerMe } from "@/lib/profile"
+import { Spinner } from "@/components/ui/spinner"
+import { QueryErrorState } from "@/components/ui/query-error-state"
+import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
+  const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
 
   const [formData, setFormData] = useState({
     name: "",
@@ -17,28 +20,20 @@ export function MyInfoPage() {
     address: "",
   })
   const [originalData, setOriginalData] = useState({ ...formData })
-  const [loading, setLoading] = useState(true)
-  const hasFetched = useRef(false)
 
   useEffect(() => {
-    if (hasFetched.current) return
-    hasFetched.current = true
-
-    fetchWorkerMe().then((res) => {
-      if (res.success && res.data) {
-        const loaded = {
-          name: res.data.workerName,
-          ssnFirst: res.data.ssnFirst,
-          ssnSecond: res.data.ssnSecond,
-          phone: res.data.phone,
-          address: res.data.address,
-        }
-        setFormData(loaded)
-        setOriginalData(loaded)
+    if (profile) {
+      const loaded = {
+        name: profile.workerName,
+        ssnFirst: profile.ssnFirst,
+        ssnSecond: profile.ssnSecond,
+        phone: profile.phone,
+        address: profile.address,
       }
-      setLoading(false)
-    })
-  }, [])
+      setFormData(loaded)
+      setOriginalData(loaded)
+    }
+  }, [profile])
 
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData)
 
@@ -80,8 +75,10 @@ export function MyInfoPage() {
       <main className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+            <Spinner />
           </div>
+        ) : isError ? (
+          <QueryErrorState onRetry={() => refetch()} message="내 정보를 불러오지 못했습니다." />
         ) : (
         <div className="flex flex-col min-h-full">
         <div className="px-4 py-6 space-y-6">

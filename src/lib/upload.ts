@@ -1,6 +1,7 @@
 import { authFetch } from './auth'
 import { devLogApiRaw, devLogRequestRaw } from '../utils/devLog'
 import { API_BASE_URL, X_TENANT_ID } from './config'
+import { reportError } from './errorReporter'
 
 // ============================================
 // Types
@@ -100,6 +101,7 @@ export async function uploadFile(file: File): Promise<UploadResult> {
       data: Array.isArray(payload) ? payload : [payload],
     }
   } catch (error) {
+    reportError('UPLOAD_FAIL', error instanceof Error ? error.message : 'Upload network error', { endpoint: '/uploads' })
     return {
       success: false,
       error: error instanceof Error ? error.message : '네트워크 오류가 발생했습니다.',

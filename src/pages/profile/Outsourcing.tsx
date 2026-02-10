@@ -4,6 +4,7 @@ import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { Button } from "@/components/ui/button"
+import { Select } from "@/components/ui/select"
 
 const companies = [
   { id: "lotte", name: "롯데건설" },
@@ -58,18 +59,12 @@ export function OutsourcingPage() {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               용역회사
             </label>
-            <select
+            <Select
+              options={companies.map((c) => ({ value: c.id, label: c.name }))}
               value={selectedCompany}
-              onChange={(e) => setSelectedCompany(e.target.value)}
-              className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
-            >
-              <option value="" disabled>용역회사 선택</option>
-              {companies.map((company) => (
-                <option key={company.id} value={company.id}>
-                  {company.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedCompany}
+              placeholder="용역회사 선택"
+            />
           </div>
 
           {/* Info Box */}
