@@ -49,7 +49,7 @@ export function LoginPage() {
       <div className="mt-[180px]">
         <div className="flex items-center gap-2">
           <span className="text-3xl">👷</span>
-          <h1 className="text-2xl font-bold text-slate-900">건설인 C-Worker</h1>
+          <h1 className="text-2xl font-bold text-slate-900">건설인</h1>
         </div>
       </div>
 

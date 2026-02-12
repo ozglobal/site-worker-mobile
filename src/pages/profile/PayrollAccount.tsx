@@ -36,9 +36,14 @@ export function PayrollAccountPage() {
             onClick={() => navigate("/profile/payroll-account/company")}
           />
           <OptionCard
-            title="본인 계좌로 지급"
+            title="본인명의 계좌로 지급"
             description="본인이 입력한 계좌로 직접 지급"
             onClick={() => navigate("/profile/my-account")}
+          />
+          <OptionCard
+            title="가족명의 계좌로 지급"
+            description="가족 명의 계좌로 급여 지급"
+            onClick={() => navigate("/profile/family-account")}
           />
         </div>
       </main>

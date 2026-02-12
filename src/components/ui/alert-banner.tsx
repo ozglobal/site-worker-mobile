@@ -6,6 +6,7 @@ export interface AlertBannerProps {
   description?: string
   variant?: "warning" | "error" | "info" | "success"
   icon?: React.ReactNode
+  onClick?: () => void
   className?: string
 }
 
@@ -68,6 +69,7 @@ export function AlertBanner({
   description,
   variant = "error",
   icon,
+  onClick,
   className,
 }: AlertBannerProps) {
   const styles = variantStyles[variant]
@@ -75,10 +77,12 @@ export function AlertBanner({
   return (
     <div
       className={cn(
-        "flex gap-3 rounded-lg p-4",
+        "flex items-center gap-3 rounded-lg p-4",
         styles.container,
+        onClick && "cursor-pointer active:opacity-80",
         className
       )}
+      onClick={onClick}
     >
       <div className={cn("shrink-0 mt-0.5", styles.icon)}>
         {icon || <DefaultIcon variant={variant} />}
@@ -90,6 +94,18 @@ export function AlertBanner({
           <p className="text-sm mt-1 opacity-90">{description}</p>
         )}
       </div>
+
+      {onClick && (
+        <svg
+          className={cn("h-5 w-5 shrink-0", styles.icon)}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      )}
     </div>
   )
 }

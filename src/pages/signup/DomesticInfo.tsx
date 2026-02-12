@@ -73,14 +73,14 @@ export function DomesticInfoPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">이름</label>
               <Input
-                maxLength={6}
+                maxLength={7}
                 value={formData.name}
                 onChange={handleChange("name")}
                 placeholder="이름"
                 className="bg-white"
               />
-              {formData.name.length >= 6 && (
-                <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다</p>
+              {formData.name.length >= 7 && (
+                <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다.</p>
               )}
             </div>
 

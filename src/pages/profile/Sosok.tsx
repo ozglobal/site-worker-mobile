@@ -83,6 +83,8 @@ export function SosokPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<string>("general")
   const [selectedCompany, setSelectedCompany] = useState("")
+  const [paymentMethod, setPaymentMethod] = useState("company")
+
   const [engineerType, setEngineerType] = useState<"representative" | "employee">("representative")
   const [representativeName, setRepresentativeName] = useState("")
   const engineerInputRef = useRef<HTMLInputElement>(null)
@@ -99,7 +101,7 @@ export function SosokPage() {
     if (selected === "general" || selected === "specialty") {
       navigate("/profile/payroll-account")
     } else if (selected === "service") {
-      navigate("/profile/outsourcing")
+      navigate("/profile/payroll-account")
     } else if (selected === "equipment") {
       navigate("/profile/engineer")
     }
@@ -151,37 +153,29 @@ export function SosokPage() {
         {selected === "equipment" && (
           <div className="mb-6 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-3">구분</label>
-              <div className="space-y-3">
-                <OptionCard
-                  title="대표자"
-                  description="사업자등록증 보유"
-                  selected={engineerType === "representative"}
-                  showRadio
-                  onClick={() => setEngineerType("representative")}
-                />
-                <OptionCard
-                  title="직원"
-                  description="법인 소속 직원"
-                  selected={engineerType === "employee"}
-                  showRadio
-                  onClick={() => setEngineerType("employee")}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                {engineerType === "representative" ? "대표자명" : "소속 법인명"}
-              </label>
-              <Input
-                type="text"
-                ref={engineerInputRef}
-                value={representativeName}
-                onChange={(e) => setRepresentativeName(e.target.value)}
-                placeholder={engineerType === "representative" ? "대표자명 입력" : "소속 법인명 입력"}
+              <label className="block text-sm font-medium text-slate-700 mb-2">구분</label>
+              <Select
+                options={[
+                  { value: "representative", label: "대표자" },
+                  { value: "employee", label: "직원" },
+                ]}
+                value={engineerType}
+                onChange={(v) => setEngineerType(v as "representative" | "employee")}
               />
             </div>
+
+            {engineerType === "representative" && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">대표자명</label>
+                <Input
+                  type="text"
+                  ref={engineerInputRef}
+                  value={representativeName}
+                  onChange={(e) => setRepresentativeName(e.target.value)}
+                  placeholder="대표자명 입력"
+                />
+              </div>
+            )}
 
             {/* Equipment Type */}
             <div>
@@ -224,14 +218,44 @@ export function SosokPage() {
           </div>
         )}
 
-        {(selected === "general" || selected === "specialty") && (
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-slate-700 mb-2">급여 지급 방식</label>
+          <Select
+            options={[
+              { value: "company", label: "회사로 지급" },
+              { value: "personal", label: "본인명의 계좌로 지급" },
+              { value: "family", label: "가족명의 계좌로 지급" },
+            ]}
+            value={paymentMethod}
+            onChange={setPaymentMethod}
+          />
+        </div>
+
+        {paymentMethod !== "company" && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
             <StatusListItem
               title="계좌 정보"
               subtitle="급여 받을 계좌"
               status="incomplete"
               onClick={() => navigate("/profile/my-account")}
+              className="border-b-0"
             />
+          </div>
+        )}
+
+        {paymentMethod === "family" && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+            <StatusListItem
+              title="위임장"
+              subtitle="급여 타인명의 지급 동의서"
+              status="incomplete"
+              onClick={() => navigate("/profile/delegation")}
+              className="border-b-0"
+            />
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
             <StatusListItem
               title="신분증"
               subtitle="연락처 및 기본 정보"
@@ -258,7 +282,6 @@ export function SosokPage() {
               className="border-b-0"
             />
           </div>
-        )}
       </div>
 
       <div className="px-4 py-6">

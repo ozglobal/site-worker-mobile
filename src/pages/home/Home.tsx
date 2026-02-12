@@ -7,6 +7,7 @@ import { LocationPermissionPopup } from "@/components/ui/LocationPermissionPopup
 import { formatKstTime } from "@/utils/time"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { AlertBanner } from "@/components/ui/alert-banner"
 import { useHomeAgent } from "./useHomeAgent"
 import { WeeklyCalendar } from "./components"
 
@@ -51,6 +52,16 @@ export function Home() {
           <h1 className="text-xl font-bold text-slate-900">
             안녕하세요, {userName}님!
           </h1>
+        </div>
+
+        {/* TODO: conditionally show when profile is incomplete */}
+        <div className="px-4 shrink-0">
+          <AlertBanner
+            variant="error"
+            title="필수 정보 입력이 완료되지 않았어요"
+            description="급여 지급을 위해 월말까지 반드시 작성을 완료해주세요."
+            onClick={() => navigate("/onboarding")}
+          />
         </div>
 
         {/* Main Content - Scrollable */}
