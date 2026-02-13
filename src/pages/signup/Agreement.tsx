@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Button } from "@/components/ui/button"
+import { signupStorage } from "@/lib/storage"
 
 export function AgreementPage() {
   const navigate = useNavigate()
@@ -10,6 +11,7 @@ export function AgreementPage() {
   }
 
   const handleNext = () => {
+    signupStorage.setData({ personalInfoConsent: true })
     navigate("/signup/domestic-foreign")
   }
 

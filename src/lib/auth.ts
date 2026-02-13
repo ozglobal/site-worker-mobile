@@ -1,7 +1,7 @@
 import { devLogApiRaw, devLogRequestRaw } from '../utils/devLog'
 import { API_BASE_URL, X_TENANT_ID } from './config'
 import { authStorage, clearAllStorage } from './storage'
-import { safeJson } from './api-result'
+import { safeJson, type ApiResult } from './api-result'
 import { reportError } from './errorReporter'
 
 // PR 1: Access token lives in memory only (not localStorage)
@@ -53,6 +53,108 @@ const mockLogin = async (params: LoginParams): Promise<LoginResult> => {
   }
 
   return { success: false, error: '아이디와 비밀번호를 입력해주세요.' }
+}
+
+// Send SMS verification code for signup
+export const getSmsCode = async (phone: string): Promise<ApiResult<unknown>> => {
+  try {
+    const requestBody = { phone }
+    devLogRequestRaw('/auth/register/send-code', requestBody)
+    const response = await fetch(`${API_BASE_URL}/auth/register/send-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    })
+
+    const responseData = await safeJson(response) as Record<string, unknown> | null
+    devLogApiRaw('/auth/register/send-code', { status: response.status, data: responseData })
+
+    if (!responseData) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
+    if (!response.ok) {
+      reportError('AUTH_SEND_CODE_FAIL', (responseData.message as string) || 'Failed to send code', { endpoint: '/auth/register/send-code', httpStatus: response.status })
+      return { success: false, error: (responseData.message as string) || '인증번호 발송에 실패했습니다.' }
+    }
+
+    return { success: true, data: responseData.data || responseData }
+  } catch (err) {
+    reportError('AUTH_SEND_CODE_FAIL', String(err), { endpoint: '/auth/register/send-code' })
+    return { success: false, error: '네트워크 오류가 발생했습니다.' }
+  }
+}
+
+// Verify SMS code for signup
+export const verifySmsCode = async (phone: string, verificationCode: string): Promise<ApiResult<unknown>> => {
+  try {
+    const requestBody = { phone, verificationCode }
+    devLogRequestRaw('/auth/register/verify-code', requestBody)
+    const response = await fetch(`${API_BASE_URL}/auth/register/verify-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    })
+
+    const responseData = await safeJson(response) as Record<string, unknown> | null
+    devLogApiRaw('/auth/register/verify-code', { status: response.status, data: responseData })
+
+    if (!responseData) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
+    if (!response.ok) {
+      reportError('AUTH_VERIFY_CODE_FAIL', (responseData.message as string) || 'Failed to verify code', { endpoint: '/auth/register/verify-code', httpStatus: response.status })
+      return { success: false, error: (responseData.message as string) || '인증번호 확인에 실패했습니다.' }
+    }
+
+    return { success: true, data: responseData.data || responseData }
+  } catch (err) {
+    reportError('AUTH_VERIFY_CODE_FAIL', String(err), { endpoint: '/auth/register/verify-code' })
+    return { success: false, error: '네트워크 오류가 발생했습니다.' }
+  }
+}
+
+// Register worker
+export interface RegisterWorkerParams {
+  password: string
+  nameKo: string
+  mobilePhone: string
+  nationalityType: string
+  idType: string
+  idNumber: string
+  address: string
+  addressDetail: string
+  personalInfoConsent: boolean
+  registrationToken: string
+}
+
+export const registerWorker = async (params: RegisterWorkerParams): Promise<ApiResult<unknown>> => {
+  try {
+    devLogRequestRaw('/auth/register/worker', { ...params, password: '***' })
+    const response = await fetch(`${API_BASE_URL}/auth/register/worker`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+
+    const responseData = await safeJson(response) as Record<string, unknown> | null
+    devLogApiRaw('/auth/register/worker', { status: response.status, data: responseData })
+
+    if (!responseData) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
+    if (!response.ok) {
+      reportError('AUTH_REGISTER_FAIL', (responseData.message as string) || 'Registration failed', { endpoint: '/auth/register/worker', httpStatus: response.status })
+      return { success: false, error: (responseData.message as string) || '회원가입에 실패했습니다.' }
+    }
+
+    return { success: true, data: responseData.data || responseData }
+  } catch (err) {
+    reportError('AUTH_REGISTER_FAIL', String(err), { endpoint: '/auth/register/worker' })
+    return { success: false, error: '네트워크 오류가 발생했습니다.' }
+  }
 }
 
 // Login API call

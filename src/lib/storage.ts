@@ -209,12 +209,36 @@ export const onboardingStorage = {
 // Signup Storage (sessionStorage, cleared on tab close)
 // ============================================
 
+export interface SignupData {
+  registrationToken?: string
+  nameKo?: string
+  nationalityType?: string
+  idType?: string
+  idNumber?: string
+  address?: string
+  personalInfoConsent?: boolean
+}
+
 export const signupStorage = {
   getPhone: (): string => sessionStorage.getItem('signup_phone') || '',
 
   setPhone: (phone: string): void => sessionStorage.setItem('signup_phone', phone),
 
-  clear: (): void => sessionStorage.removeItem('signup_phone'),
+  getData: (): SignupData => {
+    const raw = sessionStorage.getItem('signup_data')
+    if (!raw) return {}
+    try { return JSON.parse(raw) as SignupData } catch { return {} }
+  },
+
+  setData: (partial: Partial<SignupData>): void => {
+    const current = signupStorage.getData()
+    sessionStorage.setItem('signup_data', JSON.stringify({ ...current, ...partial }))
+  },
+
+  clear: (): void => {
+    sessionStorage.removeItem('signup_phone')
+    sessionStorage.removeItem('signup_data')
+  },
 }
 
 // ============================================

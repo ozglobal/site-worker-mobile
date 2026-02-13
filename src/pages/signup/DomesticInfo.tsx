@@ -37,6 +37,13 @@ export function DomesticInfoPage() {
   }
 
   const handleSave = () => {
+    signupStorage.setData({
+      nameKo: formData.name,
+      nationalityType: '내국인',
+      idType: '주민등록번호',
+      idNumber: `${formData.ssnFirst}-${formData.ssnSecond}`,
+      address: formData.address,
+    })
     navigate("/signup/set-password")
   }
 

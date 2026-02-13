@@ -3,9 +3,14 @@ import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/contexts/ToastContext"
+import { signupStorage } from "@/lib/storage"
+import { registerWorker } from "@/lib/auth"
 
 export function SetPasswordPage() {
   const navigate = useNavigate()
+  const { showError } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     newPassword: "",
@@ -58,9 +63,33 @@ export function SetPasswordPage() {
     }
   }
 
-  const handleSave = () => {
-    if (!isFormValid) return
-    navigate("/signup/complete")
+  const handleSave = async () => {
+    if (!isFormValid || isSubmitting) return
+
+    const phone = signupStorage.getPhone()
+    const data = signupStorage.getData()
+
+    setIsSubmitting(true)
+    const result = await registerWorker({
+      password: formData.newPassword,
+      nameKo: data.nameKo || '',
+      mobilePhone: phone,
+      nationalityType: data.nationalityType || '',
+      idType: data.idType || '',
+      idNumber: data.idNumber || '',
+      address: data.address || '',
+      addressDetail: '',
+      personalInfoConsent: data.personalInfoConsent ?? false,
+      registrationToken: data.registrationToken || '',
+    })
+    setIsSubmitting(false)
+
+    if (result.success) {
+      signupStorage.clear()
+      navigate("/signup/complete")
+    } else {
+      showError(result.error)
+    }
   }
 
   return (
@@ -140,9 +169,9 @@ export function SetPasswordPage() {
           {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={isFormValid ? "primary" : "primaryDisabled"}
+              variant={isFormValid && !isSubmitting ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
               onClick={handleSave}
             >
               다음
