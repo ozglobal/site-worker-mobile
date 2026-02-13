@@ -58,8 +58,23 @@ export default defineConfig({
       ".trycloudflare.com",
     ],
     proxy: {
-      '/api': {
-        target: 'https://cworker.eformsign.io',
+      '/auth': {
+        target: 'https://workerm.eformsign.io',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/system': {
+        target: 'https://workerm.eformsign.io',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/user': {
+        target: 'https://workerm.eformsign.io',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/uploads': {
+        target: 'https://workerm.eformsign.io',
         changeOrigin: true,
         secure: true,
       },
