@@ -21,8 +21,6 @@ let inMemoryWorkerInfo: InMemoryWorkerInfo | null = null
 export interface LoginParams {
   username: string
   password: string
-  captcha?: string
-  captchaId?: string
   clientId?: string
 }
 
@@ -68,8 +66,6 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
     const requestBody = {
       username: params.username,
       password: params.password,
-      captcha: params.captcha || '1234',
-      captchaId: params.captchaId || '550e8400-e29b-41d4-a716-446655440000',
       clientId: params.clientId || 'mobile',
     }
     devLogRequestRaw('/auth/login', requestBody)
