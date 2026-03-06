@@ -44,12 +44,6 @@ export function ContractPage() {
     }
   }
 
-  const handleCardClick = (url: string) => {
-    if (url) {
-      window.open(url, "_blank")
-    }
-  }
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
       <AppHeader showLeftAction={false} title="시재건설" showRightAction={true} className="shrink-0" />
@@ -91,11 +85,7 @@ export function ContractPage() {
             contracts.map((contract) => (
               <div
                 key={contract.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => handleCardClick(contract.url)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleCardClick(contract.url) }}
-                className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm cursor-pointer ${
+                className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm ${
                   year === currentYear && contract.month === currentMonth
                     ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25"
                     : "border-gray-100"
