@@ -21,28 +21,16 @@ export function ContractPage() {
 
   const years = Array.from({ length: 2 }, (_, i) => currentYear - i)
 
-  // Build contract list: current month (unsigned) + S3 files (signed)
-  const contracts: ContractItem[] = []
+  // Mock contracts for 2026
+  const mockContracts: ContractItem[] = year === currentYear ? [
+    { id: `unsigned-${currentMonth}`, name: `${currentMonth}월 근로계약서`, month: currentMonth, status: "unsigned", url: "https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=4279cf3f24394e3c9bb3eaa3ff7283f2&outsider_token_id=8b616d31907b46a6971f33f360adb3b1&country_code=kr&viewerLang=ko" },
+    { id: "mock-1", name: "일용근로계약서_일반_김철수_1월.pdf", month: 1, status: "signed", url: "#" },
+    { id: "mock-2", name: "일용근로계약서_일반_김철수_2월.pdf", month: 2, status: "signed", url: "#" },
+  ] : []
 
-  // Add current month's unsigned contract (for 2026 February)
-  if (year === currentYear) {
-    contracts.push({
-      id: `unsigned-${currentMonth}`,
-      name: `${currentMonth}월 근로계약서`,
-      month: currentMonth,
-      status: "unsigned",
-      url: "https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=4279cf3f24394e3c9bb3eaa3ff7283f2&outsider_token_id=8b616d31907b46a6971f33f360adb3b1&country_code=kr&viewerLang=ko",
-    })
-  }
-
-  // Add S3 contracts (exclude current month if already added as unsigned)
-  s3Contracts.forEach((contract) => {
-    if (year === currentYear && contract.month === currentMonth) {
-      // Skip - already added as unsigned
-      return
-    }
-    contracts.push(contract)
-  })
+  // Build contract list from S3 files + mock data, sorted by month descending
+  const contracts: ContractItem[] = [...mockContracts, ...s3Contracts]
+    .sort((a, b) => (b.month ?? 0) - (a.month ?? 0))
 
   const handleNavigation = (item: NavItem) => {
     if (item === "home") {
@@ -134,16 +122,10 @@ export function ContractPage() {
                     {contract.month ? `${contract.month}월 근로계약서` : contract.name}
                   </span>
                 </div>
-                {contract.status === "unsigned" ? (
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                ) : (
-                  <div className="flex items-center gap-1 text-sm text-slate-400">
-                    보기
-                    <ChevronRightIcon className="h-4 w-4" />
-                  </div>
-                )}
+                <div className="flex items-center gap-1 text-sm text-slate-400">
+                  보기
+                  <ChevronRightIcon className="h-4 w-4" />
+                </div>
               </div>
             ))
           )}

@@ -38,6 +38,7 @@ import { SosokPage } from './pages/profile/Sosok';
 import { CalendarPage, ListPage } from './pages/attendance';
 import { ContractPage } from './pages/contract';
 import { QrGeneratorPage } from './pages/qr-generator';
+import { ScheduleAddPage } from './pages/test/ScheduleAdd';
 
 // Public route - redirect to home if already authenticated
 const PublicRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
@@ -94,6 +95,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/profile/affiliation" element={<AffiliationPage />} />
       <Route path="/profile/myinfo" element={<MyInfoDetailPage />} />
       <Route path="/change-password" element={<ChangePasswordPage />} />
+      <Route path="/test/schedule-add" element={<ScheduleAddPage />} />
       <Route path="/" element={<Home />} />
       {/* Catch-all: redirect unknown routes to home or login */}
       <Route path="*" element={<CatchAllRedirect />} />
