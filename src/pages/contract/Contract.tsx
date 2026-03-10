@@ -1,36 +1,57 @@
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Badge } from "@/components/ui/badge"
 import { useContracts } from "@/lib/queries/useContracts"
+import { fetchSigningLink, fetchDocumentPdf } from "@/lib/contract"
+import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
-import type { ContractItem } from "@/lib/contract"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 
 const currentYear = new Date().getFullYear()
-const currentMonth = new Date().getMonth() + 1
 
 export function ContractPage() {
   const navigate = useNavigate()
   const [year, setYear] = useState(currentYear)
   const [yearOpen, setYearOpen] = useState(false)
 
-  const { data: s3Contracts = [], isLoading, isError, refetch } = useContracts(year)
+  const { data: contracts = [], isLoading, isError, refetch } = useContracts(year)
+  const { showError } = useToast()
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  const handleSigningClick = useCallback(async (efsDocumentId: string) => {
+    if (actionLoading) return
+    setActionLoading(efsDocumentId)
+    try {
+      const result = await fetchSigningLink(efsDocumentId)
+      if (result.success && result.data) {
+        window.open(result.data, "_blank")
+      } else {
+        showError(!result.success ? result.error : '서명 링크를 가져올 수 없습니다.')
+      }
+    } finally {
+      setActionLoading(null)
+    }
+  }, [actionLoading, showError])
+
+  const handlePdfClick = useCallback(async (documentId: string) => {
+    if (actionLoading) return
+    setActionLoading(documentId)
+    try {
+      const result = await fetchDocumentPdf(documentId)
+      if (result.success && result.data) {
+        window.open(result.data, "_blank")
+      } else {
+        showError(!result.success ? result.error : 'PDF를 열 수 없습니다.')
+      }
+    } finally {
+      setActionLoading(null)
+    }
+  }, [actionLoading, showError])
 
   const years = Array.from({ length: 2 }, (_, i) => currentYear - i)
-
-  // Mock contracts for 2026
-  const mockContracts: ContractItem[] = year === currentYear ? [
-    { id: `unsigned-${currentMonth}`, name: `${currentMonth}월 근로계약서`, month: currentMonth, status: "unsigned", url: "https://www.eformsign.com/eform/document/external_view_service.html?company_id=127ffd45d6784499a726f642eab83214&document_id=4279cf3f24394e3c9bb3eaa3ff7283f2&outsider_token_id=8b616d31907b46a6971f33f360adb3b1&country_code=kr&viewerLang=ko" },
-    { id: "mock-1", name: "일용근로계약서_일반_김철수_1월.pdf", month: 1, status: "signed", url: "#" },
-    { id: "mock-2", name: "일용근로계약서_일반_김철수_2월.pdf", month: 2, status: "signed", url: "#" },
-  ] : []
-
-  // Build contract list from S3 files + mock data, sorted by month descending
-  const contracts: ContractItem[] = [...mockContracts, ...s3Contracts]
-    .sort((a, b) => (b.month ?? 0) - (a.month ?? 0))
 
   const handleNavigation = (item: NavItem) => {
     if (item === "home") {
@@ -85,20 +106,47 @@ export function ContractPage() {
             contracts.map((contract) => (
               <div
                 key={contract.id}
+                role={contract.status !== "in_progress" ? "button" : undefined}
+                tabIndex={contract.status !== "in_progress" ? 0 : undefined}
+                onClick={
+                  contract.status === "sent" ? () => handleSigningClick(contract.id)
+                  : contract.status === "completed" ? () => handlePdfClick(contract.id)
+                  : undefined
+                }
+                onKeyDown={
+                  contract.status !== "in_progress"
+                    ? (e) => {
+                        if (e.key === "Enter") {
+                          if (contract.status === "sent") handleSigningClick(contract.id)
+                          else if (contract.status === "completed") handlePdfClick(contract.id)
+                        }
+                      }
+                    : undefined
+                }
                 className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm ${
-                  year === currentYear && contract.month === currentMonth
-                    ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25"
+                  contract.status === "sent"
+                    ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25 cursor-pointer"
+                    : contract.status === "completed"
+                    ? "border-gray-100 cursor-pointer"
                     : "border-gray-100"
                 }`}
               >
                 <div className="flex flex-col items-start gap-2">
-                  {contract.status === "unsigned" ? (
+                  {contract.status === "sent" ? (
                     <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium bg-red-50 text-red-500">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       미완료
                     </span>
+                  ) : contract.status === "in_progress" ? (
+                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 font-medium text-xs px-2 py-0.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mr-1">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                        <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      진행중
+                    </Badge>
                   ) : (
                     <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 font-medium text-xs px-2 py-0.5">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mr-1">
@@ -109,7 +157,10 @@ export function ContractPage() {
                     </Badge>
                   )}
                   <span className="text-base font-semibold text-slate-900">
-                    {contract.month ? `${contract.month}월 근로계약서` : contract.name}
+                    {contract.title}
+                  </span>
+                  <span className="text-sm text-slate-400">
+                    {contract.createTime?.slice(0, 10)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-slate-400">
