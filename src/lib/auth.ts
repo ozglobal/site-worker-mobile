@@ -1,6 +1,6 @@
 import { devLogApiRaw, devLogRequestRaw } from '../utils/devLog'
 import { API_BASE_URL, X_TENANT_ID } from './config'
-import { authStorage, clearAllStorage } from './storage'
+import { authStorage, workerStorage, clearAllStorage } from './storage'
 import { safeJson, type ApiResult } from './api-result'
 import { reportError } from './errorReporter'
 
@@ -262,19 +262,33 @@ export const setWorkerInfo = (workerInfo: Record<string, unknown>) => {
     info.username = inMemoryWorkerInfo.username
   }
   inMemoryWorkerInfo = info
+
+  // Cache to localStorage for restore on reload (skip if name is empty to avoid overwriting good cache)
+  if (info.workerName) {
+    workerStorage.set({
+      workerId: info.workerId,
+      workerName: info.workerName,
+      ...(info.relatedSiteId && { relatedSiteId: info.relatedSiteId }),
+    })
+  }
 }
 
-export const getWorkerInfo = () => ({
-  workerId: inMemoryWorkerInfo?.workerId ?? null,
-  workerName: inMemoryWorkerInfo?.workerName ?? null,
-  relatedSiteId: inMemoryWorkerInfo?.relatedSiteId ?? null,
-})
+export const getWorkerInfo = () => {
+  const mem = inMemoryWorkerInfo
+  const cached = workerStorage.get()
+  return {
+    workerId: mem?.workerId || cached?.workerId || null,
+    workerName: mem?.workerName || cached?.workerName || null,
+    relatedSiteId: mem?.relatedSiteId || cached?.relatedSiteId || null,
+  }
+}
 
-export const getWorkerId = () => inMemoryWorkerInfo?.workerId ?? null
-export const getWorkerName = () => inMemoryWorkerInfo?.workerName ?? null
+export const getWorkerId = () => inMemoryWorkerInfo?.workerId || workerStorage.get()?.workerId || null
+export const getWorkerName = () => inMemoryWorkerInfo?.workerName || workerStorage.get()?.workerName || null
 
 export const clearWorkerInfo = () => {
   inMemoryWorkerInfo = null
+  workerStorage.clear()
 }
 
 // Check if token is expired

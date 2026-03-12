@@ -116,3 +116,65 @@ export const changePassword = async (params: ChangePasswordRequest): Promise<Cha
     return { success: false, error: 'Network error' }
   }
 }
+
+/**
+ * Convert File to base64 string
+ */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      // Remove data URL prefix (e.g. "data:image/png;base64,")
+      const base64 = result.includes(',') ? result.split(',')[1] : result
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+export type DocumentType = 'id_card_front' | 'safety_cert' | 'bankbook'
+
+export interface UploadDocumentResponse {
+  success: boolean
+  error?: string
+}
+
+/**
+ * Upload document via POST /system/worker/me/document?documentType=...
+ */
+export const uploadDocument = async (
+  documentType: DocumentType,
+  file: File
+): Promise<UploadDocumentResponse> => {
+  const endpoint = `/system/worker/me/document?documentType=${documentType}`
+  try {
+    const base64 = await fileToBase64(file)
+    console.log('[PROFILE] uploadDocument request:', { documentType, fileName: file.name, fileSize: file.size, base64Length: base64.length })
+    devLogRequestRaw(endpoint, { documentType, fileName: file.name })
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+        'X-Tenant-Id': X_TENANT_ID,
+      },
+      body: JSON.stringify({ file: base64 }),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+    console.log('[PROFILE] uploadDocument response:', { status: response.status, data: json })
+    devLogApiRaw(endpoint, { status: response.status, data: json })
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('[PROFILE] uploadDocument error:', error)
+    reportError('PROFILE_DOCUMENT_UPLOAD_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}

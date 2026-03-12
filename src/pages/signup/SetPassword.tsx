@@ -41,26 +41,9 @@ export function SetPasswordPage() {
   }, [])
 
   const confirmRef = useRef<HTMLInputElement>(null)
-  const [passwordWasValid, setPasswordWasValid] = useState(false)
 
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
-    setFormData(prev => ({ ...prev, [field]: newValue }))
-
-    if (field === "newPassword") {
-      const valid =
-        newValue.length >= 8 &&
-        newValue.length <= 64 &&
-        /[a-zA-Z]/.test(newValue) &&
-        /[0-9]/.test(newValue) &&
-        /[^a-zA-Z0-9]/.test(newValue)
-      if (valid && !passwordWasValid) {
-        setPasswordWasValid(true)
-        setTimeout(() => confirmRef.current?.focus(), 0)
-      } else if (!valid) {
-        setPasswordWasValid(false)
-      }
-    }
+    setFormData(prev => ({ ...prev, [field]: e.target.value }))
   }
 
   const handleSave = async () => {

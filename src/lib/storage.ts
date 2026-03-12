@@ -5,6 +5,7 @@ import { reportError } from './errorReporter'
  *
  * localStorage keys (final state after migration):
  * - auth: refresh token + metadata (access token is in-memory, PR 1)
+ * - worker: cached worker info (UX cache, restored on reload)
  * - engineer: form draft data
  * - onboarding_completed: one-time flag
  *
@@ -171,6 +172,24 @@ export const fileStorage = {
 }
 
 // ============================================
+// Worker Storage (UX cache for reload)
+// ============================================
+
+export interface WorkerData {
+  workerId: string
+  workerName: string
+  relatedSiteId?: string
+}
+
+export const workerStorage = {
+  get: (): WorkerData | null => getStorageItem<WorkerData>('worker'),
+
+  set: (data: WorkerData): void => setStorageItem('worker', data),
+
+  clear: (): void => removeStorageItem('worker'),
+}
+
+// ============================================
 // Engineer Storage (form draft)
 // ============================================
 
@@ -247,5 +266,6 @@ export const signupStorage = {
 
 export const clearAllStorage = async (): Promise<void> => {
   authStorage.clear()
+  workerStorage.clear()
   await fileStorage.clear()
 }

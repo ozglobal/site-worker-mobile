@@ -27,6 +27,12 @@ import { MyInfoPage } from './pages/profile';
 import { AffiliationPage } from './pages/profile/Affiliation';
 import { MyInfoPage as MyInfoDetailPage } from './pages/profile/MyInfo';
 import { OnboardingPage } from './pages/onboarding';
+import { OnboardingAffiliationPage } from './pages/onboarding/Affiliation';
+import { OnboardingMyAccountPage } from './pages/onboarding/MyAccount';
+import { OnboardingOutsourcingPage } from './pages/onboarding/Outsourcing';
+import { OnboardingEngineerPage } from './pages/onboarding/Engineer';
+import { OnboardingFamilyAccountPage } from './pages/onboarding/FamilyAccount';
+import { OnboardingDocumentsPage } from './pages/onboarding/Documents';
 import { MyAccountPage } from './pages/profile/MyAccount';
 import { OutsourcingPage } from './pages/profile/Outsourcing';
 import { EngineerPage } from './pages/profile/Engineer';
@@ -65,6 +71,12 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route path="/onboarding/affiliation" element={<OnboardingAffiliationPage />} />
+      <Route path="/onboarding/my-account" element={<OnboardingMyAccountPage />} />
+      <Route path="/onboarding/outsourcing" element={<OnboardingOutsourcingPage />} />
+      <Route path="/onboarding/engineer" element={<OnboardingEngineerPage />} />
+      <Route path="/onboarding/family-account" element={<OnboardingFamilyAccountPage />} />
+      <Route path="/onboarding/documents" element={<OnboardingDocumentsPage />} />
       <Route path="/profile/my-account" element={<MyAccountPage />} />
       <Route path="/profile/family-account" element={<FamilyAccountPage />} />
       <Route path="/profile/outsourcing" element={<OutsourcingPage />} />

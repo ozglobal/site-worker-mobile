@@ -9,7 +9,7 @@ export function OnboardingPage() {
 
   const handleRegisterNow = () => {
     onboardingStorage.markCompleted()
-    navigate("/profile")
+    navigate("/onboarding/affiliation")
   }
 
   const handleRegisterLater = () => {
@@ -34,7 +34,7 @@ export function OnboardingPage() {
 
       {/* Bottom buttons */}
       <div className="px-6 pb-8 space-y-3 shrink-0">
-        <Button variant="secondary" size="full" onClick={handleRegisterLater}>
+        <Button variant="neutral" size="full" onClick={handleRegisterLater}>
           나중에 등록하기
         </Button>
         <Button variant="primary" size="full" onClick={handleRegisterNow}>

@@ -18,6 +18,8 @@ const buttonVariants = cva(
         // Legacy variants
         secondary:
           "bg-secondary text-black hover:bg-secondary-active active:bg-secondary-active",
+        neutral:
+          "bg-gray-100 text-slate-700 hover:bg-gray-200 active:bg-gray-200",
         outline:
           "border border-[#007DCA] text-[#007DCA] hover:bg-[#007DCA]/10",
         ghost:
