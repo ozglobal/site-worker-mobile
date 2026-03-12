@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { OptionCard } from "@/components/ui/option-card"
+import { useToast } from "@/contexts/ToastContext"
 
 export function PayrollAccountPage() {
   const navigate = useNavigate()
+  const { showSuccess } = useToast()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -33,7 +35,7 @@ export function PayrollAccountPage() {
           <OptionCard
             title="회사로 지급"
             description="소속된 용역 업체로 급여 지급"
-            onClick={() => navigate("/profile/payroll-account/company")}
+            onClick={() => showSuccess("소속된 용역 업체로 급여가 지급되도록 설정되었습니다.")}
           />
           <OptionCard
             title="본인명의 계좌로 지급"
