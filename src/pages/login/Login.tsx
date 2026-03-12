@@ -47,7 +47,7 @@ export function LoginPage() {
 
       {/* Logo */}
       <div className="mt-[180px] flex justify-center">
-        <img src="/icons/건설인_BI.png" alt="건설인" className="h-12" />
+        <img src="/icons/app-logo.png" alt="건설인" className="h-12" />
       </div>
 
       {/* Form */}
