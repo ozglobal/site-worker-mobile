@@ -46,11 +46,8 @@ export function LoginPage() {
     <div className="flex min-h-dvh flex-col bg-white px-5">
 
       {/* Logo */}
-      <div className="mt-[180px]">
-        <div className="flex items-center gap-2">
-          <span className="text-3xl">👷</span>
-          <h1 className="text-2xl font-bold text-slate-900">건설인</h1>
-        </div>
+      <div className="mt-[180px] flex justify-center">
+        <img src="/icons/건설인_BI.png" alt="건설인" className="h-12" />
       </div>
 
       {/* Form */}

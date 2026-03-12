@@ -99,7 +99,7 @@ export function AppBottomNav({
   return (
     <nav
       className={cn(
-        "flex h-[60px] w-full items-center justify-around border-t border-slate-200 bg-white",
+        "flex h-[70px] w-full items-center justify-around border-t border-slate-200 bg-white pb-[10px]",
         className
       )}
     >

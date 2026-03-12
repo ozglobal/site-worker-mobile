@@ -1,6 +1,6 @@
 {
-  "name": "C-Worker 출퇴근",
-  "short_name": "C-Worker",
+  "name": "건설인",
+  "short_name": "건설인",
   "description": "건설현장 근로자 출퇴근 관리 앱",
   "id": "/",
   "start_url": "/",
@@ -12,15 +12,9 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icons/icon-192x192.svg",
+      "src": "/icons/건설인_icon.png",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-512x512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
