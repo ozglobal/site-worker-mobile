@@ -118,19 +118,46 @@ export const changePassword = async (params: ChangePasswordRequest): Promise<Cha
 }
 
 /**
- * Convert File to base64 string
+ * Compress image to JPEG with max width, returns a Blob
  */
-function fileToBase64(file: File): Promise<string> {
+function compressImage(file: File, maxWidth = 1024, quality = 0.8): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const scale = img.width > maxWidth ? maxWidth / img.width : 1
+      const width = Math.round(img.width * scale)
+      const height = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')),
+        'image/jpeg',
+        quality,
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')) }
+    img.src = url
+  })
+}
+
+/**
+ * Convert Blob to base64 string
+ */
+function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => {
       const result = reader.result as string
-      // Remove data URL prefix (e.g. "data:image/png;base64,")
       const base64 = result.includes(',') ? result.split(',')[1] : result
       resolve(base64)
     }
     reader.onerror = reject
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(blob)
   })
 }
 
@@ -150,8 +177,9 @@ export const uploadDocument = async (
 ): Promise<UploadDocumentResponse> => {
   const endpoint = `/system/worker/me/document?documentType=${documentType}`
   try {
-    const base64 = await fileToBase64(file)
-    console.log('[PROFILE] uploadDocument request:', { documentType, fileName: file.name, fileSize: file.size, base64Length: base64.length })
+    const compressed = await compressImage(file)
+    const base64 = await blobToBase64(compressed)
+    console.log('[PROFILE] uploadDocument request:', { documentType, fileName: file.name, originalSize: file.size, compressedSize: compressed.size, base64Length: base64.length })
     devLogRequestRaw(endpoint, { documentType, fileName: file.name })
     const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
