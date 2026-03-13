@@ -27,7 +27,6 @@ export function OnboardingFamilyAccountPage() {
   const [familyName, setFamilyName] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
-  const [certificateFile, setCertificateFile] = useState<File | null>(null)
 
   const handleSubmit = () => {
     // TODO: Save family account info
@@ -108,24 +107,6 @@ export function OnboardingFamilyAccountPage() {
             />
           </div>
 
-          {/* Bankbook Copy */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              통장사본
-            </label>
-            <label className="flex items-center w-full h-12 px-4 rounded-lg border border-gray-200 bg-white cursor-pointer">
-              <span className="font-medium text-slate-900 mr-2">파일 선택</span>
-              <span className="text-sm text-slate-400 truncate">
-                {certificateFile ? certificateFile.name : "선택된 파일 없음"}
-              </span>
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                className="hidden"
-                onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
-              />
-            </label>
-          </div>
         </div>
 
           {/* Save Button */}

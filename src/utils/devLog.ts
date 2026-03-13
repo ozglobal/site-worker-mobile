@@ -1,17 +1,12 @@
 /**
- * Development logging utility
- * ⚠️ Logs are DEV-ONLY and MUST NOT ship to production
+ * Logging utility — logs in all environments
  */
 
-const isDev = import.meta.env.DEV
-
 /* ---------------------------------- */
-/* Low-level DEV logger                */
+/* Low-level logger                    */
 /* ---------------------------------- */
 
 const devLog = (level: "log" | "warn" | "error", message: string, data?: unknown) => {
-  if (!isDev) return
-
   if (data !== undefined) {
     console[level](message, data)
   } else {
@@ -42,7 +37,6 @@ export const logApiSummary = (
  * Safe debug message
  */
 export const logDebug = (message: string, data?: unknown) => {
-  if (!isDev) return
   if (data !== undefined) {
     console.log(`${message}:`, data)
   } else {

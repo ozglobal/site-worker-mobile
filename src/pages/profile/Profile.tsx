@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
@@ -7,10 +8,35 @@ import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
 import { handleLogout } from "@/lib/auth"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { uploadDocument, type DocumentType } from "@/lib/profile"
+import { useToast } from "@/contexts/ToastContext"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
   const { data: profile } = useWorkerProfile()
+  const { showSuccess, showError } = useToast()
+  const [uploaded, setUploaded] = useState<Record<string, boolean>>({})
+  const [uploading, setUploading] = useState<string | null>(null)
+
+  const handleUpload = (documentType: DocumentType, title: string) => {
+    const input = document.createElement("input")
+    input.type = "file"
+    input.accept = "image/*,.pdf"
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      setUploading(documentType)
+      const result = await uploadDocument(documentType, file)
+      setUploading(null)
+      if (result.success) {
+        setUploaded((prev) => ({ ...prev, [documentType]: true }))
+        showSuccess(`${title} 등록 완료`)
+      } else {
+        showError(result.error || "업로드에 실패했습니다.")
+      }
+    }
+    input.click()
+  }
   const isMyInfoComplete = !!(
     profile?.workerName &&
     profile?.ssnFirst &&
@@ -75,26 +101,26 @@ export function MyInfoPage() {
             <StatusListItem
               title="신분증"
               subtitle="연락처 및 기본 정보"
-              status="incomplete"
-              onClick={() => navigate("/profile/id")}
+              status={uploading === "id_card_front" ? "pending" : uploaded["id_card_front"] ? "complete" : "incomplete"}
+              onClick={() => handleUpload("id_card_front", "신분증")}
             />
             <StatusListItem
               title="안전교육 이수증"
               subtitle="기초안전보건교육 이수증"
-              status="incomplete"
-              onClick={() => navigate("/profile/safety")}
+              status={uploading === "safety_cert" ? "pending" : uploaded["safety_cert"] ? "complete" : "incomplete"}
+              onClick={() => handleUpload("safety_cert", "안전교육 이수증")}
             />
             <StatusListItem
               title="사업자등록증"
               subtitle="법인 사업자등록증"
-              status="incomplete"
-              onClick={() => navigate("/profile/business")}
+              status={uploading === "business_license" ? "pending" : uploaded["business_license"] ? "complete" : "incomplete"}
+              onClick={() => handleUpload("business_license", "사업자등록증")}
             />
             <StatusListItem
               title="위임장"
               subtitle="급여 타인명의 지급 동의서"
-              status="incomplete"
-              onClick={() => navigate("/profile/delegation")}
+              status={uploading === "proxy_general" ? "pending" : uploaded["proxy_general"] ? "complete" : "incomplete"}
+              onClick={() => handleUpload("proxy_general", "위임장")}
               className="border-b-0"
             />
           </div>

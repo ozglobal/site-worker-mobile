@@ -141,14 +141,15 @@ export function useHomeAgent(): HomeAgentReturn {
 
   /**
    * Clock Out Flow:
-   * Execute check-out immediately (no GPS required)
+   * Get fresh GPS location, then execute check-out
    */
   const handleClockOut = useCallback(async () => {
     if (!attendance.canCheckOut) return
 
     setPendingAction("check-out")
 
-    const result = await attendance.checkOut()
+    const freshLocation = await location.requestLocation()
+    const result = await attendance.checkOut(freshLocation || undefined)
 
     if (result.success) {
       setShowCheckoutPopup(true)
@@ -156,7 +157,7 @@ export function useHomeAgent(): HomeAgentReturn {
       notifications.showError("퇴근 실패", result.error)
     }
     setPendingAction(null)
-  }, [attendance, notifications])
+  }, [attendance, location, notifications])
 
   /**
    * Handle successful QR scan

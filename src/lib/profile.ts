@@ -161,7 +161,7 @@ function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
-export type DocumentType = 'id_card_front' | 'safety_cert' | 'bankbook'
+export type DocumentType = 'id_card_front' | 'safety_cert' | 'bankbook' | 'business_license' | 'proxy_general'
 
 export interface UploadDocumentResponse {
   success: boolean
@@ -177,9 +177,10 @@ export const uploadDocument = async (
 ): Promise<UploadDocumentResponse> => {
   const endpoint = `/system/worker/me/document?documentType=${documentType}`
   try {
-    const compressed = await compressImage(file)
-    const base64 = await blobToBase64(compressed)
-    console.log('[PROFILE] uploadDocument request:', { documentType, fileName: file.name, originalSize: file.size, compressedSize: compressed.size, base64Length: base64.length })
+    const isImage = file.type.startsWith('image/')
+    const blob = isImage ? await compressImage(file) : file
+    const base64 = await blobToBase64(blob)
+    console.log('[PROFILE] uploadDocument request:', { documentType, fileName: file.name, originalSize: file.size, compressedSize: blob.size, base64Length: base64.length })
     devLogRequestRaw(endpoint, { documentType, fileName: file.name })
     const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
