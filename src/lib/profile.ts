@@ -120,7 +120,7 @@ export const changePassword = async (params: ChangePasswordRequest): Promise<Cha
 /**
  * Compress image to JPEG with max width, returns a Blob
  */
-function compressImage(file: File, maxWidth = 1024, quality = 0.8): Promise<Blob> {
+function compressImage(file: File, maxWidth = 1024, quality = 0.9): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
