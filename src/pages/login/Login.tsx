@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { IconEye, IconEyeClosed } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,22 @@ export function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
   const { honeypotProps, isBotDetected } = useHoneypot()
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault()
+      setInstallPrompt(e as BeforeInstallPromptEvent)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (!installPrompt) return
+    await installPrompt.prompt()
+    setInstallPrompt(null)
+  }
 
   const handleLogin = async () => {
     if (isBotDetected || isSubmitting) return
@@ -51,10 +67,11 @@ export function LoginPage() {
       </div>
 
       {/* Form */}
-      <div className="mt-8 flex flex-col gap-3">
+      <form className="mt-8 flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); handleLogin() }}>
         {/* Phone Input */}
         <Input
           type="tel"
+          autoComplete="tel"
           placeholder="휴대폰 번호"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
@@ -65,6 +82,7 @@ export function LoginPage() {
         <div className="relative">
           <Input
             type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
             placeholder="비밀번호"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -93,15 +111,15 @@ export function LoginPage() {
 
         {/* Login Button - Figma style */}
         <Button
+          type="submit"
           variant={isSubmitting ? "primaryDisabled" : "primary"}
           size="full"
           className="mt-3"
           disabled={isSubmitting}
-          onClick={handleLogin}
         >
           {isSubmitting ? "로그인 중..." : "로그인"}
         </Button>
-      </div>
+      </form>
 
       {/* Helper Links */}
       <div className="mt-5 flex items-center justify-center gap-4 text-sm text-gray-500">
@@ -113,6 +131,15 @@ export function LoginPage() {
           비밀번호 재설정
         </button>
       </div>
+
+      {/* PWA Install Prompt */}
+      {installPrompt && (
+        <div className="mt-6 flex justify-center">
+          <Button variant="outline" size="full" onClick={handleInstall}>
+            앱 설치하기
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
