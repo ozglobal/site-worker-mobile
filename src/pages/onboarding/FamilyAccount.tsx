@@ -58,14 +58,13 @@ export function OnboardingFamilyAccountPage() {
       {/* Progress bar */}
       <ProgressBar value={40} className="mb-6" />
 
-      {/* Title */}
-      <div className="px-4 mb-4 shrink-0">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">가족 명의 계좌 정보를 입력해주세요</h1>
-        <p className="text-slate-500">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
-      </div>
-
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
+        {/* Title */}
+        <div className="px-4 pt-4 pb-2">
+          <h1 className="text-xl font-bold text-slate-900">가족 명의 계좌 정보를 입력해주세요</h1>
+          <p className="mt-1 text-sm text-gray-500">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
+        </div>
         <div className="px-4 py-6 space-y-5">
           {/* Family Member Name */}
           <div>

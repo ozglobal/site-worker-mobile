@@ -1,7 +1,6 @@
 import { authFetch } from './auth'
-import { devLogApiRaw, devLogRequestRaw } from '../utils/devLog'
 import { safeJson } from './api-result'
-import { API_BASE_URL, X_TENANT_ID } from './config'
+import { API_BASE_URL } from './config'
 import { reportError } from './errorReporter'
 
 export interface WorkerMeResponse {
@@ -27,17 +26,14 @@ export interface WorkerMeData {
  */
 export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
   try {
-    devLogRequestRaw('/system/worker/me', null)
     const response = await authFetch(`${API_BASE_URL}/system/worker/me`, {
       method: 'GET',
       headers: {
         'accept': '*/*',
-        'X-Tenant-Id': X_TENANT_ID,
       },
     })
 
     const json = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/system/worker/me', { status: response.status, data: json })
 
     if (!json) {
       return { success: false, error: 'Invalid server response' }
@@ -87,19 +83,16 @@ export const changePassword = async (params: ChangePasswordRequest): Promise<Cha
       oldPassword: params.currentPassword,
       newPassword: params.newPassword,
     }
-    devLogRequestRaw('/user/profile/password', body)
     const response = await authFetch(`${API_BASE_URL}/user/profile/password`, {
       method: 'PATCH',
       headers: {
         'accept': '*/*',
         'Content-Type': 'application/json',
-        'X-Tenant-Id': X_TENANT_ID,
       },
       body: JSON.stringify(body),
     })
 
     const json = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/user/profile/password', { status: response.status, data: json })
 
     if (!json) {
       return { success: false, error: 'Invalid server response' }
@@ -180,21 +173,16 @@ export const uploadDocument = async (
     const isImage = file.type.startsWith('image/')
     const blob = isImage ? await compressImage(file) : file
     const base64 = await blobToBase64(blob)
-    console.log('[PROFILE] uploadDocument request:', { documentType, fileName: file.name, originalSize: file.size, compressedSize: blob.size, base64Length: base64.length })
-    devLogRequestRaw(endpoint, { documentType, fileName: file.name })
     const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'accept': '*/*',
         'Content-Type': 'application/json',
-        'X-Tenant-Id': X_TENANT_ID,
       },
       body: JSON.stringify({ file: base64 }),
     })
 
     const json = await safeJson(response) as Record<string, unknown> | null
-    console.log('[PROFILE] uploadDocument response:', { status: response.status, data: json })
-    devLogApiRaw(endpoint, { status: response.status, data: json })
 
     if (!response.ok) {
       return { success: false, error: (json?.message as string) || `API error: ${response.status}` }

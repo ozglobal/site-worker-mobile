@@ -56,7 +56,7 @@ export function AppHeader({
             <ArrowBack className="h-6 w-6 text-gray-800" />
           </button>
         ) : null}
-        <h1 className="text-base font-medium text-slate-900">{title}</h1>
+        <h1 className="text-base font-semibold text-slate-900">{title}</h1>
       </div>
 
       {/* Right action - Notification bell */}

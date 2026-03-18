@@ -59,22 +59,25 @@ export const logError = (
 /* ---------------------------------- */
 
 /**
- * ⚠️ DEV-ONLY: logs raw API data (tokens, PII, etc.)
- * MUST be removed before production
+ * Logs raw API response data (always enabled, including production)
  */
 export const devLogApiRaw = (
   endpoint: string,
   data: unknown
 ) => {
-  devLog("log", `[RESPONSE] ${endpoint}`, data)
+  console.log(`[RESPONSE] ${endpoint}`, data)
 }
 
 /**
- * ⚠️ DEV-ONLY: logs raw request params
+ * Logs raw request params (always enabled, including production)
  */
 export const devLogRequestRaw = (
   endpoint: string,
   params?: unknown
 ) => {
-  devLog("log", `[REQUEST] ${endpoint}`, params)
+  if (params !== undefined) {
+    console.log(`[request] ${endpoint}`, params)
+  } else {
+    console.log(`[request] ${endpoint}`)
+  }
 }

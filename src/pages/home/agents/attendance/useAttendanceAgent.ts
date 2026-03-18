@@ -15,6 +15,7 @@ import {
   type WeeklyAttendanceRecord,
 } from "@/lib/attendance"
 import { useDailyAttendance } from "@/lib/queries/useDailyAttendance"
+import { checkinSiteStorage } from "@/lib/storage"
 
 // Import skills
 import {
@@ -40,6 +41,7 @@ export interface AttendanceAgentState {
   checkedInSiteId: string | null
   siteName: string
   siteAddress: string
+  dailyWageSnapshot: number | null
   checkInTime: string | null
   checkOutTime: string | null
   completedCount: number
@@ -57,7 +59,7 @@ export type CheckInResult =
   | { success: false; error: string }
 
 export type CheckOutResult =
-  | { success: true }
+  | { success: true; attendanceId?: string }
   | { success: false; error: string }
 
 export interface AttendanceAgentActions {
@@ -91,6 +93,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
   const [checkedInSiteId, setCheckedInSiteId] = useState<string | null>(null)
   const [siteName, setSiteName] = useState("")
   const [siteAddress, setSiteAddress] = useState("")
+  const [dailyWageSnapshot, setDailyWageSnapshot] = useState<number | null>(null)
   const [checkInTime, setCheckInTime] = useState<string | null>(null)
   const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
   const [completedCount, setCompletedCount] = useState(0)
@@ -101,9 +104,11 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     if (isLoading) return
 
     if (serverCheckIn) {
+      const cached = checkinSiteStorage.get()
       setCheckedInSiteId(serverCheckIn.siteId)
       setSiteName(serverCheckIn.siteName)
-      setSiteAddress("")
+      setSiteAddress(cached?.siteAddress || "")
+      setDailyWageSnapshot(serverCheckIn.dailyWageSnapshot ?? cached?.dailyWageSnapshot ?? null)
       setCheckInTime(timestampToIso(serverCheckIn.checkInTime))
     } else {
       // Only clear if we had data from server (not during initial load)
@@ -155,6 +160,12 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
           setCheckInTime(result.data.serverTimestamp)
           setCheckOutTime(null)
 
+          // Cache site info for reload
+          checkinSiteStorage.set({
+            siteAddress: result.data.siteAddress || "",
+            dailyWageSnapshot: null,
+          })
+
           // Invalidate query so calendar and other consumers get fresh data
           queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
 
@@ -193,11 +204,12 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
           setCheckOutTime(now)
           setCheckedInSiteId(null)
           setCompletedCount((prev) => prev + 1)
+          checkinSiteStorage.clear()
 
           // Invalidate query so calendar and other consumers get fresh data
           queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
 
-          return { success: true }
+          return { success: true, attendanceId: result.attendanceId }
         }
 
         return { success: false, error: result.error }
@@ -218,6 +230,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     checkedInSiteId,
     siteName,
     siteAddress,
+    dailyWageSnapshot,
     checkInTime,
     checkOutTime,
     completedCount,

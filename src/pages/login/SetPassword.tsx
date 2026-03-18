@@ -1,11 +1,17 @@
 import { useState, useEffect, useRef } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/contexts/ToastContext"
+import { resetPasswordBySms } from "@/lib/auth"
 
 export function SetPasswordPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { showSuccess, showError } = useToast()
+  const { phone, code } = (location.state as { phone?: string; code?: string }) || {}
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     newPassword: "",
@@ -58,9 +64,23 @@ export function SetPasswordPage() {
     }
   }
 
-  const handleSave = () => {
-    if (!isFormValid) return
-    navigate("/login")
+  const handleSave = async () => {
+    if (!isFormValid || isSubmitting) return
+    if (!phone || !code) {
+      showError("인증 정보가 없습니다. 다시 시도해주세요.")
+      return
+    }
+
+    setIsSubmitting(true)
+    const result = await resetPasswordBySms({ phone, code, newPassword: formData.newPassword })
+    setIsSubmitting(false)
+
+    if (result.success) {
+      showSuccess("비밀번호가 변경되었습니다. 변경된 비밀번호로 로그인해 주세요.")
+      navigate("/login")
+    } else {
+      showError(result.error)
+    }
   }
 
   return (
@@ -140,12 +160,12 @@ export function SetPasswordPage() {
           {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={isFormValid ? "primary" : "primaryDisabled"}
+              variant={isFormValid && !isSubmitting ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
               onClick={handleSave}
             >
-              다음
+              {isSubmitting ? "처리 중..." : "다음"}
             </Button>
           </div>
         </div>

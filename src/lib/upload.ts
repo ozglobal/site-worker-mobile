@@ -1,6 +1,5 @@
 import { authFetch } from './auth'
-import { devLogApiRaw, devLogRequestRaw } from '../utils/devLog'
-import { API_BASE_URL, X_TENANT_ID } from './config'
+import { API_BASE_URL } from './config'
 import { reportError } from './errorReporter'
 
 // ============================================
@@ -71,22 +70,12 @@ export async function uploadFile(file: File): Promise<UploadResult> {
     const formData = new FormData()
     formData.append('files', file)
 
-    devLogRequestRaw('/uploads', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-    })
-
     const response = await authFetch(`${API_BASE_URL}/uploads`, {
       method: 'POST',
-      headers: {
-        'X-Tenant-Id': X_TENANT_ID,
-      },
       body: formData,
     })
 
     const responseData = await response.json()
-    devLogApiRaw('/uploads', { status: response.status, data: responseData })
 
     if (!response.ok) {
       return {

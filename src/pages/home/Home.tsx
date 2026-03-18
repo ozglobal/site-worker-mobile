@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import FmdGoodIcon from "@mui/icons-material/FmdGood"
 import { AppHeader } from "@/components/layout/AppHeader"
@@ -5,14 +6,19 @@ import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import QRCodeScanner from "@/components/ui/QrScanner"
 import { LocationPermissionPopup } from "@/components/ui/LocationPermissionPopup"
 import { formatKstTime } from "@/utils/time"
+import { formatCurrency } from "@/utils/format"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { AlertBanner } from "@/components/ui/alert-banner"
+import { useToast } from "@/contexts/ToastContext"
+import { submitCorrectionRequest } from "@/lib/attendance"
+import { reportError } from "@/lib/errorReporter"
 import { useHomeAgent } from "./useHomeAgent"
 import { WeeklyCalendar } from "./components"
 
 export function Home() {
   const navigate = useNavigate()
+  const { showSuccess, showError } = useToast()
   const {
     userName,
     currentDate,
@@ -27,6 +33,72 @@ export function Home() {
     checkoutPopup,
     actions,
   } = useHomeAgent()
+
+  // Correction request dialog state
+  const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
+  const [correctionWorkEffort, setCorrectionWorkEffort] = useState("")
+  const [correctionDailyWage, setCorrectionDailyWage] = useState("")
+  const [correctionReason, setCorrectionReason] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const record = checkoutPopup.lastCheckoutRecord
+
+  const expectedWage = useMemo(() => {
+    const effort = parseFloat(correctionWorkEffort) || 0
+    const wage = parseFloat(correctionDailyWage.replace(/,/g, "")) || 0
+    return effort * wage
+  }, [correctionWorkEffort, correctionDailyWage])
+
+  const openCorrectionDialog = () => {
+    if (record) {
+      setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "1.0")
+      setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
+    } else {
+      setCorrectionWorkEffort("1.0")
+      setCorrectionDailyWage("0")
+    }
+    setCorrectionReason("")
+    setShowCorrectionDialog(true)
+  }
+
+  const closeCorrectionDialog = () => {
+    setShowCorrectionDialog(false)
+  }
+
+  const closeAll = () => {
+    setShowCorrectionDialog(false)
+    checkoutPopup.close()
+  }
+
+  const handleCorrectionSubmit = async () => {
+    if (!record) return
+    const attendanceId = checkoutPopup.attendanceId || record.id
+    if (!attendanceId) {
+      showError("출퇴근 기록을 찾을 수 없습니다.")
+      return
+    }
+    if (!correctionReason.trim()) {
+      showError("변경사유를 입력해주세요.")
+      return
+    }
+
+    setIsSubmitting(true)
+    const result = await submitCorrectionRequest({
+      attendanceId,
+      requestType: correctionWorkEffort,
+      requestedValue: correctionDailyWage.replace(/,/g, ""),
+      reason: correctionReason.trim(),
+    })
+    setIsSubmitting(false)
+
+    if (result.success) {
+      showSuccess("정정 요청이 제출되었습니다.")
+      closeAll()
+    } else {
+      reportError("CORRECTION_SUBMIT_FAIL", result.error)
+      showError(result.error)
+    }
+  }
 
   const handleNavigation = (item: NavItem) => {
     if (item === "attendance") {
@@ -60,7 +132,7 @@ export function Home() {
             variant="error"
             title="필수 정보 입력이 완료되지 않았어요"
             description="급여 지급을 위해 월말까지 반드시 작성을 완료해주세요."
-            onClick={() => navigate("/onboarding")}
+            onClick={() => navigate("/onboarding/affiliation")}
           />
         </div>
 
@@ -94,6 +166,11 @@ export function Home() {
                       <span>{workSite.address}</span>
                     </div>
                   )}
+                  {attendance.dailyWageSnapshot != null && (
+                    <p className="text-sm text-[#007DCA] mt-1">
+                      {formatCurrency(attendance.dailyWageSnapshot)} / 1공수
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -108,18 +185,18 @@ export function Home() {
                     </div>
                     <div className="flex items-center justify-between rounded-lg px-4 py-2">
                       <span className="text-sm font-medium text-slate-500">퇴근</span>
-                      <span className="text-sm font-semibold text-slate-500">퇴근 전</span>
+                      <span className="text-sm font-semibold text-slate-500">아직 퇴근하지 않았습니다</span>
                     </div>
                   </div>
                 )}
 
                 {/* Action Button */}
                 {attendance.isCheckedIn ? (
-                  <Button variant="dark" size="full" onClick={actions.clockOut} disabled={attendance.isProcessing}>
+                  <Button variant={attendance.isProcessing ? "primaryDisabled" : "primary"} size="full" onClick={actions.clockOut} disabled={attendance.isProcessing}>
                     {attendance.isProcessing ? "처리 중..." : "퇴근하기"}
                   </Button>
                 ) : attendance.canCheckIn && (
-                  <Button variant="primary" size="full" onClick={actions.clockIn} disabled={attendance.isProcessing}>
+                  <Button variant={attendance.isProcessing ? "primaryDisabled" : "primary"} size="full" onClick={actions.clockIn} disabled={attendance.isProcessing}>
                     {attendance.isProcessing ? "처리 중..." : "출근하기"}
                   </Button>
                 )}
@@ -357,7 +434,8 @@ export function Home() {
 
               {/* Buttons */}
               <div className="space-y-2">
-                <Button variant="secondary" size="full" onClick={checkoutPopup.close}>
+                <Button variant="neutral" size="full" onClick={openCorrectionDialog}
+                  className="bg-slate-100 border-0 hover:bg-slate-200 text-slate-900 font-semibold">
                   정정 요청
                 </Button>
                 <Button variant="primary" size="full" onClick={checkoutPopup.close}>
@@ -365,6 +443,138 @@ export function Home() {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Correction Request Dialog */}
+      {showCorrectionDialog && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={closeAll} />
+          <div className="relative z-10 w-[calc(100%-2rem)] max-w-sm bg-white rounded-xl shadow-xl max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-4 pb-2">
+              <button onClick={closeCorrectionDialog} className="p-1 -ml-1">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <h2 className="text-lg font-bold text-slate-900">정정 요청</h2>
+              <button onClick={closeAll} className="p-1 -mr-1">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {!record ? (
+                <div className="flex items-center justify-center py-10">
+                  <Spinner size="md" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Site Info */}
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">{attendance.siteName}</h3>
+                    {attendance.siteAddress && (
+                      <div className="flex items-center gap-1 text-sm text-slate-500 mt-1">
+                        <FmdGoodIcon sx={{ fontSize: 16 }} />
+                        <span>{attendance.siteAddress}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-slate-100" />
+
+                  {/* Times */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">출근</span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {attendance.checkInTime ? formatKstTime(attendance.checkInTime) : ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">퇴근</span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {attendance.checkOutTime ? formatKstTime(attendance.checkOutTime) : ""}
+                      </span>
+                    </div>
+
+                    {/* Work Effort */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">내 공수</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          value={correctionWorkEffort}
+                          onChange={(e) => setCorrectionWorkEffort(e.target.value)}
+                          className="w-20 h-10 text-center text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
+                        />
+                        <span className="text-sm text-slate-600">공수</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-100" />
+
+                  {/* Daily Wage */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">현장 단가</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={correctionDailyWage}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/[^0-9]/g, "")
+                            setCorrectionDailyWage(raw ? Number(raw).toLocaleString("ko-KR") : "")
+                          }}
+                          className="w-28 h-10 text-center text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
+                        />
+                        <span className="text-sm text-slate-600">원</span>
+                      </div>
+                    </div>
+
+                    {/* Expected Wage */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">예상 임금(세전)</span>
+                      <span className="text-base font-semibold text-[#007DCA]">
+                        {formatCurrency(expectedWage)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Reason */}
+                  <textarea
+                    value={correctionReason}
+                    onChange={(e) => setCorrectionReason(e.target.value)}
+                    placeholder="변경사유를 입력해주세요..."
+                    rows={4}
+                    className="w-full p-4 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            {record && (
+              <div className="px-5 pb-5 pt-2">
+                <Button
+                  variant={isSubmitting || !correctionReason.trim() ? "primaryDisabled" : "primary"}
+                  size="full"
+                  onClick={handleCorrectionSubmit}
+                  disabled={isSubmitting || !correctionReason.trim()}
+                >
+                  {isSubmitting ? "제출 중..." : "정정 요청 제출"}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

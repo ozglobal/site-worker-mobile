@@ -16,6 +16,7 @@ import { useCalendarAgent } from "./agents/calendar"
 import { useNotificationAgent } from "./agents/notification"
 import type { Location, Site, TodayWorkRecord } from "./home.types"
 import type { QRCodeData } from "@/components/ui/QrScanner"
+import type { WeeklyAttendanceRecord } from "@/lib/attendance"
 
 // ============================================
 // Types
@@ -37,6 +38,7 @@ interface HomeAgentReturn {
     canCheckOut: boolean
     siteName: string
     siteAddress: string
+    dailyWageSnapshot: number | null
   }
 
   // Work site
@@ -89,6 +91,8 @@ interface HomeAgentReturn {
   checkoutPopup: {
     isOpen: boolean
     close: () => void
+    attendanceId: string | null
+    lastCheckoutRecord: WeeklyAttendanceRecord | null
   }
 
   // Actions
@@ -116,6 +120,7 @@ export function useHomeAgent(): HomeAgentReturn {
   // ============================================
   const [showScanner, setShowScanner] = useState(false)
   const [showCheckoutPopup, setShowCheckoutPopup] = useState(false)
+  const [checkoutAttendanceId, setCheckoutAttendanceId] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<"check-out" | null>(null)
 
   // ============================================
@@ -152,6 +157,7 @@ export function useHomeAgent(): HomeAgentReturn {
     const result = await attendance.checkOut(freshLocation || undefined)
 
     if (result.success) {
+      setCheckoutAttendanceId(result.attendanceId || null)
       setShowCheckoutPopup(true)
     } else {
       notifications.showError("퇴근 실패", result.error)
@@ -252,6 +258,12 @@ export function useHomeAgent(): HomeAgentReturn {
     [attendance.todayRecords]
   )
 
+  // Latest completed checkout record (for correction request dialog)
+  const lastCheckoutRecord = useMemo(() => {
+    const completed = attendance.todayRecords.filter((r) => r.hasCheckedOut)
+    return completed.length > 0 ? completed[completed.length - 1] : null
+  }, [attendance.todayRecords])
+
   // ============================================
   // Return Grouped API
   // ============================================
@@ -273,6 +285,7 @@ export function useHomeAgent(): HomeAgentReturn {
       canCheckOut: attendance.canCheckOut,
       siteName: attendance.siteName,
       siteAddress: attendance.siteAddress,
+      dailyWageSnapshot: attendance.dailyWageSnapshot,
     },
 
     // Work site
@@ -327,6 +340,8 @@ export function useHomeAgent(): HomeAgentReturn {
     checkoutPopup: {
       isOpen: showCheckoutPopup,
       close: () => setShowCheckoutPopup(false),
+      attendanceId: checkoutAttendanceId,
+      lastCheckoutRecord,
     },
 
     // Actions

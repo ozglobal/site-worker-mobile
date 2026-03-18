@@ -142,7 +142,7 @@ export function LocationPermissionPopup({
               </>
             ) : (
               <>
-                <Button variant="primary" size="full" className="rounded-xl"
+                <Button variant={isRequesting ? "primaryDisabled" : "primary"} size="full" className="rounded-xl"
                   onClick={handleRequestPermission} disabled={isRequesting}>
                   {isRequesting ? (
                     <span className="flex items-center justify-center gap-2">

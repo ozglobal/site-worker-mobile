@@ -70,13 +70,15 @@ export function OnboardingAffiliationPage() {
       <ProgressBar value={20} className="mb-6" />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4">
+      <div className="flex-1 overflow-y-auto">
         {/* Title */}
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">소속을 선택해주세요</h1>
-        <p className="text-slate-500 mb-6">선택한 소속은 나중에 언제든지 변경할 수 있어요.</p>
+        <div className="px-4 pt-4 pb-2">
+          <h1 className="text-xl font-bold text-slate-900">소속을 선택해주세요</h1>
+          <p className="mt-1 text-sm text-gray-500">선택한 소속은 나중에 언제든지 변경할 수 있어요.</p>
+        </div>
 
         {/* Affiliation Cards */}
-        <div className="space-y-3">
+        <div className="px-4 space-y-3">
           {affiliationTypes.map((type) => (
             <button
               key={type.id}

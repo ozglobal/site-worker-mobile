@@ -34,7 +34,7 @@ export type CheckInApiResult =
   | { success: false; error: string }
 
 export type CheckOutApiResult =
-  | { success: true }
+  | { success: true; attendanceId?: string }
   | { success: false; error: string }
 
 // Dependencies type for injection
@@ -137,7 +137,8 @@ export async function executeCheckOutApi(
     const result = await deps.checkOut(request)
 
     if (result.success) {
-      return { success: true }
+      const data = result.data as Record<string, unknown> | undefined
+      return { success: true, attendanceId: (data?.id as string) || (data?.attendanceId as string) || undefined }
     }
 
     return {

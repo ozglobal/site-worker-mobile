@@ -85,6 +85,69 @@ export const getSmsCode = async (phone: string): Promise<ApiResult<unknown>> => 
   }
 }
 
+// Send SMS verification code for password reset
+export const sendPasswordCode = async (phone: string): Promise<ApiResult<unknown>> => {
+  try {
+    const requestBody = { phone }
+    devLogRequestRaw('/auth/password/send-code', requestBody)
+    const response = await fetch(`${API_BASE_URL}/auth/password/send-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'accept': '*/*' },
+      body: JSON.stringify(requestBody),
+    })
+
+    const responseData = await safeJson(response) as Record<string, unknown> | null
+    devLogApiRaw('/auth/password/send-code', { status: response.status, data: responseData })
+
+    if (!responseData) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
+    if (!response.ok) {
+      reportError('AUTH_PASSWORD_SEND_CODE_FAIL', (responseData.message as string) || 'Failed to send code', { endpoint: '/auth/password/send-code', httpStatus: response.status })
+      return { success: false, error: (responseData.message as string) || '인증번호 발송에 실패했습니다.' }
+    }
+
+    return { success: true, data: responseData.data || responseData }
+  } catch (err) {
+    reportError('AUTH_PASSWORD_SEND_CODE_FAIL', String(err), { endpoint: '/auth/password/send-code' })
+    return { success: false, error: '네트워크 오류가 발생했습니다.' }
+  }
+}
+
+// Reset password via SMS verification code
+export const resetPasswordBySms = async (params: {
+  phone: string
+  code: string
+  newPassword: string
+}): Promise<ApiResult<unknown>> => {
+  try {
+    devLogRequestRaw('/auth/password/reset-by-sms', { phone: params.phone, code: '***' })
+    const response = await fetch(`${API_BASE_URL}/auth/password/reset-by-sms`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'accept': '*/*' },
+      body: JSON.stringify(params),
+    })
+
+    const responseData = await safeJson(response) as Record<string, unknown> | null
+    devLogApiRaw('/auth/password/reset-by-sms', { status: response.status, data: responseData })
+
+    if (!responseData) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
+    if (!response.ok) {
+      reportError('AUTH_PASSWORD_RESET_FAIL', (responseData.message as string) || 'Password reset failed', { endpoint: '/auth/password/reset-by-sms', httpStatus: response.status })
+      return { success: false, error: (responseData.message as string) || '비밀번호 변경에 실패했습니다.' }
+    }
+
+    return { success: true, data: responseData.data || responseData }
+  } catch (err) {
+    reportError('AUTH_PASSWORD_RESET_FAIL', String(err), { endpoint: '/auth/password/reset-by-sms' })
+    return { success: false, error: '네트워크 오류가 발생했습니다.' }
+  }
+}
+
 // Verify SMS code for signup
 export const verifySmsCode = async (phone: string, verificationCode: string): Promise<ApiResult<unknown>> => {
   try {
@@ -383,7 +446,18 @@ export const handleLogout = async () => {
 }
 
 // PR 7: Fetch user info from API and restore in-memory worker info
+// Dedup: if a fetch is already in-flight, return the same promise (handles StrictMode double-mount)
+let userInfoInFlight: Promise<Record<string, unknown> | null> | null = null
+
 export const fetchUserInfo = async (): Promise<Record<string, unknown> | null> => {
+  if (userInfoInFlight) return userInfoInFlight
+
+  userInfoInFlight = _fetchUserInfoImpl()
+  userInfoInFlight.finally(() => { userInfoInFlight = null })
+  return userInfoInFlight
+}
+
+const _fetchUserInfoImpl = async (): Promise<Record<string, unknown> | null> => {
   const accessToken = getAccessToken()
   if (!accessToken) {
     return null
@@ -456,11 +530,23 @@ export const authFetch = async (
     }
   }
 
-  // Add auth header
+  // Add auth header + default X-Tenant-Id
   const headers = new Headers(options.headers)
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`)
   }
+  if (!headers.has('X-Tenant-Id')) {
+    headers.set('X-Tenant-Id', X_TENANT_ID)
+  }
+
+  // Log request
+  const endpoint = url.replace(API_BASE_URL, '') || url
+  const method = options.method || 'GET'
+  let requestBody: unknown
+  if (options.body) {
+    try { requestBody = JSON.parse(options.body as string) } catch { requestBody = options.body }
+  }
+  devLogRequestRaw(`${method} ${endpoint}`, requestBody)
 
   let response = await fetch(url, { ...options, headers })
 
@@ -476,6 +562,13 @@ export const authFetch = async (
       window.location.href = '/login'
     }
   }
+
+  // Log response
+  try {
+    const clone = response.clone()
+    const json = await safeJson(clone)
+    devLogApiRaw(`${method} ${endpoint}`, { status: response.status, data: json })
+  } catch { /* ignore logging errors */ }
 
   return response
 }

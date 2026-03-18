@@ -261,11 +261,29 @@ export const signupStorage = {
 }
 
 // ============================================
+// Checkin Site Storage (UX cache for reload)
+// ============================================
+
+export interface CheckinSiteData {
+  siteAddress: string
+  dailyWageSnapshot: number | null
+}
+
+export const checkinSiteStorage = {
+  get: (): CheckinSiteData | null => getStorageItem<CheckinSiteData>('checkin_site'),
+
+  set: (data: CheckinSiteData): void => setStorageItem('checkin_site', data),
+
+  clear: (): void => removeStorageItem('checkin_site'),
+}
+
+// ============================================
 // Clear All Storage (for logout)
 // ============================================
 
 export const clearAllStorage = async (): Promise<void> => {
   authStorage.clear()
   workerStorage.clear()
+  checkinSiteStorage.clear()
   await fileStorage.clear()
 }

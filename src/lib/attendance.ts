@@ -1,9 +1,8 @@
 import { authFetch, getWorkerId } from './auth'
-import { devLogApiRaw, devLogRequestRaw } from '../utils/devLog'
-import { safeJson } from './api-result'
+import { safeJson, type ApiResult } from './api-result'
 import { reportError } from './errorReporter'
 
-import { API_BASE_URL, X_TENANT_ID } from './config'
+import { API_BASE_URL } from './config'
 
 /**
  * Check-in request payload
@@ -97,19 +96,16 @@ export interface CheckOutResponse {
  */
 export const checkIn = async (request: CheckInRequest): Promise<CheckInResponse> => {
   try {
-    devLogRequestRaw('/system/attendance/check-in', request)
     const response = await authFetch(`${API_BASE_URL}/system/attendance/check-in`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'accept': '*/*',
-        'X-Tenant-Id': X_TENANT_ID,
       },
       body: JSON.stringify(request),
     })
 
     const data = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/system/attendance/check-in', { status: response.status, data })
 
     if (!data) {
       return { success: false, error: 'Invalid server response' }
@@ -154,19 +150,16 @@ export const checkIn = async (request: CheckInRequest): Promise<CheckInResponse>
  */
 export const checkOut = async (request: CheckOutRequest): Promise<CheckOutResponse> => {
   try {
-    devLogRequestRaw('/system/attendance/check-out', request)
     const response = await authFetch(`${API_BASE_URL}/system/attendance/check-out`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'accept': '*/*',
-        'X-Tenant-Id': X_TENANT_ID,
       },
       body: JSON.stringify(request),
     })
 
     const data = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/system/attendance/check-out', { status: response.status, data })
 
     if (!data) {
       return { success: false, error: 'Invalid server response' }
@@ -342,18 +335,15 @@ export const fetchMonthlyAttendance = async (
     try {
       const mm = String(month).padStart(2, '0')
       const endpoint = `/system/attendance/my/${year}/${mm}`
-      devLogRequestRaw(endpoint, { method: 'GET', year, month })
 
       const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
         method: 'GET',
         headers: {
           'accept': '*/*',
-          'X-Tenant-Id': X_TENANT_ID,
         },
       })
 
       const data = await safeJson(response) as Record<string, unknown> | null
-      devLogApiRaw(endpoint, { status: response.status, data })
 
       if (!data) {
         return { success: false, error: 'Invalid server response' }
@@ -395,5 +385,57 @@ export const fetchMonthlyAttendance = async (
   monthlyAttendanceRequests.set(cacheKey, request)
 
   return request
+}
+
+// ============================================
+// Correction Request API
+// ============================================
+
+export interface CorrectionRequestParams {
+  attendanceId: string
+  requestType: string
+  requestedValue: string
+  reason: string
+}
+
+export const submitCorrectionRequest = async (
+  params: CorrectionRequestParams
+): Promise<ApiResult<void>> => {
+  try {
+    const response = await authFetch(
+      `${API_BASE_URL}/system/attendance/my/correction-request`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': '*/*',
+        },
+        body: JSON.stringify(params),
+      }
+    )
+
+    const data = await safeJson(response) as Record<string, unknown> | null
+
+    if (!data) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: (data.message || data.error || `Correction request failed (${response.status})`) as string,
+      }
+    }
+
+    return { success: true, data: undefined }
+  } catch (error) {
+    reportError('CORRECTION_REQUEST_FAIL', error instanceof Error ? error.message : 'Network error', {
+      endpoint: '/system/attendance/my/correction-request',
+    })
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
+    }
+  }
 }
 

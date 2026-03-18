@@ -33,6 +33,10 @@ import { OnboardingOutsourcingPage } from './pages/onboarding/Outsourcing';
 import { OnboardingEngineerPage } from './pages/onboarding/Engineer';
 import { OnboardingFamilyAccountPage } from './pages/onboarding/FamilyAccount';
 import { OnboardingDocumentsPage } from './pages/onboarding/Documents';
+import { OnboardingCompanyAccountPage } from './pages/onboarding/CompanyAccount';
+import { OnboardingOutsourcingDocumentsPage } from './pages/onboarding/OutsourcingDocuments';
+import { OnboardingEquipmentsPage } from './pages/onboarding/Equipments';
+import { OnboardingEquipmentsListPage } from './pages/onboarding/EquipmentsList';
 import { MyAccountPage } from './pages/profile/MyAccount';
 import { OutsourcingPage } from './pages/profile/Outsourcing';
 import { EngineerPage } from './pages/profile/Engineer';
@@ -43,7 +47,6 @@ import { PayrollAccountPage } from './pages/profile/PayrollAccount';
 import { SosokPage } from './pages/profile/Sosok';
 import { CalendarPage, ListPage } from './pages/attendance';
 import { ContractPage } from './pages/contract';
-import { QrGeneratorPage } from './pages/qr-generator';
 import { ScheduleAddPage } from './pages/test/ScheduleAdd';
 
 // Public route - redirect to home if already authenticated
@@ -77,6 +80,10 @@ const AppRoutes: React.FC = () => {
       <Route path="/onboarding/engineer" element={<OnboardingEngineerPage />} />
       <Route path="/onboarding/family-account" element={<OnboardingFamilyAccountPage />} />
       <Route path="/onboarding/documents" element={<OnboardingDocumentsPage />} />
+      <Route path="/onboarding/company-account" element={<OnboardingCompanyAccountPage />} />
+      <Route path="/onboarding/outsourcing-documents" element={<OnboardingOutsourcingDocumentsPage />} />
+      <Route path="/onboarding/equipments" element={<OnboardingEquipmentsPage />} />
+      <Route path="/onboarding/equipments-list" element={<OnboardingEquipmentsListPage />} />
       <Route path="/profile/my-account" element={<MyAccountPage />} />
       <Route path="/profile/family-account" element={<FamilyAccountPage />} />
       <Route path="/profile/outsourcing" element={<OutsourcingPage />} />
@@ -102,7 +109,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/attendance" element={<CalendarPage />} />
       <Route path="/attendance/list" element={<ListPage />} />
       <Route path="/contract" element={<ContractPage />} />
-      <Route path="/qr-generator" element={<QrGeneratorPage />} />
       <Route path="/profile" element={<MyInfoPage />} />
       <Route path="/profile/affiliation" element={<AffiliationPage />} />
       <Route path="/profile/myinfo" element={<MyInfoDetailPage />} />
