@@ -6,7 +6,9 @@ import { AlertBanner } from "@/components/ui/alert-banner"
 import { AffiliationCard } from "@/components/ui/affiliation-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
-import { IdCardUploadDialog } from "@/components/ui/id-card-upload-dialog"
+import { IdCardTypeDialog, IdCardUploadDialog, type IdCardType } from "@/components/ui/id-card-upload-dialog"
+import { IdCardCamera } from "@/components/ui/IdCardCamera"
+import { IdCardPreview } from "@/components/ui/IdCardPreview"
 import { handleLogout } from "@/lib/auth"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { uploadDocument, type DocumentType } from "@/lib/profile"
@@ -18,7 +20,15 @@ export function MyInfoPage() {
   const { showSuccess, showError } = useToast()
   const [uploaded, setUploaded] = useState<Record<string, boolean>>({})
   const [uploading, setUploading] = useState<string | null>(null)
+  const [showIdCardTypeDialog, setShowIdCardTypeDialog] = useState(false)
+  const [idCardType, setIdCardType] = useState<IdCardType | null>(null)
   const [idCardSide, setIdCardSide] = useState<"front" | "back" | null>(null)
+  const [showCamera, setShowCamera] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [frontImageUrl, setFrontImageUrl] = useState<string | null>(null)
+  const [backImageUrl, setBackImageUrl] = useState<string | null>(null)
+  const [frontFile, setFrontFile] = useState<File | null>(null)
+  const [backFile, setBackFile] = useState<File | null>(null)
 
   const pickAndUpload = (documentType: DocumentType, label: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -51,7 +61,34 @@ export function MyInfoPage() {
   }
 
   const handleIdCardUpload = () => {
-    setIdCardSide("front")
+    setShowIdCardTypeDialog(true)
+  }
+
+  const uploadFile = async (documentType: DocumentType, label: string, file: File): Promise<boolean> => {
+    setUploading(documentType)
+    // TODO: uncomment when upload API is ready
+    // const result = await uploadDocument(documentType, file)
+    const result = { success: true } as const
+    setUploading(null)
+    if (result.success) {
+      setUploaded((prev) => ({ ...prev, [documentType]: true }))
+      showSuccess(`${label} 등록 완료`)
+      return true
+    } else {
+      showError("업로드에 실패했습니다.")
+      return false
+    }
+  }
+
+  const handleIdCardTypeSelect = (type: IdCardType) => {
+    setShowIdCardTypeDialog(false)
+    setIdCardType(type)
+    if (type === "id_card") {
+      setIdCardSide("front")
+      setShowCamera(true)
+    } else {
+      setIdCardSide("front")
+    }
   }
 
   const handleIdCardSelect = async () => {
@@ -63,6 +100,45 @@ export function MyInfoPage() {
     if (ok && side === "front") {
       setIdCardSide("back")
     }
+  }
+
+  const handleCameraCapture = (file: File) => {
+    const side = idCardSide!
+    setShowCamera(false)
+    const url = URL.createObjectURL(file)
+    if (side === "front") {
+      setFrontFile(file)
+      setFrontImageUrl(url)
+    } else {
+      setBackFile(file)
+      setBackImageUrl(url)
+    }
+    setIdCardSide(null)
+    setShowPreview(true)
+  }
+
+  const handlePreviewConfirm = async () => {
+    setShowPreview(false)
+    if (frontFile) {
+      await uploadFile("id_card_front", "신분증(앞면)", frontFile)
+    }
+    if (backFile) {
+      await uploadFile("id_card_back", "신분증(뒷면)", backFile)
+    }
+    setFrontFile(null)
+    setBackFile(null)
+    setFrontImageUrl(null)
+    setBackImageUrl(null)
+  }
+
+  const handlePreviewClose = () => {
+    setShowPreview(false)
+    setFrontFile(null)
+    setBackFile(null)
+    if (frontImageUrl) URL.revokeObjectURL(frontImageUrl)
+    if (backImageUrl) URL.revokeObjectURL(backImageUrl)
+    setFrontImageUrl(null)
+    setBackImageUrl(null)
   }
   const isMyInfoComplete = !!(
     profile?.workerName &&
@@ -127,7 +203,7 @@ export function MyInfoPage() {
             />
             <StatusListItem
               title="신분증"
-              subtitle="앞면 및 뒷면"
+              subtitle="주민등록증, 외국인등록증 또는 여권"
               status={
                 uploading === "id_card_front" || uploading === "id_card_back"
                   ? "pending"
@@ -186,11 +262,38 @@ export function MyInfoPage() {
         className="shrink-0"
       />
 
-      {idCardSide && (
+      {showIdCardTypeDialog && (
+        <IdCardTypeDialog
+          onSelect={handleIdCardTypeSelect}
+          onCancel={() => setShowIdCardTypeDialog(false)}
+        />
+      )}
+
+      {idCardSide && idCardType === "passport" && (
         <IdCardUploadDialog
           side={idCardSide}
           onSelect={handleIdCardSelect}
           onCancel={() => setIdCardSide(null)}
+        />
+      )}
+
+      {showCamera && idCardSide && (
+        <IdCardCamera
+          side={idCardSide}
+          onCapture={handleCameraCapture}
+          onClose={() => { setShowCamera(false); setIdCardSide(null); setShowPreview(!!frontImageUrl) }}
+        />
+      )}
+
+      {showPreview && (
+        <IdCardPreview
+          frontImage={frontImageUrl}
+          backImage={backImageUrl}
+          onTakeBack={() => { setShowPreview(false); setIdCardSide("back"); setShowCamera(true) }}
+          onRetakeFront={() => { setShowPreview(false); setIdCardSide("front"); setShowCamera(true) }}
+          onRetakeBack={() => { setShowPreview(false); setIdCardSide("back"); setShowCamera(true) }}
+          onConfirm={handlePreviewConfirm}
+          onClose={handlePreviewClose}
         />
       )}
     </div>

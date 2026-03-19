@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { Spinner } from "@/components/ui/spinner"
 import { uploadDocument, type DocumentType } from "@/lib/profile"
-import { IdCardUploadDialog } from "@/components/ui/id-card-upload-dialog"
+import { IdCardTypeDialog, IdCardUploadDialog, type IdCardType } from "@/components/ui/id-card-upload-dialog"
+import { IdCardCamera } from "@/components/ui/IdCardCamera"
+import { IdCardPreview } from "@/components/ui/IdCardPreview"
 import { useToast } from "@/contexts/ToastContext"
 
 interface DocumentItem {
@@ -49,7 +51,15 @@ export function OnboardingOutsourcingDocumentsPage() {
   const { showError, showSuccess } = useToast()
   const [uploaded, setUploaded] = useState<Record<string, boolean>>({})
   const [uploading, setUploading] = useState<string | null>(null)
+  const [showIdCardTypeDialog, setShowIdCardTypeDialog] = useState(false)
+  const [idCardType, setIdCardType] = useState<IdCardType | null>(null)
   const [idCardSide, setIdCardSide] = useState<"front" | "back" | null>(null)
+  const [showCamera, setShowCamera] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [frontImageUrl, setFrontImageUrl] = useState<string | null>(null)
+  const [backImageUrl, setBackImageUrl] = useState<string | null>(null)
+  const [frontFile, setFrontFile] = useState<File | null>(null)
+  const [backFile, setBackFile] = useState<File | null>(null)
 
   const pickAndUpload = (documentType: DocumentType, label: string, trackId: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -89,9 +99,75 @@ export function OnboardingOutsourcingDocumentsPage() {
     }
   }
 
+  const uploadFile = async (documentType: DocumentType, label: string, trackId: string, file: File): Promise<boolean> => {
+    setUploading(trackId)
+    // TODO: uncomment when upload API is ready
+    // const result = await uploadDocument(documentType, file)
+    const result = { success: true } as const
+    setUploading(null)
+    if (result.success) {
+      setUploaded((prev) => ({ ...prev, [trackId]: true }))
+      showSuccess(`${label} 등록 완료`)
+      return true
+    } else {
+      showError("업로드에 실패했습니다.")
+      return false
+    }
+  }
+
+  const handleIdCardTypeSelect = (type: IdCardType) => {
+    setShowIdCardTypeDialog(false)
+    setIdCardType(type)
+    if (type === "id_card") {
+      setIdCardSide("front")
+      setShowCamera(true)
+    } else {
+      setIdCardSide("front")
+    }
+  }
+
+  const handleCameraCapture = (file: File) => {
+    const side = idCardSide!
+    setShowCamera(false)
+    const url = URL.createObjectURL(file)
+    if (side === "front") {
+      setFrontFile(file)
+      setFrontImageUrl(url)
+    } else {
+      setBackFile(file)
+      setBackImageUrl(url)
+    }
+    setIdCardSide(null)
+    setShowPreview(true)
+  }
+
+  const handlePreviewConfirm = async () => {
+    setShowPreview(false)
+    if (frontFile) {
+      await uploadFile("id_card_front", "신분증(앞면)", "id-card-front", frontFile)
+    }
+    if (backFile) {
+      await uploadFile("id_card_back", "신분증(뒷면)", "id-card-back", backFile)
+    }
+    setFrontFile(null)
+    setBackFile(null)
+    setFrontImageUrl(null)
+    setBackImageUrl(null)
+  }
+
+  const handlePreviewClose = () => {
+    setShowPreview(false)
+    setFrontFile(null)
+    setBackFile(null)
+    if (frontImageUrl) URL.revokeObjectURL(frontImageUrl)
+    if (backImageUrl) URL.revokeObjectURL(backImageUrl)
+    setFrontImageUrl(null)
+    setBackImageUrl(null)
+  }
+
   const handleUpload = async (doc: DocumentItem) => {
     if (doc.id === "id-card") {
-      setIdCardSide("front")
+      setShowIdCardTypeDialog(true)
     } else {
       await pickAndUpload(doc.apiType, doc.title, doc.id)
     }
@@ -174,11 +250,38 @@ export function OnboardingOutsourcingDocumentsPage() {
         </Button>
       </div>
 
-      {idCardSide && (
+      {showIdCardTypeDialog && (
+        <IdCardTypeDialog
+          onSelect={handleIdCardTypeSelect}
+          onCancel={() => setShowIdCardTypeDialog(false)}
+        />
+      )}
+
+      {idCardSide && idCardType === "passport" && (
         <IdCardUploadDialog
           side={idCardSide}
           onSelect={handleIdCardSelect}
           onCancel={() => setIdCardSide(null)}
+        />
+      )}
+
+      {showCamera && idCardSide && (
+        <IdCardCamera
+          side={idCardSide}
+          onCapture={handleCameraCapture}
+          onClose={() => { setShowCamera(false); setIdCardSide(null); setShowPreview(!!frontImageUrl) }}
+        />
+      )}
+
+      {showPreview && (
+        <IdCardPreview
+          frontImage={frontImageUrl}
+          backImage={backImageUrl}
+          onTakeBack={() => { setShowPreview(false); setIdCardSide("back"); setShowCamera(true) }}
+          onRetakeFront={() => { setShowPreview(false); setIdCardSide("front"); setShowCamera(true) }}
+          onRetakeBack={() => { setShowPreview(false); setIdCardSide("back"); setShowCamera(true) }}
+          onConfirm={handlePreviewConfirm}
+          onClose={handlePreviewClose}
         />
       )}
     </div>
