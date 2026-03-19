@@ -48,7 +48,7 @@ export function LoginPage() {
     setIsSubmitting(false)
 
     if (result.success) {
-      navigate('/')
+      navigate('/home')
     } else {
       setError(result.error || "로그인에 실패했습니다")
     }

@@ -12,19 +12,19 @@ export interface AlertBannerProps {
 
 const variantStyles = {
   warning: {
-    container: "bg-amber-50 text-amber-700",
+    container: "bg-amber-50 text-amber-700 border border-amber-200",
     icon: "text-amber-500",
   },
   error: {
-    container: "bg-red-50 text-red-600",
+    container: "bg-red-50 text-red-600 border border-red-200",
     icon: "text-red-500",
   },
   info: {
-    container: "bg-blue-50 text-blue-700",
+    container: "bg-blue-50 text-blue-700 border border-blue-200",
     icon: "text-blue-500",
   },
   success: {
-    container: "bg-green-50 text-green-700",
+    container: "bg-green-50 text-green-700 border border-green-200",
     icon: "text-green-500",
   },
 }

@@ -126,13 +126,21 @@ export function Home() {
           </h1>
         </div>
 
-        {/* TODO: conditionally show when profile is incomplete */}
-        <div className="px-4 shrink-0">
+        <div className="px-4 shrink-0 space-y-3">
+          {/* ProfileAlertBanner: conditionally show when profile is incomplete */}
           <AlertBanner
             variant="error"
             title="필수 정보 입력이 완료되지 않았어요"
             description="급여 지급을 위해 월말까지 반드시 작성을 완료해주세요."
-            onClick={() => navigate("/onboarding/affiliation")}
+            onClick={() => navigate("/profile")}
+          />
+
+          {/* ContractAlertBanner: conditionally show when unsigned contract exists */}
+          <AlertBanner
+            variant="error"
+            title="서명하지 않은 근로계약서가 있어요"
+            description="급여 지급을 위해 월말까지 반드시 서명해주세요."
+            onClick={() => navigate("/contract")}
           />
         </div>
 

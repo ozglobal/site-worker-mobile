@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { Spinner } from "@/components/ui/spinner"
 import { uploadDocument, type DocumentType } from "@/lib/profile"
+import { IdCardUploadDialog } from "@/components/ui/id-card-upload-dialog"
 import { useToast } from "@/contexts/ToastContext"
 
 interface DocumentItem {
@@ -42,27 +43,52 @@ export function OnboardingDocumentsPage() {
   const { showError, showSuccess } = useToast()
   const [uploaded, setUploaded] = useState<Record<string, boolean>>({})
   const [uploading, setUploading] = useState<string | null>(null)
+  const [idCardSide, setIdCardSide] = useState<"front" | "back" | null>(null)
 
-  const handleUpload = (doc: DocumentItem) => {
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = "image/*,.pdf"
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (!file) return
-
-      setUploading(doc.id)
-      const result = await uploadDocument(doc.apiType, file)
-      setUploading(null)
-
-      if (result.success) {
-        setUploaded((prev) => ({ ...prev, [doc.id]: true }))
-        showSuccess(`${doc.title} 등록 완료`)
-      } else {
-        showError(result.error || "업로드에 실패했습니다.")
+  const pickAndUpload = (documentType: DocumentType, label: string, trackId: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const input = document.createElement("input")
+      input.type = "file"
+      input.accept = "image/*,.pdf"
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0]
+        if (!file) { resolve(false); return }
+        setUploading(trackId)
+        // TODO: uncomment when upload API is ready
+        // const result = await uploadDocument(documentType, file)
+        const result = { success: true } as const
+        setUploading(null)
+        if (result.success) {
+          setUploaded((prev) => ({ ...prev, [trackId]: true }))
+          showSuccess(`${label} 등록 완료`)
+          resolve(true)
+        } else {
+          showError("업로드에 실패했습니다.")
+          resolve(false)
+        }
       }
+      input.click()
+    })
+  }
+
+  const handleIdCardSelect = async () => {
+    const side = idCardSide!
+    setIdCardSide(null)
+    const docType: DocumentType = side === "front" ? "id_card_front" : "id_card_back"
+    const label = side === "front" ? "신분증(앞면)" : "신분증(뒷면)"
+    const trackId = side === "front" ? "id-card-front" : "id-card-back"
+    const ok = await pickAndUpload(docType, label, trackId)
+    if (ok && side === "front") {
+      setIdCardSide("back")
     }
-    input.click()
+  }
+
+  const handleUpload = async (doc: DocumentItem) => {
+    if (doc.id === "id-card") {
+      setIdCardSide("front")
+    } else {
+      await pickAndUpload(doc.apiType, doc.title, doc.id)
+    }
   }
 
   const handleRegisterLater = () => {
@@ -94,31 +120,41 @@ export function OnboardingDocumentsPage() {
       {/* Document cards */}
       <div className="flex-1 overflow-y-auto px-4">
         <div className="space-y-3">
-          {documents.map((doc) => (
-            <button
-              key={doc.id}
-              onClick={() => handleUpload(doc)}
-              disabled={uploading === doc.id}
-              className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-white text-left disabled:opacity-60"
-            >
-              <div>
-                <p className="font-bold text-slate-900">{doc.title}</p>
-                <p className="text-sm text-slate-500 mt-1">{doc.description}</p>
-              </div>
-              <div className="flex items-center shrink-0 ml-4">
-                {uploading === doc.id ? (
-                  <Spinner />
-                ) : uploaded[doc.id] ? (
-                  <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                ) : (
-                  <div className="flex items-center text-slate-400">
-                    <span className="text-sm">등록</span>
-                    <ChevronRightIcon className="h-5 w-5" />
-                  </div>
-                )}
-              </div>
-            </button>
-          ))}
+          {documents.map((doc) => {
+            const isIdCard = doc.id === "id-card"
+            const isUploading = isIdCard
+              ? uploading === "id-card-front" || uploading === "id-card-back"
+              : uploading === doc.id
+            const isComplete = isIdCard
+              ? uploaded["id-card-front"] && uploaded["id-card-back"]
+              : uploaded[doc.id]
+
+            return (
+              <button
+                key={doc.id}
+                onClick={() => handleUpload(doc)}
+                disabled={!!isUploading}
+                className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-white text-left disabled:opacity-60"
+              >
+                <div>
+                  <p className="font-bold text-slate-900">{doc.title}</p>
+                  <p className="text-sm text-slate-500 mt-1">{doc.description}</p>
+                </div>
+                <div className="flex items-center shrink-0 ml-4">
+                  {isUploading ? (
+                    <Spinner />
+                  ) : isComplete ? (
+                    <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <div className="flex items-center text-slate-400">
+                      <span className="text-sm">등록</span>
+                      <ChevronRightIcon className="h-5 w-5" />
+                    </div>
+                  )}
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -131,6 +167,14 @@ export function OnboardingDocumentsPage() {
           등록 완료하기
         </Button>
       </div>
+
+      {idCardSide && (
+        <IdCardUploadDialog
+          side={idCardSide}
+          onSelect={handleIdCardSelect}
+          onCancel={() => setIdCardSide(null)}
+        />
+      )}
     </div>
   )
 }

@@ -4,17 +4,14 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
+import { Spinner } from "@/components/ui/spinner"
+import { QueryErrorState } from "@/components/ui/query-error-state"
 import { ProgressBar } from "@/components/ui/progress-bar"
-
-const companies = [
-  { id: "lotte", name: "롯데건설" },
-  { id: "kyungnam", name: "경남기업" },
-  { id: "kyeryong", name: "계룡건설산업" },
-  { id: "kwangshin", name: "광신종합건설" },
-]
+import { useActivePartners } from "@/lib/queries/useActivePartners"
 
 export function OnboardingOutsourcingPage() {
   const navigate = useNavigate()
+  const { data: partners, isLoading, isError, refetch } = useActivePartners()
   const [selectedCompany, setSelectedCompany] = useState("")
 
   const handleSubmit = () => {
@@ -61,12 +58,18 @@ export function OnboardingOutsourcingPage() {
             <label className="block text-sm font-medium text-slate-700 mb-2">
               용역회사
             </label>
-            <Select
-              options={companies.map((c) => ({ value: c.id, label: c.name }))}
-              value={selectedCompany}
-              onChange={setSelectedCompany}
-              placeholder="용역회사 선택"
-            />
+            {isLoading ? (
+              <div className="flex justify-center py-4"><Spinner /></div>
+            ) : isError ? (
+              <QueryErrorState message="용역회사 목록을 불러오지 못했습니다" onRetry={refetch} />
+            ) : (
+              <Select
+                options={(partners || []).map((p) => ({ value: p.id, label: p.partnerName }))}
+                value={selectedCompany}
+                onChange={setSelectedCompany}
+                placeholder="용역회사 선택"
+              />
+            )}
           </div>
 
           {/* Info Box */}

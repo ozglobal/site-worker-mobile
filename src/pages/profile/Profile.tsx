@@ -6,6 +6,7 @@ import { AlertBanner } from "@/components/ui/alert-banner"
 import { AffiliationCard } from "@/components/ui/affiliation-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
+import { IdCardUploadDialog } from "@/components/ui/id-card-upload-dialog"
 import { handleLogout } from "@/lib/auth"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { uploadDocument, type DocumentType } from "@/lib/profile"
@@ -17,25 +18,51 @@ export function MyInfoPage() {
   const { showSuccess, showError } = useToast()
   const [uploaded, setUploaded] = useState<Record<string, boolean>>({})
   const [uploading, setUploading] = useState<string | null>(null)
+  const [idCardSide, setIdCardSide] = useState<"front" | "back" | null>(null)
+
+  const pickAndUpload = (documentType: DocumentType, label: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const input = document.createElement("input")
+      input.type = "file"
+      input.accept = "image/*,.pdf"
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0]
+        if (!file) { resolve(false); return }
+        setUploading(documentType)
+        // TODO: uncomment when upload API is ready
+        // const result = await uploadDocument(documentType, file)
+        const result = { success: true } as const
+        setUploading(null)
+        if (result.success) {
+          setUploaded((prev) => ({ ...prev, [documentType]: true }))
+          showSuccess(`${label} 등록 완료`)
+          resolve(true)
+        } else {
+          showError("업로드에 실패했습니다.")
+          resolve(false)
+        }
+      }
+      input.click()
+    })
+  }
 
   const handleUpload = (documentType: DocumentType, title: string) => {
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = "image/*,.pdf"
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (!file) return
-      setUploading(documentType)
-      const result = await uploadDocument(documentType, file)
-      setUploading(null)
-      if (result.success) {
-        setUploaded((prev) => ({ ...prev, [documentType]: true }))
-        showSuccess(`${title} 등록 완료`)
-      } else {
-        showError(result.error || "업로드에 실패했습니다.")
-      }
+    pickAndUpload(documentType, title)
+  }
+
+  const handleIdCardUpload = () => {
+    setIdCardSide("front")
+  }
+
+  const handleIdCardSelect = async () => {
+    const side = idCardSide!
+    setIdCardSide(null)
+    const docType: DocumentType = side === "front" ? "id_card_front" : "id_card_back"
+    const label = side === "front" ? "신분증(앞면)" : "신분증(뒷면)"
+    const ok = await pickAndUpload(docType, label)
+    if (ok && side === "front") {
+      setIdCardSide("back")
     }
-    input.click()
   }
   const isMyInfoComplete = !!(
     profile?.workerName &&
@@ -100,9 +127,15 @@ export function MyInfoPage() {
             />
             <StatusListItem
               title="신분증"
-              subtitle="연락처 및 기본 정보"
-              status={uploading === "id_card_front" ? "pending" : uploaded["id_card_front"] ? "complete" : "incomplete"}
-              onClick={() => handleUpload("id_card_front", "신분증")}
+              subtitle="앞면 및 뒷면"
+              status={
+                uploading === "id_card_front" || uploading === "id_card_back"
+                  ? "pending"
+                  : uploaded["id_card_front"] && uploaded["id_card_back"]
+                    ? "complete"
+                    : "incomplete"
+              }
+              onClick={handleIdCardUpload}
             />
             <StatusListItem
               title="안전교육 이수증"
@@ -152,6 +185,14 @@ export function MyInfoPage() {
         onNavigate={handleNavigation}
         className="shrink-0"
       />
+
+      {idCardSide && (
+        <IdCardUploadDialog
+          side={idCardSide}
+          onSelect={handleIdCardSelect}
+          onCancel={() => setIdCardSide(null)}
+        />
+      )}
     </div>
   )
 }

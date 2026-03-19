@@ -154,7 +154,48 @@ function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
-export type DocumentType = 'id_card_front' | 'safety_cert' | 'bankbook' | 'business_license' | 'proxy_general'
+export interface Partner {
+  id: string
+  partnerName: string
+  partnerType: string
+}
+
+export interface ActivePartnersResponse {
+  success: boolean
+  data?: Partner[]
+  error?: string
+}
+
+/**
+ * Fetch active partners via GET /system/partner/active
+ */
+export const fetchActivePartners = async (): Promise<ActivePartnersResponse> => {
+  try {
+    const response = await authFetch(`${API_BASE_URL}/system/partner/active`, {
+      method: 'GET',
+      headers: { 'accept': '*/*' },
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!json) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
+    if (!response.ok) {
+      return { success: false, error: `API error: ${response.status}` }
+    }
+
+    const data = (json.data || []) as Partner[]
+    return { success: true, data }
+  } catch (error) {
+    console.error('[PROFILE] fetchActivePartners error:', error)
+    reportError('PARTNER_FETCH_FAIL', 'Network error', { endpoint: '/system/partner/active' })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export type DocumentType = 'id_card_front' | 'id_card_back' | 'safety_cert' | 'bankbook' | 'business_license' | 'proxy_general'
 
 export interface UploadDocumentResponse {
   success: boolean

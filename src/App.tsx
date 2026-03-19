@@ -61,13 +61,13 @@ const PublicRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? <Navigate to="/" replace /> : children;
+  return isAuthenticated ? <Navigate to="/home" replace /> : children;
 };
 
 // Catch-all redirect component
 const CatchAllRedirect: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  return <Navigate to={isAuthenticated ? "/" : "/login"} replace />;
+  return <Navigate to={isAuthenticated ? "/home" : "/login"} replace />;
 };
 
 const AppRoutes: React.FC = () => {
@@ -114,7 +114,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/profile/myinfo" element={<MyInfoDetailPage />} />
       <Route path="/change-password" element={<ChangePasswordPage />} />
       <Route path="/test/schedule-add" element={<ScheduleAddPage />} />
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<Navigate to="/home" replace />} />
       {/* Catch-all: redirect unknown routes to home or login */}
       <Route path="*" element={<CatchAllRedirect />} />
     </Routes>
