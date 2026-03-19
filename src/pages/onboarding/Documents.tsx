@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { Spinner } from "@/components/ui/spinner"
 import { uploadDocument, type DocumentType } from "@/lib/profile"
-import { IdCardTypeDialog, IdCardUploadDialog, type IdCardType } from "@/components/ui/id-card-upload-dialog"
+import { IdCardTypeDialog, type IdCardType } from "@/components/ui/id-card-upload-dialog"
 import { IdCardCamera } from "@/components/ui/IdCardCamera"
 import { IdCardPreview } from "@/components/ui/IdCardPreview"
 import { useToast } from "@/contexts/ToastContext"
@@ -81,18 +81,6 @@ export function OnboardingDocumentsPage() {
     })
   }
 
-  const handleIdCardSelect = async () => {
-    const side = idCardSide!
-    setIdCardSide(null)
-    const docType: DocumentType = side === "front" ? "id_card_front" : "id_card_back"
-    const label = side === "front" ? "신분증(앞면)" : "신분증(뒷면)"
-    const trackId = side === "front" ? "id-card-front" : "id-card-back"
-    const ok = await pickAndUpload(docType, label, trackId)
-    if (ok && side === "front") {
-      setIdCardSide("back")
-    }
-  }
-
   const uploadFile = async (documentType: DocumentType, label: string, trackId: string, file: File): Promise<boolean> => {
     setUploading(trackId)
     // TODO: uncomment when upload API is ready
@@ -112,12 +100,8 @@ export function OnboardingDocumentsPage() {
   const handleIdCardTypeSelect = (type: IdCardType) => {
     setShowIdCardTypeDialog(false)
     setIdCardType(type)
-    if (type === "id_card") {
-      setIdCardSide("front")
-      setShowCamera(true)
-    } else {
-      setIdCardSide("front")
-    }
+    setIdCardSide("front")
+    setShowCamera(true)
   }
 
   const handleCameraCapture = (file: File) => {
@@ -251,14 +235,6 @@ export function OnboardingDocumentsPage() {
         />
       )}
 
-      {idCardSide && idCardType === "passport" && (
-        <IdCardUploadDialog
-          side={idCardSide}
-          onSelect={handleIdCardSelect}
-          onCancel={() => setIdCardSide(null)}
-        />
-      )}
-
       {showCamera && idCardSide && (
         <IdCardCamera
           side={idCardSide}
@@ -271,6 +247,7 @@ export function OnboardingDocumentsPage() {
         <IdCardPreview
           frontImage={frontImageUrl}
           backImage={backImageUrl}
+          needsBack={idCardType === "id_card"}
           onTakeBack={() => { setShowPreview(false); setIdCardSide("back"); setShowCamera(true) }}
           onRetakeFront={() => { setShowPreview(false); setIdCardSide("front"); setShowCamera(true) }}
           onRetakeBack={() => { setShowPreview(false); setIdCardSide("back"); setShowCamera(true) }}

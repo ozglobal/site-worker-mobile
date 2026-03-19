@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 interface IdCardPreviewProps {
   frontImage: string | null
   backImage: string | null
+  needsBack?: boolean
   onTakeBack: () => void
   onRetakeFront: () => void
   onRetakeBack: () => void
@@ -16,6 +17,7 @@ interface IdCardPreviewProps {
 export function IdCardPreview({
   frontImage,
   backImage,
+  needsBack = true,
   onTakeBack,
   onRetakeFront,
   onRetakeBack,
@@ -24,13 +26,13 @@ export function IdCardPreview({
 }: IdCardPreviewProps) {
   const [showBackGuide, setShowBackGuide] = useState(false)
 
-  // Show back guide dialog after front photo is taken
+  // Show back guide dialog after front photo is taken (only if back is needed)
   useEffect(() => {
-    if (frontImage && !backImage) {
+    if (needsBack && frontImage && !backImage) {
       const timer = setTimeout(() => setShowBackGuide(true), 500)
       return () => clearTimeout(timer)
     }
-  }, [frontImage, backImage])
+  }, [needsBack, frontImage, backImage])
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
@@ -70,7 +72,7 @@ export function IdCardPreview({
         </div>
 
         {/* Back */}
-        <div className="mb-8">
+        {needsBack && <div className="mb-8">
           <p className="text-center font-bold text-slate-900 mb-3">뒷면</p>
           {backImage ? (
             <div className="relative">
@@ -97,11 +99,11 @@ export function IdCardPreview({
               <span className="text-sm text-gray-400">뒷면 촬영</span>
             </button>
           )}
-        </div>
+        </div>}
       </div>
 
       {/* Bottom button */}
-      {frontImage && backImage && (
+      {frontImage && (!needsBack || backImage) && (
         <div className="px-4 pb-8 pt-4 shrink-0">
           <Button variant="primary" size="full" onClick={onConfirm}>
             등록 완료
@@ -110,7 +112,7 @@ export function IdCardPreview({
       )}
 
       {/* Back guide dialog */}
-      {showBackGuide && !backImage && (
+      {needsBack && showBackGuide && !backImage && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowBackGuide(false)} />
           <div className="relative bg-white rounded-2xl w-[90%] max-w-sm mx-auto overflow-hidden">

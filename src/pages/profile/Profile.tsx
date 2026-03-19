@@ -6,7 +6,7 @@ import { AlertBanner } from "@/components/ui/alert-banner"
 import { AffiliationCard } from "@/components/ui/affiliation-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
-import { IdCardTypeDialog, IdCardUploadDialog, type IdCardType } from "@/components/ui/id-card-upload-dialog"
+import { IdCardTypeDialog, type IdCardType } from "@/components/ui/id-card-upload-dialog"
 import { IdCardCamera } from "@/components/ui/IdCardCamera"
 import { IdCardPreview } from "@/components/ui/IdCardPreview"
 import { handleLogout } from "@/lib/auth"
@@ -83,23 +83,8 @@ export function MyInfoPage() {
   const handleIdCardTypeSelect = (type: IdCardType) => {
     setShowIdCardTypeDialog(false)
     setIdCardType(type)
-    if (type === "id_card") {
-      setIdCardSide("front")
-      setShowCamera(true)
-    } else {
-      setIdCardSide("front")
-    }
-  }
-
-  const handleIdCardSelect = async () => {
-    const side = idCardSide!
-    setIdCardSide(null)
-    const docType: DocumentType = side === "front" ? "id_card_front" : "id_card_back"
-    const label = side === "front" ? "신분증(앞면)" : "신분증(뒷면)"
-    const ok = await pickAndUpload(docType, label)
-    if (ok && side === "front") {
-      setIdCardSide("back")
-    }
+    setIdCardSide("front")
+    setShowCamera(true)
   }
 
   const handleCameraCapture = (file: File) => {
@@ -269,14 +254,6 @@ export function MyInfoPage() {
         />
       )}
 
-      {idCardSide && idCardType === "passport" && (
-        <IdCardUploadDialog
-          side={idCardSide}
-          onSelect={handleIdCardSelect}
-          onCancel={() => setIdCardSide(null)}
-        />
-      )}
-
       {showCamera && idCardSide && (
         <IdCardCamera
           side={idCardSide}
@@ -289,6 +266,7 @@ export function MyInfoPage() {
         <IdCardPreview
           frontImage={frontImageUrl}
           backImage={backImageUrl}
+          needsBack={idCardType === "id_card"}
           onTakeBack={() => { setShowPreview(false); setIdCardSide("back"); setShowCamera(true) }}
           onRetakeFront={() => { setShowPreview(false); setIdCardSide("front"); setShowCamera(true) }}
           onRetakeBack={() => { setShowPreview(false); setIdCardSide("back"); setShowCamera(true) }}
