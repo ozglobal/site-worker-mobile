@@ -63,6 +63,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      '/juso-api': {
+        target: 'https://business.juso.go.kr',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path: string) => path.replace(/^\/juso-api/, ''),
+      },
     },
   },
 

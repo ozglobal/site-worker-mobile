@@ -9,6 +9,8 @@ import { Select } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { uploadDocument } from "@/lib/profile"
+import { useToast } from "@/contexts/ToastContext"
 
 interface Bank {
   id: string
@@ -29,10 +31,12 @@ const banks: Bank[] = [
 export function MyAccountPage() {
   const navigate = useNavigate()
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
+  const { showSuccess, showError } = useToast()
   const [accountHolder, setAccountHolder] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
   const [certificateFile, setCertificateFile] = useState<File | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (profile) {
@@ -42,9 +46,23 @@ export function MyAccountPage() {
     }
   }, [profile])
 
-  const handleSubmit = () => {
-    // TODO: Save account info
-    navigate("/profile")
+  const handleSubmit = async () => {
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      // TODO: Save account info (bankName, accountNumber, accountHolder) when API is ready
+      if (certificateFile) {
+        const result = await uploadDocument("bankbook", certificateFile)
+        if (!result.success) {
+          showError("통장사본 업로드에 실패했습니다.")
+          return
+        }
+      }
+      showSuccess("저장되었습니다.")
+      navigate("/profile")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleFamilyProxy = () => {
@@ -169,10 +187,10 @@ export function MyAccountPage() {
             <Button
               variant={isFormValid ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
               onClick={handleSubmit}
             >
-              저장
+              {isSubmitting ? "저장 중..." : "저장"}
             </Button>
           </div>
         </div>

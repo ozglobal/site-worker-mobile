@@ -13,11 +13,13 @@ import { handleLogout } from "@/lib/auth"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { uploadDocument, type DocumentType } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
+import { useWorkerDocuments } from "@/lib/queries/useWorkerDocuments"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
   const { data: profile } = useWorkerProfile()
   const { showSuccess, showError } = useToast()
+  const { data: documents = [] } = useWorkerDocuments()
   const [uploaded, setUploaded] = useState<Record<string, boolean>>({})
   const [uploading, setUploading] = useState<string | null>(null)
   const [showIdCardTypeDialog, setShowIdCardTypeDialog] = useState(false)
@@ -39,9 +41,7 @@ export function MyInfoPage() {
         const file = (e.target as HTMLInputElement).files?.[0]
         if (!file) { resolve(false); return }
         setUploading(documentType)
-        // TODO: uncomment when upload API is ready
-        // const result = await uploadDocument(documentType, file)
-        const result = { success: true } as const
+        const result = await uploadDocument(documentType, file)
         setUploading(null)
         if (result.success) {
           setUploaded((prev) => ({ ...prev, [documentType]: true }))
@@ -66,9 +66,7 @@ export function MyInfoPage() {
 
   const uploadFile = async (documentType: DocumentType, label: string, file: File): Promise<boolean> => {
     setUploading(documentType)
-    // TODO: uncomment when upload API is ready
-    // const result = await uploadDocument(documentType, file)
-    const result = { success: true } as const
+    const result = await uploadDocument(documentType, file)
     setUploading(null)
     if (result.success) {
       setUploaded((prev) => ({ ...prev, [documentType]: true }))
@@ -125,6 +123,9 @@ export function MyInfoPage() {
     setFrontImageUrl(null)
     setBackImageUrl(null)
   }
+  const hasDocument = (type: string) =>
+    uploaded[type] || documents.some(d => d.documentType === type)
+
   const isMyInfoComplete = !!(
     profile?.workerName &&
     profile?.ssnFirst &&
@@ -192,7 +193,7 @@ export function MyInfoPage() {
               status={
                 uploading === "id_card_front" || uploading === "id_card_back"
                   ? "pending"
-                  : uploaded["id_card_front"] && uploaded["id_card_back"]
+                  : hasDocument("id_card_front") && hasDocument("id_card_back")
                     ? "complete"
                     : "incomplete"
               }
@@ -201,19 +202,19 @@ export function MyInfoPage() {
             <StatusListItem
               title="안전교육 이수증"
               subtitle="기초안전보건교육 이수증"
-              status={uploading === "safety_cert" ? "pending" : uploaded["safety_cert"] ? "complete" : "incomplete"}
+              status={uploading === "safety_cert" ? "pending" : hasDocument("safety_cert") ? "complete" : "incomplete"}
               onClick={() => handleUpload("safety_cert", "안전교육 이수증")}
             />
             <StatusListItem
               title="사업자등록증"
               subtitle="법인 사업자등록증"
-              status={uploading === "business_license" ? "pending" : uploaded["business_license"] ? "complete" : "incomplete"}
+              status={uploading === "business_license" ? "pending" : hasDocument("business_license") ? "complete" : "incomplete"}
               onClick={() => handleUpload("business_license", "사업자등록증")}
             />
             <StatusListItem
               title="위임장"
               subtitle="급여 타인명의 지급 동의서"
-              status={uploading === "proxy_general" ? "pending" : uploaded["proxy_general"] ? "complete" : "incomplete"}
+              status={uploading === "proxy_general" ? "pending" : hasDocument("proxy_general") ? "complete" : "incomplete"}
               onClick={() => handleUpload("proxy_general", "위임장")}
               className="border-b-0"
             />

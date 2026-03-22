@@ -1,5 +1,5 @@
 import { authFetch } from './auth'
-import { safeJson } from './api-result'
+import { safeJson, type ApiResult } from './api-result'
 import { API_BASE_URL } from './config'
 import { reportError } from './errorReporter'
 
@@ -191,6 +191,108 @@ export const fetchActivePartners = async (): Promise<ActivePartnersResponse> => 
   } catch (error) {
     console.error('[PROFILE] fetchActivePartners error:', error)
     reportError('PARTNER_FETCH_FAIL', 'Network error', { endpoint: '/system/partner/active' })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * Update worker profile via POST /system/worker
+ */
+export const updateWorkerProfile = async (data: {
+  workerName: string
+  ssnFirst: string
+  ssnSecond: string
+  phone: string
+  address: string
+}): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch (error) {
+    console.error('[PROFILE] updateWorkerProfile error:', error)
+    reportError('PROFILE_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * Update worker profile via PUT /system/worker/me
+ */
+export const updateWorkerAddress = async (
+  address: string
+): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address }),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch (error) {
+    console.error('[PROFILE] updateWorkerAddress error:', error)
+    reportError('PROFILE_ADDRESS_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export interface WorkerDocument {
+  id: string
+  documentType: string
+  documentGroup: string
+  documentName: string
+  status: string
+  fileId: string
+}
+
+/**
+ * Fetch worker documents via GET /system/worker/me/document
+ */
+export const fetchWorkerDocuments = async (): Promise<ApiResult<WorkerDocument[]>> => {
+  const endpoint = '/system/worker/me/document'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: { 'accept': '*/*' },
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    const payload = json?.data || json
+    const data = (Array.isArray(payload) ? payload : []) as WorkerDocument[]
+    return { success: true, data }
+  } catch (error) {
+    console.error('[PROFILE] fetchWorkerDocuments error:', error)
+    reportError('PROFILE_DOCUMENTS_FETCH_FAIL', 'Network error', { endpoint })
     return { success: false, error: 'Network error' }
   }
 }

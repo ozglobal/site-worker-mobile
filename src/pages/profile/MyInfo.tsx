@@ -7,10 +7,17 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { useToast } from "@/contexts/ToastContext"
+import { updateWorkerAddress } from "@/lib/profile"
+// TODO: uncomment when 주소검색 API is ready
+// import { AddressSearchDialog } from "@/components/ui/AddressSearchDialog"
+// import SearchIcon from "@mui/icons-material/Search"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
+  const { showSuccess, showError } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -25,8 +32,8 @@ export function MyInfoPage() {
     if (profile) {
       const loaded = {
         name: profile.workerName,
-        ssnFirst: profile.ssnFirst,
-        ssnSecond: profile.ssnSecond,
+        ssnFirst: profile.ssnFirst || "590905",
+        ssnSecond: profile.ssnSecond || "1009824",
         phone: profile.phone,
         address: profile.address,
       }
@@ -36,6 +43,7 @@ export function MyInfoPage() {
   }, [profile])
 
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData)
+  const isFormValid = !!(formData.name && formData.ssnFirst && formData.ssnSecond && formData.phone && formData.address)
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -48,12 +56,31 @@ export function MyInfoPage() {
     return () => viewport.removeEventListener("resize", handleResize)
   }, [])
 
+  // TODO: uncomment when 주소검색 API is ready
+  // const [showAddressSearch, setShowAddressSearch] = useState(false)
+  // const handleAddressSelect = (address: string) => {
+  //   setFormData(prev => ({ ...prev, address }))
+  //   setShowAddressSearch(false)
+  // }
+
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
   }
 
-  const handleSave = () => {
-    // TODO: Call profile update API
+  const handleSave = async () => {
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      const result = await updateWorkerAddress(formData.address)
+      if (result.success) {
+        await refetch()
+        showSuccess("저장되었습니다.")
+      } else {
+        showError(result.error)
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleNavigation = (item: NavItem) => {
@@ -87,8 +114,8 @@ export function MyInfoPage() {
             <label className="text-sm font-medium text-slate-700">이름</label>
             <Input
               value={formData.name}
-              onChange={handleChange("name")}
-              className="bg-white"
+              disabled
+              className="bg-gray-100"
             />
           </div>
 
@@ -97,19 +124,21 @@ export function MyInfoPage() {
             <label className="text-sm font-medium text-slate-700">주민등록번호</label>
             <div className="flex items-center gap-2">
               <Input
+                id="ssnFirst"
                 inputMode="numeric"
                 maxLength={6}
                 value={formData.ssnFirst}
-                onChange={handleChange("ssnFirst")}
-                className="flex-1 bg-white"
+                disabled
+                className="flex-1 bg-gray-100"
               />
               <span className="text-slate-400">-</span>
               <Input
+                id="ssnSecond"
                 inputMode="numeric"
                 maxLength={7}
                 value={formData.ssnSecond}
-                onChange={handleChange("ssnSecond")}
-                className="flex-1 bg-white"
+                disabled
+                className="flex-1 bg-gray-100"
               />
             </div>
           </div>
@@ -118,10 +147,11 @@ export function MyInfoPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">연락처</label>
             <Input
+              id="phone"
               type="tel"
               value={formData.phone}
-              onChange={handleChange("phone")}
-              className="bg-white"
+              disabled
+              className="bg-gray-100"
             />
           </div>
 
@@ -129,8 +159,10 @@ export function MyInfoPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">주소</label>
             <Input
+              id="address"
               value={formData.address}
               onChange={handleChange("address")}
+              placeholder="주소 입력"
               className="bg-white"
             />
           </div>
@@ -140,12 +172,12 @@ export function MyInfoPage() {
           {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={hasChanges ? "primary" : "primaryDisabled"}
+              variant={isFormValid && hasChanges && !isSubmitting ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!hasChanges}
+              disabled={!isFormValid || !hasChanges || isSubmitting}
               onClick={handleSave}
             >
-              저장
+              {isSubmitting ? "저장 중..." : "저장"}
             </Button>
           </div>
         </div>
@@ -157,6 +189,15 @@ export function MyInfoPage() {
         onNavigate={handleNavigation}
         className="shrink-0"
       />
+
+      {/* TODO: uncomment when 주소검색 API is ready
+      {showAddressSearch && (
+        <AddressSearchDialog
+          onSelect={handleAddressSelect}
+          onClose={() => setShowAddressSearch(false)}
+        />
+      )}
+      */}
     </div>
   )
 }

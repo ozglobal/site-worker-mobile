@@ -106,29 +106,26 @@ export function ContractPage() {
             contracts.map((contract) => (
               <div
                 key={contract.id}
-                role={contract.status !== "in_progress" ? "button" : undefined}
-                tabIndex={contract.status !== "in_progress" ? 0 : undefined}
+                role="button"
+                tabIndex={0}
                 onClick={
-                  contract.status === "sent" ? () => handleSigningClick(contract.id)
-                  : contract.status === "completed" ? () => handlePdfClick(contract.id)
-                  : undefined
-                }
-                onKeyDown={
-                  contract.status !== "in_progress"
-                    ? (e) => {
-                        if (e.key === "Enter") {
-                          if (contract.status === "sent") handleSigningClick(contract.id)
-                          else if (contract.status === "completed") handlePdfClick(contract.id)
-                        }
-                      }
+                  contract.status === "sent" || contract.status === "in_progress"
+                    ? () => handleSigningClick(contract.id)
+                    : contract.status === "completed" ? () => handlePdfClick(contract.id)
                     : undefined
                 }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (contract.status === "sent" || contract.status === "in_progress") handleSigningClick(contract.id)
+                    else if (contract.status === "completed") handlePdfClick(contract.id)
+                  }
+                }}
                 className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm ${
                   contract.status === "sent"
                     ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25 cursor-pointer"
                     : contract.status === "completed"
-                    ? "border-gray-100 cursor-pointer"
-                    : "border-gray-100"
+                    ? "border-green-500 cursor-pointer"
+                    : "border-blue-500 cursor-pointer"
                 }`}
               >
                 <div className="flex flex-col items-start gap-2">

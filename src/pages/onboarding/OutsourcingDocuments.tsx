@@ -70,9 +70,7 @@ export function OnboardingOutsourcingDocumentsPage() {
         const file = (e.target as HTMLInputElement).files?.[0]
         if (!file) { resolve(false); return }
         setUploading(trackId)
-        // TODO: uncomment when upload API is ready
-        // const result = await uploadDocument(documentType, file)
-        const result = { success: true } as const
+        const result = await uploadDocument(documentType, file)
         setUploading(null)
         if (result.success) {
           setUploaded((prev) => ({ ...prev, [trackId]: true }))
@@ -89,9 +87,7 @@ export function OnboardingOutsourcingDocumentsPage() {
 
   const uploadFile = async (documentType: DocumentType, label: string, trackId: string, file: File): Promise<boolean> => {
     setUploading(trackId)
-    // TODO: uncomment when upload API is ready
-    // const result = await uploadDocument(documentType, file)
-    const result = { success: true } as const
+    const result = await uploadDocument(documentType, file)
     setUploading(null)
     if (result.success) {
       setUploaded((prev) => ({ ...prev, [trackId]: true }))
