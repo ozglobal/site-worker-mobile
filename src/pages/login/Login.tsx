@@ -113,9 +113,17 @@ export function LoginPage() {
         <label className="flex items-center gap-2 mt-1 cursor-pointer">
           <Checkbox
             checked={autoLogin}
-            onCheckedChange={(checked) => setAutoLogin(checked === true)}
+            onCheckedChange={(checked) => {
+              const value = checked === true
+              setAutoLogin(value)
+              if (value) {
+                autoLoginStorage.enable()
+              } else {
+                autoLoginStorage.disable()
+              }
+            }}
           />
-          <span className="text-sm text-slate-500">자동 로그인 설정</span>
+          <span className="text-sm text-slate-500">자동 로그인</span>
         </label>
 
         {/* Honeypot */}
