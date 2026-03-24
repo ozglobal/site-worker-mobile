@@ -23,7 +23,7 @@ export function OnboardingPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-8">
         <div className="text-8xl mb-8">👋</div>
 
-        <h1 className="text-2xl font-bold text-slate-900 text-center mb-4">
+        <h1 className="text-lg font-bold text-slate-900 text-center mb-4">
           안녕하세요, {worker?.workerName || ""}님!
         </h1>
 

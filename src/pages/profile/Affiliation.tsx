@@ -68,7 +68,7 @@ export function AffiliationPage() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4">
         {/* Title */}
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">소속을 선택해주세요</h1>
+        <h1 className="text-lg font-bold text-slate-900 mb-2">소속을 선택해주세요</h1>
         <p className="text-slate-500 mb-6">선택한 소속은 나중에 언제든지 변경할 수 있어요.</p>
 
         {/* Affiliation Cards */}

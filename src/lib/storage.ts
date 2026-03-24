@@ -278,6 +278,20 @@ export const checkinSiteStorage = {
 }
 
 // ============================================
+// Auto Login Storage (persists across logouts)
+// ============================================
+
+export const autoLoginStorage = {
+  isEnabled: (): boolean => localStorage.getItem('auto_login') === 'true',
+
+  enable: (): void => localStorage.setItem('auto_login', 'true'),
+
+  disable: (): void => localStorage.setItem('auto_login', 'false'),
+
+  clear: (): void => removeStorageItem('auto_login'),
+}
+
+// ============================================
 // Clear All Storage (for logout)
 // ============================================
 

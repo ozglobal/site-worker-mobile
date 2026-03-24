@@ -10,7 +10,7 @@ import { createNotification, type Notification } from "./skills"
 // Constants
 // ============================================
 
-const AUTO_DISMISS_MS = 5000
+const AUTO_DISMISS_MS = 8000
 
 // ============================================
 // Types

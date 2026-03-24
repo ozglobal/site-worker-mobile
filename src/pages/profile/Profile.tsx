@@ -227,7 +227,7 @@ export function MyInfoPage() {
             variant="outline"
             size="lg"
             onClick={() => navigate("/change-password")}
-            className="flex-1 bg-white border-gray-200 text-slate-900 hover:bg-gray-50"
+            className="flex-1 bg-white border-gray-200 text-slate-600 hover:bg-gray-50 font-semibold"
           >
             비밀번호 변경
           </Button>
@@ -235,7 +235,7 @@ export function MyInfoPage() {
             variant="destructive"
             size="lg"
             onClick={handleLogout}
-            className="flex-1 bg-red-50 text-red-500 border border-red-100 hover:bg-red-100"
+            className="flex-1 bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 font-semibold"
           >
             로그아웃
           </Button>

@@ -28,7 +28,7 @@ export function AgreementPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
           <div className="px-4 py-6">
-            <h1 className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
+            <h1 className="text-lg font-bold text-slate-900 mb-6 leading-tight">
               서비스 이용을 위해<br />약관에 동의해주세요
             </h1>
 

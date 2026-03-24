@@ -21,7 +21,7 @@ export function SignUpPage() {
 
       <main className="flex-1 overflow-hidden px-4">
         <div className="mt-4">
-          <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
+          <p className="text-lg font-bold text-slate-900 mb-6 leading-tight">
             회원 가입을 위해 본인 인증을<br />진행해 주세요
           </p>
 

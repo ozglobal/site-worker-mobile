@@ -169,7 +169,7 @@ export function OnboardingDocumentsPage() {
 
       {/* Title */}
       <div className="px-4 mb-6 shrink-0">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">필수 서류를 등록해주세요</h1>
+        <h1 className="text-lg font-bold text-slate-900 mb-2">필수 서류를 등록해주세요</h1>
         <p className="text-slate-500">각 항목을 눌러 사진을 촬영하거나 파일을 업로드해주세요.</p>
       </div>
 

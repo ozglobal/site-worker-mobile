@@ -22,7 +22,7 @@ export function DomesticForeignPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
           <div className="px-4 py-6">
-            <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
+            <p className="text-lg font-bold text-slate-900 mb-6 leading-tight">
               회원 유형을 선택해주세요.
             </p>
 

@@ -65,7 +65,7 @@ export function SmsVerificationPage() {
       <main className="flex-1 overflow-hidden">
         <div className="flex flex-col min-h-full">
           <div className="px-4 py-6 space-y-6">
-            <p className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
+            <p className="text-lg font-bold text-slate-900 mb-6 leading-tight">
               현재 이용중인 휴대폰 번호를<br /> 인증해주세요.
             </p>
 

@@ -45,7 +45,7 @@ export function SignUpStep3Page() {
 
       <main className="flex-1 overflow-y-auto bg-white px-4">
         <div className="mt-4">
-          <p className="text-2xl font-bold text-slate-900 mb-6">비밀번호를 설정해주세요</p>
+          <p className="text-lg font-bold text-slate-900 mb-6">비밀번호를 설정해주세요</p>
 
           <input {...honeypotProps} />
 

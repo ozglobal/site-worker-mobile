@@ -23,7 +23,7 @@ export function SignUpCompletePage() {
           </svg>
         </div>
 
-        <p className="text-2xl font-bold text-slate-900 mb-2">회원 가입 완료</p>
+        <p className="text-lg font-bold text-slate-900 mb-2">회원 가입 완료</p>
         <p className="text-slate-500 mb-8">가입한 계정으로 로그인해주세요</p>
 
         <div className="w-full">

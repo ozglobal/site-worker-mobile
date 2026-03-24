@@ -24,7 +24,7 @@ export function PayrollAccountPage() {
           <div className="bg-gray-200 w-1/2" />
         </div>
 
-        <p className="text-2xl font-bold text-slate-900 mb-2 leading-tight">
+        <p className="text-lg font-bold text-slate-900 mb-2 leading-tight">
           급여 지급 방식을 알려주세요
         </p>
         <p className="text-sm text-slate-500 mb-8">

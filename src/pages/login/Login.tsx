@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom"
 import { IconEye, IconEyeClosed } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/contexts/AuthContext"
 import { useHoneypot } from "@/hooks/useHoneypot"
+import { autoLoginStorage } from "@/lib/storage"
 
 export function LoginPage() {
   const [phone, setPhone] = useState("")
@@ -15,6 +17,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
   const { honeypotProps, isBotDetected } = useHoneypot()
+  const [autoLogin, setAutoLogin] = useState(() => autoLoginStorage.isEnabled())
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
@@ -48,6 +51,11 @@ export function LoginPage() {
     setIsSubmitting(false)
 
     if (result.success) {
+      if (autoLogin) {
+        autoLoginStorage.enable()
+      } else {
+        autoLoginStorage.disable()
+      }
       navigate('/home')
     } else {
       setError(result.error || "로그인에 실패했습니다")
@@ -100,6 +108,15 @@ export function LoginPage() {
             )}
           </button>
         </div>
+
+        {/* Auto Login Checkbox */}
+        <label className="flex items-center gap-2 mt-1 cursor-pointer">
+          <Checkbox
+            checked={autoLogin}
+            onCheckedChange={(checked) => setAutoLogin(checked === true)}
+          />
+          <span className="text-sm text-slate-500">자동 로그인 설정</span>
+        </label>
 
         {/* Honeypot */}
         <input {...honeypotProps} />

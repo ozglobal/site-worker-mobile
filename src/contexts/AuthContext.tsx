@@ -10,6 +10,7 @@ import {
   checkAndRefreshToken,
   type LoginParams,
 } from '@/lib/auth'
+import { autoLoginStorage, workerStorage, checkinSiteStorage } from '@/lib/storage'
 
 interface WorkerInfo {
   workerId: string | null
@@ -67,8 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
-    clearTokens()
-    clearWorkerInfo()
+    if (autoLoginStorage.isEnabled()) {
+      // Keep auth tokens for auto-login, only clear UI state
+      clearWorkerInfo()
+      workerStorage.clear()
+      checkinSiteStorage.clear()
+    } else {
+      clearTokens()
+      clearWorkerInfo()
+    }
     setIsAuthenticated(false)
     setWorker(null)
     window.location.href = '/login'
