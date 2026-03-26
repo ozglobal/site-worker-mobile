@@ -13,18 +13,18 @@ interface FrameRect {
 }
 
 /**
- * Minimal document detection hook.
+ * Document detection hook.
  *
- * Analyses the frame region of a video feed by checking:
- * 1. Edge density — documents have clear edges compared to empty surfaces
- * 2. Brightness contrast — paper is typically brighter than the background
- *
- * Returns detection state + confidence (0–1).
+ * Detects a document that COMPLETELY fills the frame by checking
+ * all 4 inner edge strips of the frame. Each strip must be bright
+ * and uniform (paper), not dark (background). If any edge shows
+ * background, detection fails — meaning the document only partially
+ * covers the frame.
  */
 export function useDocumentDetection() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const stableCountRef = useRef(0)
-  const STABLE_THRESHOLD = 10 // ~2.5s at 250ms interval
+  const STABLE_THRESHOLD = 10
 
   const getCanvas = () => {
     if (!canvasRef.current) {
@@ -33,9 +33,33 @@ export function useDocumentDetection() {
     return canvasRef.current
   }
 
+  const getBrightness = (data: Uint8ClampedArray, idx: number) =>
+    data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114
+
   /**
-   * Detect whether a document is present inside the frame region.
+   * Sample average brightness of a rectangular region in the image data.
    */
+  const sampleRegion = (
+    data: Uint8ClampedArray,
+    stride: number,
+    rx: number,
+    ry: number,
+    rw: number,
+    rh: number,
+    maxW: number,
+    maxH: number
+  ) => {
+    let sum = 0
+    let count = 0
+    for (let y = ry; y < ry + rh && y < maxH; y++) {
+      for (let x = rx; x < rx + rw && x < maxW; x++) {
+        sum += getBrightness(data, (y * stride + x) * 4)
+        count++
+      }
+    }
+    return count > 0 ? sum / count : 0
+  }
+
   const detect = useCallback(
     (
       video: HTMLVideoElement,
@@ -51,99 +75,105 @@ export function useDocumentDetection() {
       const videoW = video.videoWidth
       const videoH = video.videoHeight
 
-      const scaleX = videoW / viewportWidth
-      const scaleY = videoH / viewportHeight
-
-      // Sample region (centre of frame, slightly inset)
-      const inset = 0.1
-      const sx = (frameRect.x + frameRect.width * inset) * scaleX
-      const sy = (frameRect.y + frameRect.height * inset) * scaleY
-      const sw = frameRect.width * (1 - inset * 2) * scaleX
-      const sh = frameRect.height * (1 - inset * 2) * scaleY
-
-      // Use a small sample size for performance
-      const sampleW = 120
-      const sampleH = Math.round(sampleW * (sh / sw))
+      const sampleW = 160
+      const sampleH = Math.round(sampleW * (videoH / videoW))
 
       canvas.width = sampleW
       canvas.height = sampleH
 
       const ctx = canvas.getContext("2d", { willReadFrequently: true })!
-      ctx.drawImage(
-        video,
-        Math.round(sx),
-        Math.round(sy),
-        Math.round(sw),
-        Math.round(sh),
-        0,
-        0,
-        sampleW,
-        sampleH
-      )
+      ctx.drawImage(video, 0, 0, sampleW, sampleH)
 
       const imageData = ctx.getImageData(0, 0, sampleW, sampleH)
       const data = imageData.data
 
-      // 1. Calculate average brightness of frame area
-      let totalBrightness = 0
-      const pixelCount = sampleW * sampleH
+      const scaleX = sampleW / viewportWidth
+      const scaleY = sampleH / viewportHeight
 
-      for (let i = 0; i < data.length; i += 4) {
-        totalBrightness += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114
-      }
-      const avgBrightness = totalBrightness / pixelCount
+      const fx = Math.round(frameRect.x * scaleX)
+      const fy = Math.round(frameRect.y * scaleY)
+      const fw = Math.round(frameRect.width * scaleX)
+      const fh = Math.round(frameRect.height * scaleY)
 
-      // 2. Calculate edge density using simple Sobel-like horizontal gradient
-      let edgeSum = 0
-      let edgeCount = 0
+      // Inner edge strips: inset 10% from frame border to avoid fingers/shadows at edges
+      const insetX = Math.round(fw * 0.10)
+      const insetY = Math.round(fh * 0.10)
+      const stripW = Math.max(Math.round(fw * 0.08), 2)
+      const stripH = Math.max(Math.round(fh * 0.08), 2)
 
-      for (let y = 1; y < sampleH - 1; y++) {
-        for (let x = 1; x < sampleW - 1; x++) {
-          const idx = (y * sampleW + x) * 4
-          const left = data[idx - 4] * 0.299 + data[idx - 3] * 0.587 + data[idx - 2] * 0.114
-          const right = data[idx + 4] * 0.299 + data[idx + 5] * 0.587 + data[idx + 6] * 0.114
-          const top = data[((y - 1) * sampleW + x) * 4] * 0.299 +
-            data[((y - 1) * sampleW + x) * 4 + 1] * 0.587 +
-            data[((y - 1) * sampleW + x) * 4 + 2] * 0.114
-          const bottom = data[((y + 1) * sampleW + x) * 4] * 0.299 +
-            data[((y + 1) * sampleW + x) * 4 + 1] * 0.587 +
-            data[((y + 1) * sampleW + x) * 4 + 2] * 0.114
+      // Sample 4 inner edge strips (inset from border to avoid fingers)
+      const topStrip = sampleRegion(data, sampleW, fx + insetX, fy + insetY, fw - insetX * 2, stripH, sampleW, sampleH)
+      const bottomStrip = sampleRegion(data, sampleW, fx + insetX, fy + fh - insetY - stripH, fw - insetX * 2, stripH, sampleW, sampleH)
+      const leftStrip = sampleRegion(data, sampleW, fx + insetX, fy + insetY, stripW, fh - insetY * 2, sampleW, sampleH)
+      const rightStrip = sampleRegion(data, sampleW, fx + fw - insetX - stripW, fy + insetY, stripW, fh - insetY * 2, sampleW, sampleH)
 
-          const gx = Math.abs(right - left)
-          const gy = Math.abs(bottom - top)
-          const gradient = Math.sqrt(gx * gx + gy * gy)
+      // Sample outside strips for contrast comparison
+      const outsideStripW = Math.max(Math.round(fw * 0.1), 3)
+      const outsideStripH = Math.max(Math.round(fh * 0.1), 3)
 
-          if (gradient > 15) edgeSum++
-          edgeCount++
-        }
-      }
+      const outsideTop = sampleRegion(data, sampleW, fx, Math.max(fy - outsideStripH, 0), fw, outsideStripH, sampleW, sampleH)
+      const outsideBottom = sampleRegion(data, sampleW, fx, fy + fh, fw, outsideStripH, sampleW, sampleH)
+      const outsideLeft = sampleRegion(data, sampleW, Math.max(fx - outsideStripW, 0), fy, outsideStripW, fh, sampleW, sampleH)
+      const outsideRight = sampleRegion(data, sampleW, fx + fw, fy, outsideStripW, fh, sampleW, sampleH)
 
-      const edgeDensity = edgeCount > 0 ? edgeSum / edgeCount : 0
+      // Each inner edge must be brighter than its corresponding outer edge
+      // This means the document paper extends all the way to each frame edge
+      const MIN_CONTRAST = 8
+      const edgeScores = [
+        topStrip - outsideTop,
+        bottomStrip - outsideBottom,
+        leftStrip - outsideLeft,
+        rightStrip - outsideRight,
+      ]
 
-      // 3. Score: bright surface (paper) with meaningful edges (text/lines) = document
-      // A blank table is bright but has no edges — must have both.
-      const isBright = avgBrightness > 120
-      const hasEdges = edgeDensity > 0.03 && edgeDensity < 0.5
+      const passingEdges = edgeScores.filter((s) => s > MIN_CONTRAST).length
 
-      // Both conditions must be true for detection
-      if (!isBright || !hasEdges) {
+      // ALL 4 edges must show document-vs-background contrast
+      if (passingEdges < 4) {
         return { isDocumentDetected: false, confidence: 0 }
       }
 
-      const brightnessScore = Math.min(avgBrightness / 200, 1)
-      const edgeScore = Math.min(edgeDensity / 0.12, 1)
+      // Also check that inner edges are bright enough (paper ≥ 70 for dim lighting)
+      const minEdgeBrightness = Math.min(topStrip, bottomStrip, leftStrip, rightStrip)
+      if (minEdgeBrightness < 70) {
+        return { isDocumentDetected: false, confidence: 0 }
+      }
 
-      const confidence = brightnessScore * 0.3 + edgeScore * 0.7
-      const isDocumentDetected = confidence > 0.55
+      // Center content check — must have some text/lines (not blank)
+      const cx = Math.round(fx + fw * 0.2)
+      const cy = Math.round(fy + fh * 0.2)
+      const cw = Math.round(fw * 0.6)
+      const ch = Math.round(fh * 0.6)
 
-      return { isDocumentDetected, confidence }
+      let edgePixels = 0
+      let centerCount = 0
+      for (let y = cy; y < cy + ch && y < sampleH; y++) {
+        for (let x = cx + 1; x < cx + cw && x < sampleW; x++) {
+          const b = getBrightness(data, (y * sampleW + x) * 4)
+          const left = getBrightness(data, (y * sampleW + x - 1) * 4)
+          if (Math.abs(b - left) > 18) edgePixels++
+          centerCount++
+        }
+      }
+
+      const edgeDensity = centerCount > 0 ? edgePixels / centerCount : 0
+      if (edgeDensity < 0.005) {
+        return { isDocumentDetected: false, confidence: 0 }
+      }
+
+      // Confidence
+      const avgContrast = edgeScores.reduce((a, b) => a + b, 0) / 4
+      const contrastScore = Math.min(avgContrast / 40, 1)
+      const brightScore = Math.min(minEdgeBrightness / 160, 1)
+      const contentScore = Math.min(edgeDensity / 0.06, 1)
+
+      const confidence = contrastScore * 0.5 + brightScore * 0.3 + contentScore * 0.2
+
+      return { isDocumentDetected: confidence > 0.4, confidence }
     },
     []
   )
 
-  /**
-   * Track stability: returns true when document has been steadily detected.
-   */
   const checkStability = useCallback(
     (detected: boolean): boolean => {
       if (detected) {
