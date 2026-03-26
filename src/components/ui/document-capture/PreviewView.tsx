@@ -40,7 +40,7 @@ export function PreviewView({ image, onRetake, onConfirm }: PreviewViewProps) {
           onClick={onConfirm}
           className="flex-1 py-3.5 rounded-lg bg-[#007DCA] text-white font-medium text-sm active:bg-[#006BB0] transition-colors"
         >
-          저장하기
+          등록하기
         </button>
       </div>
     </div>

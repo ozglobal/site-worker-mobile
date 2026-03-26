@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import { Button } from "@/components/ui/button"
 import { DocumentCapture } from "@/components/ui/document-capture/DocumentCapture"
 import { uploadDocument } from "@/lib/profile"
@@ -39,9 +40,16 @@ export function OnboardingDocumentCaptureGuidePassportPage() {
 
   return (
     <div className="flex h-screen flex-col bg-white">
+      {/* Header */}
+      <div className="flex items-center h-14 px-4 shrink-0">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2">
+          <ArrowBackIcon className="h-6 w-6 text-slate-900" />
+        </button>
+      </div>
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-6 pt-12 pb-6 text-center">
+        <div className="px-6 pt-4 pb-6 text-center">
           <h1 className="text-xl font-bold text-slate-900 mb-2">여권 개인정보면 촬영</h1>
           <p className="text-sm text-gray-500">여권의 개인정보면 전체가 잘 보이도록 놓고 촬영해주세요</p>
         </div>

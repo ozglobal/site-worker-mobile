@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import { Button } from "@/components/ui/button"
 
 export function OnboardingDocumentCaptureGuideIdcardPage() {
@@ -28,6 +29,13 @@ export function OnboardingDocumentCaptureGuideIdcardPage() {
 
   return (
     <div className="flex h-screen flex-col bg-white">
+      {/* Header */}
+      <div className="flex items-center h-14 px-4 shrink-0">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2">
+          <ArrowBackIcon className="h-6 w-6 text-slate-900" />
+        </button>
+      </div>
+
       {/* Content - centered */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         {/* ID Card Illustration */}
