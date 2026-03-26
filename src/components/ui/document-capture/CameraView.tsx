@@ -1,156 +1,283 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
+import CloseIcon from "@mui/icons-material/Close"
+import { useDocumentDetection } from "./useDocumentDetection"
+import { cropToFrame } from "./utils/cropToFrame"
 
-interface Props {
-  onCapture: (base64: string) => void
+interface CameraViewProps {
+  onCapture: (imageBase64: string) => void
+  onClose: () => void
 }
 
-export function CameraView({ onCapture }: Props) {
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+const A4_RATIO = 1 / 1.414 // width / height
 
-  const [status, setStatus] = useState<string>("문서를 화면 안에 맞춰주세요")
-  const [progress, setProgress] = useState<number>(0)
-  const [countdown, setCountdown] = useState<number | null>(null)
+export function CameraView({ onCapture, onClose }: CameraViewProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const detectionLoopRef = useRef<number | null>(null)
 
-  const stableRef = useRef<number>(0)
-  const runningRef = useRef<boolean>(true)
-  const lastRunRef = useRef<number>(0)
+  const [cameraReady, setCameraReady] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+  const [detected, setDetected] = useState(false)
+  const [stable, setStable] = useState(false)
+  const [frameRect, setFrameRect] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
-  const STABLE_THRESHOLD = 8
-  const FPS = 10
+  const { detect, checkStability, resetStability } = useDocumentDetection()
 
-  useEffect(() => {
-    startCamera()
-    return stopCamera
+  // Calculate frame rect based on container size
+  const computeFrameRect = useCallback(() => {
+    const container = containerRef.current
+    if (!container) return { x: 0, y: 0, width: 0, height: 0 }
+
+    const vw = container.clientWidth
+    const vh = container.clientHeight
+    const frameW = vw * 0.88
+    const frameH = frameW / A4_RATIO
+    const maxH = vh * 0.75
+
+    const finalH = Math.min(frameH, maxH)
+    const finalW = finalH * A4_RATIO
+
+    const x = (vw - finalW) / 2
+    const y = (vh - finalH) / 2
+
+    return { x, y, width: finalW, height: finalH }
   }, [])
 
-  const startCamera = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false,
-    })
+  // Start camera
+  useEffect(() => {
+    let cancelled = false
 
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream
-      await videoRef.current.play()
-    }
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+          audio: false,
+        })
 
-    requestAnimationFrame(loop)
-  }
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop())
+          return
+        }
 
-  const stopCamera = () => {
-    const stream = videoRef.current?.srcObject as MediaStream | null
-    stream?.getTracks().forEach((t) => t.stop())
-  }
+        streamRef.current = stream
 
-  const loop = (time: number) => {
-    if (!runningRef.current) return
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.setAttribute("playsinline", "true")
+          await videoRef.current.play()
+          setCameraReady(true)
 
-    if (time - lastRunRef.current > 1000 / FPS) {
-      lastRunRef.current = time
-      detect()
-    }
-
-    requestAnimationFrame(loop)
-  }
-
-  // 🔁 Replace with OpenCV detection
-  const detect = () => {
-    const detected = true
-    const stable = Math.random() > 0.3
-
-    if (!detected) {
-      setStatus("문서를 화면 안에 맞춰주세요")
-      stableRef.current = 0
-      setProgress(0)
-      return
-    }
-
-    if (!stable) {
-      setStatus("좋아요! 조금만 더 가까이")
-      stableRef.current = 0
-      setProgress(0)
-      return
-    }
-
-    stableRef.current++
-    setProgress((stableRef.current / STABLE_THRESHOLD) * 100)
-    setStatus("움직이지 마세요")
-
-    if (stableRef.current >= STABLE_THRESHOLD) {
-      startCountdown()
-    }
-  }
-
-  const startCountdown = () => {
-    runningRef.current = false
-    navigator.vibrate?.(50)
-
-    let count = 3
-    setCountdown(count)
-
-    const tick = () => {
-      count--
-      if (count === 0) {
-        capture()
-      } else {
-        setCountdown(count)
-        setTimeout(tick, 300)
+          // Compute frame rect after camera is ready
+          const rect = computeFrameRect()
+          setFrameRect(rect)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setCameraError("카메라 접근 권한이 필요합니다.")
+        }
       }
     }
 
-    setTimeout(tick, 300)
-  }
+    startCamera()
 
-  const capture = () => {
-    navigator.vibrate?.([50, 30, 80])
+    return () => {
+      cancelled = true
+      if (detectionLoopRef.current) {
+        clearInterval(detectionLoopRef.current)
+      }
+      streamRef.current?.getTracks().forEach((t) => t.stop())
+    }
+  }, [computeFrameRect])
 
-    const canvas = canvasRef.current!
-    const video = videoRef.current!
+  // Recalculate frame on resize
+  useEffect(() => {
+    const handleResize = () => {
+      const rect = computeFrameRect()
+      setFrameRect(rect)
+    }
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [computeFrameRect])
 
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+  // Detection loop
+  useEffect(() => {
+    if (!cameraReady || !videoRef.current) return
 
-    const ctx = canvas.getContext("2d")!
-    ctx.filter = "contrast(1.1) brightness(1.05)"
-    ctx.drawImage(video, 0, 0)
+    const video = videoRef.current
+    const container = containerRef.current
+    if (!container) return
 
-    const base64 = canvas.toDataURL("image/jpeg", 0.85)
+    const loop = () => {
+      const vw = container.clientWidth
+      const vh = container.clientHeight
+      const rect = computeFrameRect()
+
+      const result = detect(video, rect, vw, vh)
+      setDetected(result.isDocumentDetected)
+
+      const isStable = checkStability(result.isDocumentDetected)
+      setStable(isStable)
+    }
+
+    detectionLoopRef.current = window.setInterval(loop, 250)
+
+    return () => {
+      if (detectionLoopRef.current) {
+        clearInterval(detectionLoopRef.current)
+      }
+    }
+  }, [cameraReady, detect, checkStability, computeFrameRect])
+
+  // Handle capture
+  const handleCapture = useCallback(() => {
+    const video = videoRef.current
+    const container = containerRef.current
+    if (!video || !container) return
+
+    const vw = container.clientWidth
+    const vh = container.clientHeight
+    const rect = computeFrameRect()
+
+    const base64 = cropToFrame(video, rect, vw, vh, 0.92)
     onCapture(base64)
+  }, [computeFrameRect, onCapture])
+
+  // Auto-capture disabled — user must tap capture button
+  useEffect(() => {
+    if (stable) {
+      navigator.vibrate?.(50)
+    }
+  }, [stable, handleCapture])
+
+  // Guide text
+  const getGuideText = () => {
+    if (cameraError) return cameraError
+    if (!cameraReady) return "카메라 준비 중..."
+    if (detected) return "문서가 감지되었습니다. 촬영 버튼을 눌러주세요"
+    return "문서를 프레임 안에 맞춰주세요"
   }
+
+  const borderColor = stable
+    ? "border-green-400"
+    : detected
+      ? "border-green-400/70"
+      : "border-white/60"
 
   return (
-    <div className="fixed inset-0 bg-black">
+    <div ref={containerRef} className="fixed inset-0 z-50 bg-black">
+      {/* Video */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"
         playsInline
         muted
+        autoPlay
       />
 
-      <canvas ref={canvasRef} className="hidden" />
+      {/* Dim overlay with frame cutout */}
+      {frameRect.width > 0 && (
+        <div className="absolute inset-0 z-10 pointer-events-none">
+          {/* Top dim */}
+          <div
+            className="absolute left-0 right-0 top-0 bg-black/50"
+            style={{ height: frameRect.y }}
+          />
+          {/* Bottom dim */}
+          <div
+            className="absolute left-0 right-0 bottom-0 bg-black/50"
+            style={{ top: frameRect.y + frameRect.height }}
+          />
+          {/* Left dim */}
+          <div
+            className="absolute bg-black/50"
+            style={{
+              left: 0,
+              top: frameRect.y,
+              width: frameRect.x,
+              height: frameRect.height,
+            }}
+          />
+          {/* Right dim */}
+          <div
+            className="absolute bg-black/50"
+            style={{
+              right: 0,
+              top: frameRect.y,
+              width: frameRect.x,
+              height: frameRect.height,
+            }}
+          />
 
-      <div className="absolute inset-0 flex flex-col justify-between text-white">
-        <div className="text-center mt-10 text-sm">{status}</div>
+          {/* Frame border */}
+          <div
+            className={`absolute border-2 rounded-lg transition-colors duration-300 ${borderColor}`}
+            style={{
+              left: frameRect.x,
+              top: frameRect.y,
+              width: frameRect.width,
+              height: frameRect.height,
+            }}
+          >
+            {/* Corner markers */}
+            <div className="absolute -top-0.5 -left-0.5 w-6 h-6 border-t-[3px] border-l-[3px] rounded-tl-lg border-inherit" />
+            <div className="absolute -top-0.5 -right-0.5 w-6 h-6 border-t-[3px] border-r-[3px] rounded-tr-lg border-inherit" />
+            <div className="absolute -bottom-0.5 -left-0.5 w-6 h-6 border-b-[3px] border-l-[3px] rounded-bl-lg border-inherit" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 border-b-[3px] border-r-[3px] rounded-br-lg border-inherit" />
+          </div>
+        </div>
+      )}
 
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 left-4 z-20 w-10 h-10 flex items-center justify-center text-white"
+      >
+        <CloseIcon className="h-6 w-6" />
+      </button>
+
+      {/* Guide text */}
+      <div className="absolute top-12 left-0 right-0 z-20 text-center">
+        <p
+          className={`text-sm font-medium px-4 py-2 inline-block rounded-full transition-colors duration-300 ${
+            detected
+              ? "bg-green-500/20 text-green-300"
+              : "bg-black/40 text-white/80"
+          }`}
+        >
+          {getGuideText()}
+        </p>
+      </div>
+
+      {/* Bottom controls */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 pb-8 pt-4">
+        {/* Capture button */}
         <div className="flex justify-center">
-          <div className="w-40 h-1 bg-white/20 rounded">
+          <button
+            onClick={handleCapture}
+            disabled={!cameraReady}
+            className={`w-[72px] h-[72px] rounded-full border-4 flex items-center justify-center transition-all duration-300 ${
+              detected
+                ? "border-green-400 opacity-100"
+                : "border-white/80 opacity-100"
+            }`}
+          >
             <div
-              className="h-full bg-green-400 transition-all"
-              style={{ width: `${progress}%` }}
+              className={`w-14 h-14 rounded-full transition-colors duration-300 ${
+                detected ? "bg-green-400" : "bg-white"
+              }`}
             />
-          </div>
+          </button>
         </div>
 
-        {countdown !== null && (
-          <div className="text-center text-6xl mb-20 animate-pulse">
-            {countdown}
-          </div>
-        )}
-
-        <div className="text-center mb-10 text-xs opacity-70">
-          자동으로 촬영됩니다
-        </div>
+        {/* Hint */}
+        <p className="text-center text-xs text-white/50 mt-3">
+          문서를 프레임에 맞추고 촬영 버튼을 눌러주세요
+        </p>
       </div>
     </div>
   )

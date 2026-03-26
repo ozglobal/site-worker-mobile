@@ -10,7 +10,7 @@ import { uploadDocument, type DocumentType } from "@/lib/profile"
 import { type IdCardType } from "@/components/ui/id-card-upload-dialog"
 import { IdCardCamera } from "@/components/ui/IdCardCamera"
 import { IdCardPreview } from "@/components/ui/IdCardPreview"
-import { DocumentCaptureFlow } from "@/components/ui/document-capture/DocumentCaptureFlow"
+import { DocumentCapture } from "@/components/ui/document-capture/DocumentCapture"
 import { useToast } from "@/contexts/ToastContext"
 
 interface DocumentItem {
@@ -198,10 +198,16 @@ export function OnboardingDocumentsPage() {
     }
   }
 
-  const handleDocCaptureConfirm = async (file: File) => {
+  const handleDocCaptureConfirm = async (imageBase64: string) => {
     if (!captureDoc) return
     setShowDocCapture(false)
     setUploading(captureDoc.id)
+
+    // Convert base64 to File
+    const res = await fetch(imageBase64)
+    const blob = await res.blob()
+    const file = new File([blob], `${captureDoc.id}.jpg`, { type: "image/jpeg" })
+
     const result = await uploadDocument(captureDoc.apiType, file)
     setUploading(null)
     if (result.success) {
@@ -323,9 +329,9 @@ export function OnboardingDocumentsPage() {
           onClose={handlePreviewClose}
         />
       )}
+
       {showDocCapture && captureDoc && (
-        <DocumentCaptureFlow
-          title={captureDoc.title}
+        <DocumentCapture
           onConfirm={handleDocCaptureConfirm}
           onClose={() => { setShowDocCapture(false); setCaptureDoc(null) }}
         />
