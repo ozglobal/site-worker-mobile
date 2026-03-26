@@ -47,7 +47,7 @@ function detectCard(video: HTMLVideoElement, canvas: HTMLCanvasElement): boolean
 
   // Sample points along the edges of the guide box
   // Compare pixels just inside vs just outside the box
-  const margin = 3
+  const margin = Math.max(Math.round(boxW * 0.14), 3)
   const samples = 16
   let edgeContrast = 0
   let sampleCount = 0
@@ -214,6 +214,16 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
           return
         }
         streamRef.current = stream
+
+        // Apply 1.5x zoom if supported
+        const track = stream.getVideoTracks()[0]
+        const capabilities = track.getCapabilities?.()
+        if (capabilities?.zoom) {
+          const maxZoom = capabilities.zoom.max ?? 1
+          const targetZoom = Math.min(1.5, maxZoom)
+          await track.applyConstraints({ advanced: [{ zoom: targetZoom } as any] })
+        }
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream
           await videoRef.current.play()
@@ -268,15 +278,21 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
 
         {/* Card guide overlay */}
         {isReady && (
-          <div className="relative z-10 w-[90%] max-w-[400px]" style={{ aspectRatio: "85.6 / 53.98" }}>
+          <div
+            className="relative z-10 w-[90%] max-w-[400px]"
+            style={{
+              aspectRatio: "85.6 / 53.98",
+              boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)",
+            }}
+          >
             {/* Gray border */}
-            <div className={`absolute inset-0 rounded-xl border-2 transition-colors ${detected ? "border-green-400/80" : "border-gray-400/60"}`} />
+            <div className={`absolute inset-0 rounded-xl border-[3px] transition-colors ${detected ? "border-green-400/80" : "border-gray-400/60"}`} />
 
             {/* Corners */}
-            <div className={`absolute -top-0.5 -left-0.5 w-8 h-8 border-t-[3px] border-l-[3px] rounded-tl-xl transition-colors ${detected ? "border-green-400" : "border-primary"}`} />
-            <div className={`absolute -top-0.5 -right-0.5 w-8 h-8 border-t-[3px] border-r-[3px] rounded-tr-xl transition-colors ${detected ? "border-green-400" : "border-primary"}`} />
-            <div className={`absolute -bottom-0.5 -left-0.5 w-8 h-8 border-b-[3px] border-l-[3px] rounded-bl-xl transition-colors ${detected ? "border-green-400" : "border-primary"}`} />
-            <div className={`absolute -bottom-0.5 -right-0.5 w-8 h-8 border-b-[3px] border-r-[3px] rounded-br-xl transition-colors ${detected ? "border-green-400" : "border-primary"}`} />
+            <div className={`absolute -top-[3px] -left-[3px] w-6 h-6 border-t-[4px] border-l-[4px] rounded-tl-xl transition-colors ${detected ? "border-green-400" : "border-yellow-400"}`} />
+            <div className={`absolute -top-[3px] -right-[3px] w-6 h-6 border-t-[4px] border-r-[4px] rounded-tr-xl transition-colors ${detected ? "border-green-400" : "border-yellow-400"}`} />
+            <div className={`absolute -bottom-[3px] -left-[3px] w-6 h-6 border-b-[4px] border-l-[4px] rounded-bl-xl transition-colors ${detected ? "border-green-400" : "border-yellow-400"}`} />
+            <div className={`absolute -bottom-[3px] -right-[3px] w-6 h-6 border-b-[4px] border-r-[4px] rounded-br-xl transition-colors ${detected ? "border-green-400" : "border-yellow-400"}`} />
 
             {/* Countdown overlay */}
             {countdown !== null && countdown > 0 && (

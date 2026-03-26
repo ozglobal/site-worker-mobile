@@ -181,15 +181,15 @@ export function OnboardingDocumentsPage() {
     setBackImageUrl(null)
   }
 
-  const idDocIds = ["id-card", "foreign-card", "passport"]
+  const idDocIds = ["id-card", "foreign-card"]
 
   const handleUpload = async (doc: DocumentItem) => {
-    if (doc.id === "passport") {
-      navigate("/onboarding/documents/capture-guide-passport", {
+    if (idDocIds.includes(doc.id)) {
+      navigate("/onboarding/documents/capture-guide-idcard", {
         state: { docId: doc.id, title: doc.title },
       })
-    } else if (idDocIds.includes(doc.id)) {
-      navigate("/onboarding/documents/capture-guide-idcard", {
+    } else if (doc.id === "passport") {
+      navigate("/onboarding/documents/capture-guide-passport", {
         state: { docId: doc.id, title: doc.title },
       })
     } else {

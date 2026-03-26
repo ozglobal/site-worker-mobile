@@ -209,9 +209,9 @@ export function OnboardingIdCardPreviewPage() {
               onFocus={(e) => { e.target.type = "date" }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="허가일자"
-              className="flex-1 h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+              className="flex-1 min-w-0 h-12 px-3 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
             />
-            <span className="text-gray-400">~</span>
+            <span className="text-gray-400 shrink-0">~</span>
             <input
               type="text"
               value={expiryDate}
@@ -219,7 +219,7 @@ export function OnboardingIdCardPreviewPage() {
               onFocus={(e) => { e.target.type = "date" }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="만료일자"
-              className="flex-1 h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+              className="flex-1 min-w-0 h-12 px-3 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
             />
           </div>
         </div>

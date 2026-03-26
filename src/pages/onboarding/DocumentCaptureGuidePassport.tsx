@@ -1,16 +1,40 @@
+import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import { DocumentCapture } from "@/components/ui/document-capture/DocumentCapture"
+import { uploadDocument } from "@/lib/profile"
+import { useToast } from "@/contexts/ToastContext"
 
 export function OnboardingDocumentCaptureGuidePassportPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { showSuccess, showError } = useToast()
   const state = location.state as { docId?: string; title?: string } | null
+  const [showCapture, setShowCapture] = useState(false)
 
-  const handleCapture = () => {
-    navigate("/onboarding/documents/passport-preview", {
-      replace: true,
-      state: { docId: state?.docId, title: state?.title },
-    })
+  const handleConfirm = async (imageBase64: string) => {
+    setShowCapture(false)
+
+    const res = await fetch(imageBase64)
+    const blob = await res.blob()
+    const file = new File([blob], "passport.jpg", { type: "image/jpeg" })
+
+    const result = await uploadDocument("id_card_front", file)
+    if (result.success) {
+      showSuccess("여권 등록 완료")
+    } else {
+      showError("업로드에 실패했습니다.")
+    }
+    navigate("/onboarding/documents", { replace: true, state: { completed: state?.docId } })
+  }
+
+  if (showCapture) {
+    return (
+      <DocumentCapture
+        onConfirm={handleConfirm}
+        onClose={() => setShowCapture(false)}
+      />
+    )
   }
 
   return (
@@ -34,7 +58,7 @@ export function OnboardingDocumentCaptureGuidePassportPage() {
 
       {/* Bottom Button */}
       <div className="px-4 py-6">
-        <Button variant="primary" size="full" onClick={handleCapture}>
+        <Button variant="primary" size="full" onClick={() => setShowCapture(true)}>
           여권 촬영
         </Button>
       </div>
