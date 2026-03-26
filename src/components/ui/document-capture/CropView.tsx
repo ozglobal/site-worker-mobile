@@ -7,7 +7,7 @@ import { cropImage } from "./cropImage"
 
 interface CropViewProps {
   imageSrc: string
-  onCrop: (croppedImageUrl: string, blob: Blob) => void
+  onCrop: (url: string, blob: Blob) => void
   onBack: () => void
 }
 

@@ -1,296 +1,156 @@
-import { useRef, useEffect, useState, useCallback } from "react"
-import CloseIcon from "@mui/icons-material/Close"
-import {
-  getQuadContour,
-  sortPoints,
-  warpDocument,
-  drawContour,
-  createStabilityTracker,
-  isOpenCvReady,
-  matToBase64,
-  type Point,
-} from "./documentDetection"
+import { useEffect, useRef, useState } from "react"
 
-declare const cv: any
-
-interface CameraViewProps {
-  onCapture: (imageSrc: string) => void
-  onClose: () => void
+interface Props {
+  onCapture: (base64: string) => void
 }
 
-export function CameraView({ onCapture, onClose }: CameraViewProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const overlayRef = useRef<HTMLCanvasElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const stabilityRef = useRef(createStabilityTracker(20, 10))
-  const detectedPtsRef = useRef<Point[] | null>(null)
-  const capturedRef = useRef(false)
+export function CameraView({ onCapture }: Props) {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  const [isReady, setIsReady] = useState(false)
-  const [detected, setDetected] = useState(false)
-  const [stable, setStable] = useState(false)
-  const [statusText, setStatusText] = useState("문서를 맞춰주세요")
-  const [cvLoaded, setCvLoaded] = useState(isOpenCvReady())
+  const [status, setStatus] = useState<string>("문서를 화면 안에 맞춰주세요")
+  const [progress, setProgress] = useState<number>(0)
+  const [countdown, setCountdown] = useState<number | null>(null)
 
-  // Wait for OpenCV to load
+  const stableRef = useRef<number>(0)
+  const runningRef = useRef<boolean>(true)
+  const lastRunRef = useRef<number>(0)
+
+  const STABLE_THRESHOLD = 8
+  const FPS = 10
+
   useEffect(() => {
-    if (cvLoaded) return
-    const interval = setInterval(() => {
-      if (isOpenCvReady()) {
-        setCvLoaded(true)
-        clearInterval(interval)
-      }
-    }, 200)
-    return () => clearInterval(interval)
-  }, [cvLoaded])
-
-  // Start camera
-  useEffect(() => {
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
-        })
-        streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          videoRef.current.onloadedmetadata = () => setIsReady(true)
-        }
-      } catch {
-        setStatusText("카메라를 사용할 수 없습니다")
-      }
-    }
     startCamera()
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop())
-    }
+    return stopCamera
   }, [])
 
-  // Detection loop
-  useEffect(() => {
-    if (!isReady || !cvLoaded) return
+  const startCamera = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+      audio: false,
+    })
 
-    const video = videoRef.current!
-    const canvas = canvasRef.current!
-    const overlay = overlayRef.current!
-    const ctx = canvas.getContext("2d")!
-    const overlayCtx = overlay.getContext("2d")!
-
-    let animId: number
-
-    const detect = () => {
-      if (capturedRef.current) return
-
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
-      if (overlay.width !== overlay.clientWidth || overlay.height !== overlay.clientHeight) {
-        overlay.width = overlay.clientWidth
-        overlay.height = overlay.clientHeight
-      }
-
-      ctx.drawImage(video, 0, 0)
-      overlayCtx.clearRect(0, 0, overlay.width, overlay.height)
-
-      // Redraw last detected polygon if exists
-      if (detectedPtsRef.current) {
-        const scaleX = overlay.width / canvas.width
-        const scaleY = overlay.height / canvas.height
-        drawContour(overlayCtx, detectedPtsRef.current, stable, scaleX, scaleY)
-      }
-
-      try {
-        const src = cv.imread(canvas)
-        const gray = new cv.Mat()
-        const blurred = new cv.Mat()
-        const thresh = new cv.Mat()
-        const contours = new cv.MatVector()
-        const hierarchy = new cv.Mat()
-
-        // Threshold approach: separate white document from darker background
-        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY)
-        cv.GaussianBlur(gray, blurred, new cv.Size(11, 11), 0)
-        cv.adaptiveThreshold(blurred, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 51, 5)
-
-        // Morphological close to fill internal content and get solid document shape
-        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(15, 15))
-        cv.morphologyEx(thresh, thresh, cv.MORPH_CLOSE, kernel)
-        kernel.delete()
-
-        cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
-        const quad = getQuadContour(contours)
-
-        if (quad) {
-          const pts = sortPoints(quad)
-          detectedPtsRef.current = pts
-
-          // Document must be at least 15% of frame to avoid detecting small internal elements
-          const area = cv.contourArea(quad)
-          const frameArea = canvas.width * canvas.height
-          const isLargeEnough = area > frameArea * 0.15
-
-          if (isLargeEnough) {
-            setDetected(true)
-
-            const scaleX = overlay.width / canvas.width
-            const scaleY = overlay.height / canvas.height
-            const isStable = stabilityRef.current.check(pts)
-
-            drawContour(overlayCtx, pts, isStable, scaleX, scaleY)
-
-            if (isStable) {
-              setStable(true)
-              setStatusText("자동 촬영 중...")
-              capturedRef.current = true
-
-              // Warp and capture
-              const warped = warpDocument(src, pts)
-              const base64 = matToBase64(warped)
-              warped.delete()
-              quad.delete()
-              src.delete()
-              gray.delete()
-              blurred.delete()
-              thresh.delete()
-              contours.delete()
-              hierarchy.delete()
-              onCapture(base64)
-              return
-            } else {
-              setStable(false)
-              setStatusText("촬영 준비 완료")
-            }
-          } else {
-            setDetected(false)
-            setStatusText("문서를 더 가까이 맞춰주세요")
-            stabilityRef.current.reset()
-          }
-
-          quad.delete()
-        } else {
-          detectedPtsRef.current = null
-          setDetected(false)
-          setStable(false)
-          setStatusText("문서를 맞춰주세요")
-          stabilityRef.current.reset()
-        }
-
-        src.delete()
-        gray.delete()
-        blurred.delete()
-        thresh.delete()
-        contours.delete()
-        hierarchy.delete()
-      } catch {
-        // OpenCV processing error — silently continue
-      }
-
-      animId = requestAnimationFrame(detect)
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream
+      await videoRef.current.play()
     }
 
-    // Start detection with slight delay
-    const timeout = setTimeout(() => {
-      animId = requestAnimationFrame(detect)
-    }, 500)
+    requestAnimationFrame(loop)
+  }
 
-    return () => {
-      clearTimeout(timeout)
-      cancelAnimationFrame(animId)
+  const stopCamera = () => {
+    const stream = videoRef.current?.srcObject as MediaStream | null
+    stream?.getTracks().forEach((t) => t.stop())
+  }
+
+  const loop = (time: number) => {
+    if (!runningRef.current) return
+
+    if (time - lastRunRef.current > 1000 / FPS) {
+      lastRunRef.current = time
+      detect()
     }
-  }, [isReady, cvLoaded, onCapture])
 
-  // Manual capture fallback
-  const handleManualCapture = useCallback(() => {
-    if (capturedRef.current) return
-    capturedRef.current = true
+    requestAnimationFrame(loop)
+  }
 
-    const video = videoRef.current!
+  // 🔁 Replace with OpenCV detection
+  const detect = () => {
+    const detected = true
+    const stable = Math.random() > 0.3
+
+    if (!detected) {
+      setStatus("문서를 화면 안에 맞춰주세요")
+      stableRef.current = 0
+      setProgress(0)
+      return
+    }
+
+    if (!stable) {
+      setStatus("좋아요! 조금만 더 가까이")
+      stableRef.current = 0
+      setProgress(0)
+      return
+    }
+
+    stableRef.current++
+    setProgress((stableRef.current / STABLE_THRESHOLD) * 100)
+    setStatus("움직이지 마세요")
+
+    if (stableRef.current >= STABLE_THRESHOLD) {
+      startCountdown()
+    }
+  }
+
+  const startCountdown = () => {
+    runningRef.current = false
+    navigator.vibrate?.(50)
+
+    let count = 3
+    setCountdown(count)
+
+    const tick = () => {
+      count--
+      if (count === 0) {
+        capture()
+      } else {
+        setCountdown(count)
+        setTimeout(tick, 300)
+      }
+    }
+
+    setTimeout(tick, 300)
+  }
+
+  const capture = () => {
+    navigator.vibrate?.([50, 30, 80])
+
     const canvas = canvasRef.current!
-    const ctx = canvas.getContext("2d")!
+    const video = videoRef.current!
 
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
+
+    const ctx = canvas.getContext("2d")!
+    ctx.filter = "contrast(1.1) brightness(1.05)"
     ctx.drawImage(video, 0, 0)
 
-    // If we have detected points, warp; otherwise capture raw
-    if (detectedPtsRef.current && cvLoaded) {
-      try {
-        const src = cv.imread(canvas)
-        const warped = warpDocument(src, detectedPtsRef.current)
-        const base64 = matToBase64(warped)
-        warped.delete()
-        src.delete()
-        onCapture(base64)
-        return
-      } catch {
-        // Fall through to raw capture
-      }
-    }
-
-    onCapture(canvas.toDataURL("image/jpeg", 0.9))
-  }, [cvLoaded, onCapture])
+    const base64 = canvas.toDataURL("image/jpeg", 0.85)
+    onCapture(base64)
+  }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      {/* Camera + overlay */}
-      <div className="flex-1 relative overflow-hidden">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+    <div className="fixed inset-0 bg-black">
+      <video
+        ref={videoRef}
+        className="absolute inset-0 w-full h-full object-cover"
+        playsInline
+        muted
+      />
 
-        {/* Default guide frame (shown when no document detected) */}
-        {!detected && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+      <canvas ref={canvasRef} className="hidden" />
+
+      <div className="absolute inset-0 flex flex-col justify-between text-white">
+        <div className="text-center mt-10 text-sm">{status}</div>
+
+        <div className="flex justify-center">
+          <div className="w-40 h-1 bg-white/20 rounded">
             <div
-              className="border-2 border-white/60 rounded-lg"
-              style={{
-                width: "85%",
-                aspectRatio: `${1 / 1.414}`,
-                boxShadow: "0 0 0 9999px rgba(0,0,0,0.3)",
-              }}
+              className="h-full bg-green-400 transition-all"
+              style={{ width: `${progress}%` }}
             />
+          </div>
+        </div>
+
+        {countdown !== null && (
+          <div className="text-center text-6xl mb-20 animate-pulse">
+            {countdown}
           </div>
         )}
 
-        {/* Detection overlay canvas */}
-        <canvas
-          ref={overlayRef}
-          className="absolute inset-0 w-full h-full z-10 pointer-events-none"
-        />
-
-        {/* Hidden processing canvas */}
-        <canvas ref={canvasRef} className="hidden" />
-
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 left-4 z-20 w-10 h-10 flex items-center justify-center text-white"
-        >
-          <CloseIcon className="h-6 w-6" />
-        </button>
-
-      </div>
-
-      {/* Status text + Capture button */}
-      <div className="bg-black pt-3 pb-6 flex flex-col items-center gap-3 z-20">
-        <p className={`text-sm transition-colors ${
-          stable ? "text-green-400" : detected ? "text-white" : "text-gray-300"
-        }`}>
-          {!cvLoaded ? "문서 인식 준비 중..." : statusText}
-        </p>
-        <button
-          onClick={handleManualCapture}
-          className="w-16 h-16 rounded-full border-4 border-white flex items-center justify-center"
-        >
-          <div className={`w-12 h-12 rounded-full transition-colors ${
-            stable ? "bg-green-400" : "bg-white"
-          }`} />
-        </button>
+        <div className="text-center mb-10 text-xs opacity-70">
+          자동으로 촬영됩니다
+        </div>
       </div>
     </div>
   )

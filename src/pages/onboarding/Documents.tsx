@@ -10,7 +10,7 @@ import { uploadDocument, type DocumentType } from "@/lib/profile"
 import { type IdCardType } from "@/components/ui/id-card-upload-dialog"
 import { IdCardCamera } from "@/components/ui/IdCardCamera"
 import { IdCardPreview } from "@/components/ui/IdCardPreview"
-import { DocumentCapture } from "@/components/ui/document-capture/DocumentCapture"
+import { DocumentCaptureFlow } from "@/components/ui/document-capture/DocumentCaptureFlow"
 import { useToast } from "@/contexts/ToastContext"
 
 interface DocumentItem {
@@ -324,7 +324,7 @@ export function OnboardingDocumentsPage() {
         />
       )}
       {showDocCapture && captureDoc && (
-        <DocumentCapture
+        <DocumentCaptureFlow
           title={captureDoc.title}
           onConfirm={handleDocCaptureConfirm}
           onClose={() => { setShowDocCapture(false); setCaptureDoc(null) }}
