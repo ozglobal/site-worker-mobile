@@ -99,12 +99,13 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
         const hierarchy = new cv.Mat()
 
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY)
-        cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0)
-        cv.Canny(blurred, edges, 50, 150)
+        cv.GaussianBlur(gray, blurred, new cv.Size(7, 7), 0)
+        cv.Canny(blurred, edges, 30, 100)
 
-        // Dilate to close gaps
-        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3))
+        // Strong morphological closing to merge outer document edge and suppress internal lines
+        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(9, 9))
         cv.dilate(edges, edges, kernel)
+        cv.erode(edges, edges, kernel)
         kernel.delete()
 
         cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -115,10 +116,10 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
           const pts = sortPoints(quad)
           detectedPtsRef.current = pts
 
-          // Check minimum area (at least 2% of frame)
+          // Document must be at least 15% of frame to avoid detecting small internal elements
           const area = cv.contourArea(quad)
           const frameArea = canvas.width * canvas.height
-          const isLargeEnough = area > frameArea * 0.02
+          const isLargeEnough = area > frameArea * 0.15
 
           if (isLargeEnough) {
             setDetected(true)

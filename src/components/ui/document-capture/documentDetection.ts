@@ -22,8 +22,8 @@ export function getQuadContour(contours: any): any | null {
     const approx = new cv.Mat()
     cv.approxPolyDP(cnt, approx, 0.02 * peri, true)
 
-    if (approx.rows === 4) {
-      const area = cv.contourArea(cnt)
+    if (approx.rows === 4 && cv.isContourConvex(approx)) {
+      const area = cv.contourArea(approx)
       if (area > maxArea) {
         if (best) best.delete()
         maxArea = area
