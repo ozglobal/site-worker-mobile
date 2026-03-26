@@ -84,11 +84,20 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
 
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
-      overlay.width = overlay.clientWidth
-      overlay.height = overlay.clientHeight
+      if (overlay.width !== overlay.clientWidth || overlay.height !== overlay.clientHeight) {
+        overlay.width = overlay.clientWidth
+        overlay.height = overlay.clientHeight
+      }
 
       ctx.drawImage(video, 0, 0)
       overlayCtx.clearRect(0, 0, overlay.width, overlay.height)
+
+      // Redraw last detected polygon if exists
+      if (detectedPtsRef.current) {
+        const scaleX = overlay.width / canvas.width
+        const scaleY = overlay.height / canvas.height
+        drawContour(overlayCtx, detectedPtsRef.current, stable, scaleX, scaleY)
+      }
 
       try {
         const src = cv.imread(canvas)
