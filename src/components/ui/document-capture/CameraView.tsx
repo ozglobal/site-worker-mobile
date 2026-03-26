@@ -94,21 +94,21 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
         const src = cv.imread(canvas)
         const gray = new cv.Mat()
         const blurred = new cv.Mat()
-        const edges = new cv.Mat()
+        const thresh = new cv.Mat()
         const contours = new cv.MatVector()
         const hierarchy = new cv.Mat()
 
+        // Threshold approach: separate white document from darker background
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY)
-        cv.GaussianBlur(gray, blurred, new cv.Size(7, 7), 0)
-        cv.Canny(blurred, edges, 30, 100)
+        cv.GaussianBlur(gray, blurred, new cv.Size(11, 11), 0)
+        cv.adaptiveThreshold(blurred, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 51, 5)
 
-        // Strong morphological closing to merge outer document edge and suppress internal lines
-        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(9, 9))
-        cv.dilate(edges, edges, kernel)
-        cv.erode(edges, edges, kernel)
+        // Morphological close to fill internal content and get solid document shape
+        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(15, 15))
+        cv.morphologyEx(thresh, thresh, cv.MORPH_CLOSE, kernel)
         kernel.delete()
 
-        cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
         const quad = getQuadContour(contours)
 
@@ -143,7 +143,7 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
               src.delete()
               gray.delete()
               blurred.delete()
-              edges.delete()
+              thresh.delete()
               contours.delete()
               hierarchy.delete()
               onCapture(base64)
@@ -170,7 +170,7 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
         src.delete()
         gray.delete()
         blurred.delete()
-        edges.delete()
+        thresh.delete()
         contours.delete()
         hierarchy.delete()
       } catch {
