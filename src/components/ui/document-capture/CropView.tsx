@@ -36,7 +36,7 @@ export function CropView({ imageSrc, onCrop, onBack }: CropViewProps) {
         <button onClick={onBack} className="p-2 -ml-2 text-white">
           <ArrowBackIcon className="h-6 w-6" />
         </button>
-        <span className="flex-1 text-center text-white font-medium mr-8">영역 조정</span>
+        <span className="flex-1 text-center text-white font-medium mr-8">촬영 완료</span>
       </div>
 
       {/* Crop area */}
