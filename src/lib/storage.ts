@@ -289,6 +289,14 @@ export const autoLoginStorage = {
   disable: (): void => localStorage.setItem('auto_login', 'false'),
 
   clear: (): void => removeStorageItem('auto_login'),
+
+  getCredentials: (): { phone: string; password: string } | null =>
+    getStorageItem<{ phone: string; password: string }>('auto_login_cred'),
+
+  setCredentials: (phone: string, password: string): void =>
+    setStorageItem('auto_login_cred', { phone, password }),
+
+  clearCredentials: (): void => removeStorageItem('auto_login_cred'),
 }
 
 // ============================================

@@ -51,7 +51,7 @@ export function ScheduleAddPage() {
           {/* Date */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-xl font-bold text-slate-900">{dateStr}</span>
+              <span className="text-lg font-bold text-slate-900">{dateStr}</span>
               <span className="text-blue-500 font-semibold underline">오늘</span>
             </div>
             <button className="p-1 text-slate-600">

@@ -124,7 +124,8 @@ export async function fetchSigningLink(documentId: string): Promise<ApiResult<st
       return { success: false, error: msg }
     }
 
-    const link = json.data?.[0]?.linkUrl || ''
+    const items = json.data || []
+    const link = (items.length >= 2 ? items[1]?.linkUrl : items[0]?.linkUrl) || ''
     if (!link) {
       return { success: false, error: '서명 링크가 없습니다.' }
     }

@@ -297,7 +297,7 @@ export const fetchWorkerDocuments = async (): Promise<ApiResult<WorkerDocument[]
   }
 }
 
-export type DocumentType = 'id_card_front' | 'id_card_back' | 'safety_cert' | 'bankbook' | 'business_license' | 'proxy_general'
+export type DocumentType = 'id_card_front' | 'id_card_back' | 'safety_cert' | 'bankbook' | 'business_license' | 'proxy_general' | 'family_cert' | 'labor_proxy' | 'business_cert'
 
 export interface UploadDocumentResponse {
   success: boolean

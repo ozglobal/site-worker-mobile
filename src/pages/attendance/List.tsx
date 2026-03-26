@@ -210,7 +210,7 @@ export function ListPage() {
 
         {/* Error state */}
         {isError && (
-          <QueryErrorState onRetry={() => refetch()} message="출역 기록을 불러오지 못했습니다." />
+          <QueryErrorState onRetry={() => refetch()} message="출역 기록을 가져오지 못했습니다." />
         )}
 
         {/* Empty state */}

@@ -30,7 +30,6 @@ export function Home() {
     scanner,
     locationPopup,
     notifications,
-    checkoutPopup,
     actions,
   } = useHomeAgent()
 
@@ -40,8 +39,10 @@ export function Home() {
   const [correctionDailyWage, setCorrectionDailyWage] = useState("")
   const [correctionReason, setCorrectionReason] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showOvertimeDialog, setShowOvertimeDialog] = useState(false)
+  const [showCheckoutDialog, setShowCheckoutDialog] = useState(false)
+  const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
 
-  const record = checkoutPopup.lastCheckoutRecord
 
   const expectedWage = useMemo(() => {
     const effort = parseFloat(correctionWorkEffort) || 0
@@ -49,40 +50,39 @@ export function Home() {
     return effort * wage
   }, [correctionWorkEffort, correctionDailyWage])
 
-  const openCorrectionDialog = () => {
-    if (record) {
-      setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "1.0")
-      setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
-    } else {
-      setCorrectionWorkEffort("1.0")
-      setCorrectionDailyWage("0")
-    }
-    setCorrectionReason("")
-    setShowCorrectionDialog(true)
-  }
-
-  const closeCorrectionDialog = () => {
-    setShowCorrectionDialog(false)
-  }
 
   const closeAll = () => {
     setShowCorrectionDialog(false)
-    checkoutPopup.close()
+    setShowCheckoutDialog(false)
+    setCorrectionAttendanceId(null)
   }
 
   const handleCorrectionSubmit = async () => {
-    if (!record) return
-    const attendanceId = checkoutPopup.attendanceId || record.id
-    if (!attendanceId) {
-      showError("출퇴근 기록을 찾을 수 없습니다.")
-      return
-    }
     if (!correctionReason.trim()) {
-      showError("변경사유를 입력해주세요.")
+      showError("요청사유를 입력해주세요.")
       return
     }
 
     setIsSubmitting(true)
+
+    // 1. If no attendanceId yet, execute checkout first
+    let attendanceId = correctionAttendanceId
+    if (!attendanceId) {
+      const checkoutResult = await actions.clockOut()
+      if (!checkoutResult?.success) {
+        setIsSubmitting(false)
+        return // clockOut already shows error notification
+      }
+      attendanceId = checkoutResult.attendanceId || null
+      if (!attendanceId) {
+        showError("출퇴근 기록을 찾을 수 없습니다.")
+        setIsSubmitting(false)
+        return
+      }
+      setCorrectionAttendanceId(attendanceId)
+    }
+
+    // 2. Submit correction request
     const result = await submitCorrectionRequest({
       attendanceId,
       requestType: correctionWorkEffort,
@@ -93,8 +93,10 @@ export function Home() {
 
     if (result.success) {
       showSuccess("정정 요청이 제출되었습니다.")
-      closeAll()
+      setCorrectionAttendanceId(null)
+      setShowCorrectionDialog(false)
     } else {
+      // Checkout already done, but correction failed — dialog stays open for retry
       reportError("CORRECTION_SUBMIT_FAIL", result.error)
       showError(result.error)
     }
@@ -121,7 +123,7 @@ export function Home() {
           <p className="text-sm text-slate-500 mb-1">
             {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월 {currentDate.getDate()}일 ({["일", "월", "화", "수", "목", "금", "토"][currentDate.getDay()]})
           </p>
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-lg font-bold text-slate-900">
             안녕하세요, {userName}님!
           </h1>
         </div>
@@ -200,9 +202,16 @@ export function Home() {
 
                 {/* Action Button */}
                 {attendance.isCheckedIn ? (
-                  <Button variant={attendance.isProcessing ? "primaryDisabled" : "primary"} size="full" onClick={actions.clockOut} disabled={attendance.isProcessing}>
-                    {attendance.isProcessing ? "처리 중..." : "퇴근하기"}
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button variant="outline" size="full" onClick={() => setShowOvertimeDialog(true)} disabled={attendance.isProcessing}
+                      className="flex-1 bg-white border-gray-300 text-slate-900 hover:bg-gray-50">
+                      야근하기
+                    </Button>
+                    <Button variant={attendance.isProcessing ? "primaryDisabled" : "primary"} size="full" onClick={() => setShowCheckoutDialog(true)} disabled={attendance.isProcessing}
+                      className="flex-1">
+                      {attendance.isProcessing ? "처리 중..." : "퇴근하기"}
+                    </Button>
+                  </div>
                 ) : attendance.canCheckIn && (
                   <Button variant={attendance.isProcessing ? "primaryDisabled" : "primary"} size="full" onClick={actions.clockIn} disabled={attendance.isProcessing}>
                     {attendance.isProcessing ? "처리 중..." : "출근하기"}
@@ -362,6 +371,143 @@ export function Home() {
         </div>
       )}
 
+      {/* Overtime Request Dialog */}
+      {showOvertimeDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowOvertimeDialog(false)} />
+          <div className="relative z-10 w-80 bg-white rounded-xl shadow-xl p-6">
+            <h2 className="text-lg font-bold text-slate-900 text-center mb-3">야근 신청</h2>
+            <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+              금일 야간 근로를 실제 진행하는 경우에만<br />야근 신청을 진행해주세요.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" size="full" onClick={() => setShowOvertimeDialog(false)}
+                className="flex-1 bg-gray-100 border-0 text-slate-900 hover:bg-gray-200">
+                취소하기
+              </Button>
+              <Button variant="primary" size="full" onClick={() => { setShowOvertimeDialog(false); actions.clockOut() }}
+                className="flex-1">
+                신청하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Confirmation Dialog */}
+      {showCheckoutDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowCheckoutDialog(false)} />
+          <div className="relative z-10 w-[calc(100%-2rem)] max-w-sm bg-white rounded-xl shadow-xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-4">
+              <h2 className="text-lg font-bold text-slate-900">퇴근하기</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowCheckoutDialog(false)}
+                className="w-6 h-6 hover:bg-transparent text-slate-900">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="px-5 py-4 space-y-4">
+              {/* Site Info */}
+              {workSite.name && (
+                <div className="bg-slate-100 rounded-lg p-4">
+                  <h3 className="text-base font-bold text-slate-900 mb-1">{workSite.name}</h3>
+                  {workSite.address && (
+                    <div className="flex items-center gap-1 text-sm text-slate-500">
+                      <FmdGoodIcon sx={{ fontSize: 16 }} />
+                      <span>{workSite.address}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Times */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">출근</span>
+                  <span className="text-slate-900 font-medium">
+                    {attendance.checkInTime ? formatKstTime(attendance.checkInTime) : ""}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">퇴근</span>
+                  <span className="text-slate-900 font-medium">
+                    {formatKstTime(new Date().toISOString())}
+                  </span>
+                </div>
+              </div>
+
+              <hr className="border-slate-200" />
+
+              {/* Work Info */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">공수</span>
+                  <span className="text-slate-900 font-medium">1공수</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">적용 단가</span>
+                  <span className="text-slate-900 font-medium">
+                    {attendance.dailyWageSnapshot != null ? formatCurrency(attendance.dailyWageSnapshot) : "0원"}
+                  </span>
+                </div>
+              </div>
+
+              <hr className="border-slate-200" />
+
+              {/* Expected Wage */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600">예상 임금(세전)</span>
+                <span className="text-[#007DCA] font-bold">
+                  {attendance.dailyWageSnapshot != null ? formatCurrency(attendance.dailyWageSnapshot) : "0원"}
+                </span>
+              </div>
+
+              {/* Info Message */}
+              <div className="bg-slate-50 rounded-lg p-4 flex gap-3">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0 mt-0.5">
+                  <path
+                    d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z"
+                    stroke="#94A3B8"
+                    strokeWidth="1.5"
+                  />
+                  <path d="M10 6V11" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
+                  <circle cx="10" cy="14" r="1" fill="#94A3B8" />
+                </svg>
+                <p className="text-sm text-slate-500">
+                  당일 공수/단가 수정이 필요한 경우,{"\n"}'정정 요청' 버튼을 눌러 관리자에게{"\n"}수정을 요청할 수 있습니다.
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <Button variant="outline" size="full" onClick={() => {
+                  setShowCheckoutDialog(false)
+                  setCorrectionWorkEffort("1.0")
+                  setCorrectionDailyWage(attendance.dailyWageSnapshot != null ? attendance.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
+                  setCorrectionReason("")
+                  setShowCorrectionDialog(true)
+                }}
+                  className="flex-1 bg-gray-100 border-0 text-slate-900 hover:bg-gray-200">
+                  정정 요청
+                </Button>
+                <Button variant="primary" size="full" onClick={() => {
+                  setShowCheckoutDialog(false)
+                  actions.clockOut()
+                }}
+                  className="flex-1">
+                  퇴근하기
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Check-in Error Notification */}
       {notifications.showError && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4 pointer-events-none">
@@ -390,70 +536,6 @@ export function Home() {
         </div>
       )}
 
-      {/* Checkout Complete Popup */}
-      {checkoutPopup.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={checkoutPopup.close} />
-          <div className="relative z-10 w-80 bg-white rounded-xl shadow-xl border border-slate-200">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-4">
-              <h2 className="text-lg font-bold text-slate-900">퇴근하기</h2>
-              <Button variant="ghost" size="icon" onClick={checkoutPopup.close}
-                className="w-6 h-6 hover:bg-transparent text-slate-900">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </Button>
-            </div>
-
-            {/* Content */}
-            <div className="px-5 py-4 space-y-4">
-              {/* Check-in Time */}
-              <div className="text-sm text-slate-600">
-                <span>출근</span>
-                <span className="float-right text-slate-900 font-medium">
-                  {attendance.checkInTime ? formatKstTime(attendance.checkInTime) : ""}
-                </span>
-              </div>
-
-              {/* Check-out Time */}
-              <div className="text-sm text-slate-600">
-                <span>퇴근</span>
-                <span className="float-right text-slate-900 font-medium">
-                  {attendance.checkOutTime ? formatKstTime(attendance.checkOutTime) : ""}
-                </span>
-              </div>
-
-              {/* Warning Box */}
-              <div className="bg-orange-50 rounded-lg p-4 flex gap-3">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0 mt-0.5">
-                  <path
-                    d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z"
-                    stroke="#EA580C"
-                    strokeWidth="1.5"
-                  />
-                  <path d="M10 6V11" stroke="#EA580C" strokeWidth="1.5" strokeLinecap="round" />
-                  <circle cx="10" cy="14" r="1" fill="#EA580C" />
-                </svg>
-                <p className="text-sm text-orange-600">
-                  공수가 실제와 다른 경우, '정정 요청' 버튼을 눌러 정정 요청할 수 있습니다.
-                </p>
-              </div>
-
-              {/* Buttons */}
-              <div className="space-y-2">
-                <Button variant="neutral" size="full" onClick={openCorrectionDialog}
-                  className="bg-slate-100 border-0 hover:bg-slate-200 text-slate-900 font-semibold">
-                  정정 요청
-                </Button>
-                <Button variant="primary" size="full" onClick={checkoutPopup.close}>
-                  확인 완료
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Correction Request Dialog */}
       {showCorrectionDialog && (
@@ -461,13 +543,14 @@ export function Home() {
           <div className="absolute inset-0 bg-black/50" onClick={closeAll} />
           <div className="relative z-10 w-[calc(100%-2rem)] max-w-sm bg-white rounded-xl shadow-xl max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <button onClick={closeCorrectionDialog} className="p-1 -ml-1">
+            <div className="flex items-center px-5 pt-4 pb-2">
+              <button onClick={() => { setShowCorrectionDialog(false); setShowCheckoutDialog(true) }} className="p-1 -ml-1">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
               </button>
-              <h2 className="text-lg font-bold text-slate-900">정정 요청</h2>
+              <h2 className="text-lg font-bold text-slate-900 ml-2">정정 요청</h2>
+              <div className="flex-1" />
               <button onClick={closeAll} className="p-1 -mr-1">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 6L6 18M6 6l12 12" />
@@ -476,113 +559,103 @@ export function Home() {
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              {!record ? (
-                <div className="flex items-center justify-center py-10">
-                  <Spinner size="md" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Site Info */}
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">{attendance.siteName}</h3>
-                    {attendance.siteAddress && (
-                      <div className="flex items-center gap-1 text-sm text-slate-500 mt-1">
-                        <FmdGoodIcon sx={{ fontSize: 16 }} />
-                        <span>{attendance.siteAddress}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="border-t border-slate-100" />
-
-                  {/* Times */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">출근</span>
-                      <span className="text-sm font-medium text-slate-900">
-                        {attendance.checkInTime ? formatKstTime(attendance.checkInTime) : ""}
-                      </span>
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              {/* Site Info */}
+              {workSite.name && (
+                <div className="bg-slate-100 rounded-lg p-4">
+                  <h3 className="text-base font-bold text-slate-900 mb-1">{workSite.name}</h3>
+                  {workSite.address && (
+                    <div className="flex items-center gap-1 text-sm text-slate-500">
+                      <FmdGoodIcon sx={{ fontSize: 16 }} />
+                      <span>{workSite.address}</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">퇴근</span>
-                      <span className="text-sm font-medium text-slate-900">
-                        {attendance.checkOutTime ? formatKstTime(attendance.checkOutTime) : ""}
-                      </span>
-                    </div>
-
-                    {/* Work Effort */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">내 공수</span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          value={correctionWorkEffort}
-                          onChange={(e) => setCorrectionWorkEffort(e.target.value)}
-                          className="w-20 h-10 text-center text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
-                        />
-                        <span className="text-sm text-slate-600">공수</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-100" />
-
-                  {/* Daily Wage */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">현장 단가</span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={correctionDailyWage}
-                          onChange={(e) => {
-                            const raw = e.target.value.replace(/[^0-9]/g, "")
-                            setCorrectionDailyWage(raw ? Number(raw).toLocaleString("ko-KR") : "")
-                          }}
-                          className="w-28 h-10 text-center text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
-                        />
-                        <span className="text-sm text-slate-600">원</span>
-                      </div>
-                    </div>
-
-                    {/* Expected Wage */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">예상 임금(세전)</span>
-                      <span className="text-base font-semibold text-[#007DCA]">
-                        {formatCurrency(expectedWage)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Reason */}
-                  <textarea
-                    value={correctionReason}
-                    onChange={(e) => setCorrectionReason(e.target.value)}
-                    placeholder="변경사유를 입력해주세요..."
-                    rows={4}
-                    className="w-full p-4 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
-                  />
+                  )}
                 </div>
               )}
+
+              {/* Times */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">출근</span>
+                  <span className="text-slate-900 font-medium">
+                    {attendance.checkInTime ? formatKstTime(attendance.checkInTime) : ""}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">퇴근</span>
+                  <span className="text-slate-900 font-medium">
+                    {formatKstTime(new Date().toISOString())}
+                  </span>
+                </div>
+              </div>
+
+              <hr className="border-slate-200" />
+
+              {/* Work Effort & Daily Wage */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">공수</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={correctionWorkEffort}
+                      onChange={(e) => setCorrectionWorkEffort(e.target.value)}
+                      className="w-24 h-10 text-center text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
+                    />
+                    <span className="text-sm text-slate-600">공수</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">적용 단가</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={correctionDailyWage}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, "")
+                        setCorrectionDailyWage(raw ? Number(raw).toLocaleString("ko-KR") : "")
+                      }}
+                      className="w-28 h-10 text-center text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
+                    />
+                    <span className="text-sm text-slate-600">원</span>
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-slate-200" />
+
+              {/* Expected Wage */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600">예상 임금(세전)</span>
+                <span className="text-[#007DCA] font-bold">
+                  {formatCurrency(expectedWage)}
+                </span>
+              </div>
+
+              {/* Reason */}
+              <textarea
+                value={correctionReason}
+                onChange={(e) => setCorrectionReason(e.target.value)}
+                placeholder="요청사유를 입력해주세요..."
+                rows={4}
+                className="w-full p-4 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
+              />
             </div>
 
             {/* Submit Button */}
-            {record && (
-              <div className="px-5 pb-5 pt-2">
-                <Button
-                  variant={isSubmitting || !correctionReason.trim() ? "primaryDisabled" : "primary"}
-                  size="full"
-                  onClick={handleCorrectionSubmit}
-                  disabled={isSubmitting || !correctionReason.trim()}
-                >
-                  {isSubmitting ? "제출 중..." : "정정 요청 제출"}
-                </Button>
-              </div>
-            )}
+            <div className="px-5 pb-5 pt-2">
+              <Button
+                variant={isSubmitting || !correctionReason.trim() ? "primaryDisabled" : "primary"}
+                size="full"
+                onClick={handleCorrectionSubmit}
+                disabled={isSubmitting || !correctionReason.trim()}
+              >
+                {isSubmitting ? "제출 중..." : "요청 제출 및 퇴근"}
+              </Button>
+            </div>
           </div>
         </div>
       )}

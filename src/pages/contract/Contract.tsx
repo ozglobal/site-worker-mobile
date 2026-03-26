@@ -109,15 +109,16 @@ export function ContractPage() {
                 role="button"
                 tabIndex={0}
                 onClick={
-                  contract.status === "sent" || contract.status === "in_progress"
+                  contract.status === "sent"
                     ? () => handleSigningClick(contract.id)
-                    : contract.status === "completed" ? () => handlePdfClick(contract.id)
+                    : contract.status === "in_progress" || contract.status === "completed"
+                    ? () => handlePdfClick(contract.id)
                     : undefined
                 }
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    if (contract.status === "sent" || contract.status === "in_progress") handleSigningClick(contract.id)
-                    else if (contract.status === "completed") handlePdfClick(contract.id)
+                    if (contract.status === "sent") handleSigningClick(contract.id)
+                    else if (contract.status === "in_progress" || contract.status === "completed") handlePdfClick(contract.id)
                   }
                 }}
                 className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm ${

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { AppHeader } from "@/components/layout/AppHeader"
 import { AffiliationCard } from "@/components/ui/affiliation-card"
 import { ProgressBar } from "@/components/ui/progress-bar"
 
@@ -49,7 +49,7 @@ export function OnboardingAffiliationPage() {
   const handleSelect = (id: string) => {
     setSelected(id)
     if (id === "general" || id === "specialty") {
-      navigate("/onboarding/my-account")
+      navigate("/onboarding/payroll-account")
     } else if (id === "service") {
       navigate("/onboarding/outsourcing")
     } else if (id === "equipment") {
@@ -59,21 +59,22 @@ export function OnboardingAffiliationPage() {
 
   return (
     <div className="flex h-screen flex-col bg-white">
-      {/* Header with back button */}
-      <div className="flex items-center px-4 py-4 shrink-0">
-        <button onClick={handleBack} className="p-2 -ml-2">
-          <ArrowBackIcon className="h-6 w-6 text-slate-900" />
-        </button>
-      </div>
+      <AppHeader
+        showLeftAction={true}
+        title=""
+        showRightAction={false}
+        onLeftActionClick={handleBack}
+        className="shrink-0"
+      />
 
       {/* Progress bar */}
-      <ProgressBar value={20} className="mb-6" />
+      <ProgressBar value={20} />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {/* Title */}
         <div className="px-4 pt-4 pb-2">
-          <h1 className="text-xl font-bold text-slate-900">소속을 선택해주세요</h1>
+          <h1 className="text-lg font-bold text-slate-900">소속을 선택해주세요</h1>
           <p className="mt-1 text-sm text-gray-500">선택한 소속은 나중에 언제든지 변경할 수 있어요.</p>
         </div>
 

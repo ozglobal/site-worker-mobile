@@ -37,6 +37,12 @@ import { OnboardingCompanyAccountPage } from './pages/onboarding/CompanyAccount'
 import { OnboardingOutsourcingDocumentsPage } from './pages/onboarding/OutsourcingDocuments';
 import { OnboardingEquipmentsPage } from './pages/onboarding/Equipments';
 import { OnboardingEquipmentsListPage } from './pages/onboarding/EquipmentsList';
+import { OnboardingPayrollAccountPage } from './pages/onboarding/PayrollAccount';
+import { OnboardingDocumentCaptureGuideIdcardPage } from './pages/onboarding/DocumentCaptureGuideIdcard';
+import { OnboardingDocumentCaptureGuidePassportPage } from './pages/onboarding/DocumentCaptureGuidePassport';
+import { OnboardingIdCardPreviewPage } from './pages/onboarding/IdCardPreview';
+import { OnboardingIdCardPreviewKrPage } from './pages/onboarding/IdCardPreviewKr';
+import { OnboardingPassportPreviewPage } from './pages/onboarding/PassportPreview';
 import { MyAccountPage } from './pages/profile/MyAccount';
 import { OutsourcingPage } from './pages/profile/Outsourcing';
 import { EngineerPage } from './pages/profile/Engineer';
@@ -84,6 +90,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/onboarding/outsourcing-documents" element={<OnboardingOutsourcingDocumentsPage />} />
       <Route path="/onboarding/equipments" element={<OnboardingEquipmentsPage />} />
       <Route path="/onboarding/equipments-list" element={<OnboardingEquipmentsListPage />} />
+      <Route path="/onboarding/payroll-account" element={<OnboardingPayrollAccountPage />} />
+      <Route path="/onboarding/documents/capture-guide-idcard" element={<OnboardingDocumentCaptureGuideIdcardPage />} />
+      <Route path="/onboarding/documents/capture-guide-passport" element={<OnboardingDocumentCaptureGuidePassportPage />} />
+      <Route path="/onboarding/documents/id-card-preview" element={<OnboardingIdCardPreviewPage />} />
+      <Route path="/onboarding/documents/id-card-preview-kr" element={<OnboardingIdCardPreviewKrPage />} />
+      <Route path="/onboarding/documents/passport-preview" element={<OnboardingPassportPreviewPage />} />
       <Route path="/profile/my-account" element={<MyAccountPage />} />
       <Route path="/profile/family-account" element={<FamilyAccountPage />} />
       <Route path="/profile/outsourcing" element={<OutsourcingPage />} />

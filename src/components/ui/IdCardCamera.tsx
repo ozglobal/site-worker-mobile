@@ -4,6 +4,8 @@ import CameraAltIcon from "@mui/icons-material/CameraAlt"
 
 interface IdCardCameraProps {
   side: "front" | "back"
+  title?: string
+  showSide?: boolean
   onCapture: (file: File) => void
   onClose: () => void
 }
@@ -95,7 +97,7 @@ function detectCard(video: HTMLVideoElement, canvas: HTMLCanvasElement): boolean
   return avgContrast > 15
 }
 
-export function IdCardCamera({ side, onCapture, onClose }: IdCardCameraProps) {
+export function IdCardCamera({ side, title = "신분증", showSide = true, onCapture, onClose }: IdCardCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const detectionCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -249,7 +251,7 @@ export function IdCardCamera({ side, onCapture, onClose }: IdCardCameraProps) {
           <CloseIcon className="h-6 w-6" />
         </button>
         <span className="text-white font-medium">
-          신분증 {side === "front" ? "앞면" : "뒷면"}
+          {title}{showSide ? ` ${side === "front" ? "앞면" : "뒷면"}` : ""}
         </span>
         <div className="w-10" />
       </div>
@@ -295,7 +297,7 @@ export function IdCardCamera({ side, onCapture, onClose }: IdCardCameraProps) {
       {/* Guide text */}
       <div className="text-center py-4">
         <p className={`text-sm transition-colors ${detected ? "text-green-400" : "text-gray-400"}`}>
-          {detected ? "신분증이 인식되었습니다" : "영역 안에 신분증을 맞춰주세요"}
+          {detected ? `${title}이 인식되었습니다` : `영역 안에 ${title}을 맞춰주세요`}
         </p>
       </div>
 

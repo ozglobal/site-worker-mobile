@@ -50,7 +50,7 @@ export function NiceApiPage() {
 
       <main className="flex-1 overflow-hidden">
           <div className="px-4 py-6 space-y-6">
-            <p className="text-xl font-bold text-slate-900 leading-tight">
+            <p className="text-lg font-bold text-slate-900 leading-tight">
               Backend API call이 보내준 <br></br>NICE 휴대폰 본인확인 서비스 페이지
             </p>
 

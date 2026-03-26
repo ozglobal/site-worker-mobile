@@ -16,7 +16,6 @@ import { useCalendarAgent } from "./agents/calendar"
 import { useNotificationAgent } from "./agents/notification"
 import type { Location, Site, TodayWorkRecord } from "./home.types"
 import type { QRCodeData } from "@/components/ui/QrScanner"
-import type { WeeklyAttendanceRecord } from "@/lib/attendance"
 
 // ============================================
 // Types
@@ -87,18 +86,10 @@ interface HomeAgentReturn {
     dismissError: () => void
   }
 
-  // Checkout popup
-  checkoutPopup: {
-    isOpen: boolean
-    close: () => void
-    attendanceId: string | null
-    lastCheckoutRecord: WeeklyAttendanceRecord | null
-  }
-
   // Actions
   actions: {
     clockIn: () => Promise<void>
-    clockOut: () => Promise<void>
+    clockOut: () => Promise<{ success: boolean; attendanceId?: string | null } | undefined>
   }
 }
 
@@ -119,8 +110,6 @@ export function useHomeAgent(): HomeAgentReturn {
   // Local UI State
   // ============================================
   const [showScanner, setShowScanner] = useState(false)
-  const [showCheckoutPopup, setShowCheckoutPopup] = useState(false)
-  const [checkoutAttendanceId, setCheckoutAttendanceId] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<"check-out" | null>(null)
 
   // ============================================
@@ -156,13 +145,13 @@ export function useHomeAgent(): HomeAgentReturn {
     const freshLocation = await location.requestLocation()
     const result = await attendance.checkOut(freshLocation || undefined)
 
-    if (result.success) {
-      setCheckoutAttendanceId(result.attendanceId || null)
-      setShowCheckoutPopup(true)
-    } else {
+    if (!result.success) {
       notifications.showError("퇴근 실패", result.error)
+      setPendingAction(null)
+      return { success: false }
     }
     setPendingAction(null)
+    return { success: true, attendanceId: result.attendanceId }
   }, [attendance, location, notifications])
 
   /**
@@ -258,11 +247,6 @@ export function useHomeAgent(): HomeAgentReturn {
     [attendance.todayRecords]
   )
 
-  // Latest completed checkout record (for correction request dialog)
-  const lastCheckoutRecord = useMemo(() => {
-    const completed = attendance.todayRecords.filter((r) => r.hasCheckedOut)
-    return completed.length > 0 ? completed[completed.length - 1] : null
-  }, [attendance.todayRecords])
 
   // ============================================
   // Return Grouped API
@@ -334,14 +318,6 @@ export function useHomeAgent(): HomeAgentReturn {
         const errorNotif = notifications.notifications.find((n) => n.type === "error")
         if (errorNotif) notifications.dismiss(errorNotif.id)
       },
-    },
-
-    // Checkout popup
-    checkoutPopup: {
-      isOpen: showCheckoutPopup,
-      close: () => setShowCheckoutPopup(false),
-      attendanceId: checkoutAttendanceId,
-      lastCheckoutRecord,
     },
 
     // Actions

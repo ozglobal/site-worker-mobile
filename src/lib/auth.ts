@@ -59,7 +59,7 @@ const mockLogin = async (params: LoginParams): Promise<LoginResult> => {
 export const getSmsCode = async (phone: string): Promise<ApiResult<unknown>> => {
   try {
     const requestBody = { phone }
-    devLogRequestRaw('/auth/register/send-code', requestBody)
+    devLogRequestRaw('POST /auth/register/send-code', requestBody)
     const response = await fetch(`${API_BASE_URL}/auth/register/send-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -67,7 +67,7 @@ export const getSmsCode = async (phone: string): Promise<ApiResult<unknown>> => 
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/auth/register/send-code', { status: response.status, data: responseData })
+    devLogApiRaw('POST /auth/register/send-code', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -89,7 +89,7 @@ export const getSmsCode = async (phone: string): Promise<ApiResult<unknown>> => 
 export const sendPasswordCode = async (phone: string): Promise<ApiResult<unknown>> => {
   try {
     const requestBody = { phone }
-    devLogRequestRaw('/auth/password/send-code', requestBody)
+    devLogRequestRaw('POST /auth/password/send-code', requestBody)
     const response = await fetch(`${API_BASE_URL}/auth/password/send-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'accept': '*/*' },
@@ -97,7 +97,7 @@ export const sendPasswordCode = async (phone: string): Promise<ApiResult<unknown
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/auth/password/send-code', { status: response.status, data: responseData })
+    devLogApiRaw('POST /auth/password/send-code', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -122,7 +122,7 @@ export const resetPasswordBySms = async (params: {
   newPassword: string
 }): Promise<ApiResult<unknown>> => {
   try {
-    devLogRequestRaw('/auth/password/reset-by-sms', { phone: params.phone, code: '***' })
+    devLogRequestRaw('PATCH /auth/password/reset-by-sms', { phone: params.phone, code: '***' })
     const response = await fetch(`${API_BASE_URL}/auth/password/reset-by-sms`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'accept': '*/*' },
@@ -130,7 +130,7 @@ export const resetPasswordBySms = async (params: {
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/auth/password/reset-by-sms', { status: response.status, data: responseData })
+    devLogApiRaw('PATCH /auth/password/reset-by-sms', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -152,7 +152,7 @@ export const resetPasswordBySms = async (params: {
 export const verifySmsCode = async (phone: string, verificationCode: string): Promise<ApiResult<unknown>> => {
   try {
     const requestBody = { phone, verificationCode }
-    devLogRequestRaw('/auth/register/verify-code', requestBody)
+    devLogRequestRaw('POST /auth/register/verify-code', requestBody)
     const response = await fetch(`${API_BASE_URL}/auth/register/verify-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -160,7 +160,7 @@ export const verifySmsCode = async (phone: string, verificationCode: string): Pr
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/auth/register/verify-code', { status: response.status, data: responseData })
+    devLogApiRaw('POST /auth/register/verify-code', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -194,7 +194,7 @@ export interface RegisterWorkerParams {
 
 export const registerWorker = async (params: RegisterWorkerParams): Promise<ApiResult<unknown>> => {
   try {
-    devLogRequestRaw('/auth/register/worker', { ...params, password: '***' })
+    devLogRequestRaw('POST /auth/register/worker', { ...params, password: '***' })
     const response = await fetch(`${API_BASE_URL}/auth/register/worker`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -202,7 +202,7 @@ export const registerWorker = async (params: RegisterWorkerParams): Promise<ApiR
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/auth/register/worker', { status: response.status, data: responseData })
+    devLogApiRaw('POST /auth/register/worker', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -233,7 +233,7 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
       password: params.password,
       clientId: params.clientId || 'mobile',
     }
-    devLogRequestRaw('/auth/login', requestBody)
+    devLogRequestRaw('POST /auth/login', requestBody)
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
@@ -243,7 +243,7 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/auth/login', { status: response.status, data: responseData })
+    devLogApiRaw('POST /auth/login', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -387,7 +387,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     }
 
     try {
-      devLogRequestRaw('/auth/refresh', { refreshToken: '***' })
+      devLogRequestRaw('POST /auth/refresh', { refreshToken: '***' })
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
@@ -397,17 +397,17 @@ export const refreshAccessToken = async (): Promise<string | null> => {
       })
 
       if (!response.ok) {
-        devLogApiRaw('/auth/refresh', { status: response.status, error: 'Refresh failed' })
+        devLogApiRaw('POST /auth/refresh', { status: response.status, error: 'Refresh failed' })
         reportError('AUTH_REFRESH_FAIL', 'Token refresh failed', { endpoint: '/auth/refresh', httpStatus: response.status })
         clearTokens()
         return null
       }
 
       const responseData = await safeJson(response) as Record<string, unknown> | null
-      devLogApiRaw('/auth/refresh', { status: response.status, data: responseData })
+      devLogApiRaw('POST /auth/refresh', { status: response.status, data: responseData })
 
       if (!responseData) {
-        devLogApiRaw('/auth/refresh', { error: 'Invalid response body' })
+        devLogApiRaw('POST /auth/refresh', { error: 'Invalid response body' })
         reportError('AUTH_REFRESH_INVALID', 'Invalid refresh response')
         clearTokens()
         return null
@@ -428,7 +428,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
 
       return null
     } catch (err) {
-      devLogApiRaw('/auth/refresh', { error: 'Network error', detail: String(err) })
+      devLogApiRaw('POST /auth/refresh', { error: 'Network error', detail: String(err) })
       reportError('AUTH_REFRESH_NETWORK', 'Refresh network error', { endpoint: '/auth/refresh' })
       clearTokens()
       return null
@@ -464,7 +464,7 @@ const _fetchUserInfoImpl = async (): Promise<Record<string, unknown> | null> => 
   }
 
   try {
-    devLogRequestRaw('/auth/user/info', { method: 'GET' })
+    devLogRequestRaw('GET /auth/user/info')
     const response = await fetch(`${API_BASE_URL}/auth/user/info`, {
       method: 'GET',
       headers: {
@@ -479,7 +479,7 @@ const _fetchUserInfoImpl = async (): Promise<Record<string, unknown> | null> => 
     }
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('/auth/user/info', { status: response.status, data: responseData })
+    devLogApiRaw('GET /auth/user/info', { status: response.status, data: responseData })
 
     if (!responseData) {
       return null

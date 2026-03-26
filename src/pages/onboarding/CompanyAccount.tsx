@@ -42,20 +42,20 @@ export function OnboardingCompanyAccountPage() {
   return (
     <div className="flex h-screen flex-col bg-white">
       {/* Header with back button */}
-      <div className="flex items-center px-4 py-4 shrink-0">
+      <div className="flex items-center px-4 h-14 shrink-0">
         <button onClick={handleBack} className="p-2 -ml-2">
           <ArrowBackIcon className="h-6 w-6 text-slate-900" />
         </button>
       </div>
 
       {/* Progress bar */}
-      <ProgressBar value={20} className="mb-6" />
+      <ProgressBar value={20} />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {/* Title */}
         <div className="px-4 pt-4 pb-2">
-          <h1 className="text-xl font-bold text-slate-900">급여 지급 방식을 알려주세요</h1>
+          <h1 className="text-lg font-bold text-slate-900">급여 지급 방식을 알려주세요</h1>
           <p className="mt-1 text-sm text-gray-500">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
         </div>
 

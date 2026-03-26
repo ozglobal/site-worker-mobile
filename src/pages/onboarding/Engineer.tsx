@@ -42,14 +42,14 @@ export function OnboardingEngineerPage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
       {/* Header with back button */}
-      <div className="flex items-center px-4 py-4 shrink-0">
+      <div className="flex items-center px-4 h-14 shrink-0">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2">
           <ArrowBackIcon className="h-6 w-6 text-slate-900" />
         </button>
       </div>
 
       {/* Progress bar */}
-      <ProgressBar value={40} className="mb-6" />
+      <ProgressBar value={40} />
 
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">

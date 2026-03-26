@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import CameraAltIcon from "@mui/icons-material/CameraAlt"
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import { Button } from "@/components/ui/button"
 
 interface IdCardPreviewProps {
@@ -24,30 +25,26 @@ export function IdCardPreview({
   onConfirm,
   onClose,
 }: IdCardPreviewProps) {
-  const [showBackGuide, setShowBackGuide] = useState(false)
+  const [nationality, setNationality] = useState("")
+  const [residenceStatus, setResidenceStatus] = useState("")
 
-  // Show back guide dialog after front photo is taken (only if back is needed)
-  useEffect(() => {
-    if (needsBack && frontImage && !backImage) {
-      const timer = setTimeout(() => setShowBackGuide(true), 500)
-      return () => clearTimeout(timer)
-    }
-  }, [needsBack, frontImage, backImage])
+  const isFormComplete = frontImage && (!needsBack || backImage) && nationality && residenceStatus
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       {/* Header */}
-      <div className="flex items-center px-4 py-4 shrink-0">
+      <div className="flex items-center h-14 px-4 shrink-0">
         <button onClick={onClose} className="p-2 -ml-2">
           <ArrowBackIcon className="h-6 w-6 text-slate-900" />
         </button>
+        <h1 className="flex-1 text-center text-base font-semibold text-slate-900 mr-8">신분증 촬영</h1>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4">
         {/* Front */}
-        <div className="mb-8">
-          <p className="text-center font-bold text-slate-900 mb-3">앞면</p>
+        <div className="mb-6">
+          <p className="font-bold text-slate-900 mb-3">앞면</p>
           {frontImage ? (
             <div className="relative">
               <img
@@ -72,8 +69,8 @@ export function IdCardPreview({
         </div>
 
         {/* Back */}
-        {needsBack && <div className="mb-8">
-          <p className="text-center font-bold text-slate-900 mb-3">뒷면</p>
+        {needsBack && <div className="mb-6">
+          <p className="font-bold text-slate-900 mb-3">뒷면</p>
           {backImage ? (
             <div className="relative">
               <img
@@ -100,41 +97,58 @@ export function IdCardPreview({
             </button>
           )}
         </div>}
+
+        {/* 국적 */}
+        <div className="mb-4">
+          <p className="font-bold text-slate-900 mb-2">국적</p>
+          <div className="relative">
+            <select
+              value={nationality}
+              onChange={(e) => setNationality(e.target.value)}
+              className="w-full h-12 px-4 pr-10 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 appearance-none"
+            >
+              <option value="" disabled>국적 선택</option>
+              <option value="KR">대한민국</option>
+              <option value="CN">중국</option>
+              <option value="VN">베트남</option>
+              <option value="TH">태국</option>
+              <option value="PH">필리핀</option>
+              <option value="ID">인도네시아</option>
+              <option value="MM">미얀마</option>
+              <option value="KH">캄보디아</option>
+              <option value="NP">네팔</option>
+              <option value="UZ">우즈베키스탄</option>
+              <option value="OTHER">기타</option>
+            </select>
+            <ExpandMoreIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* 체류자격 */}
+        <div className="mb-6">
+          <p className="font-bold text-slate-900 mb-2">체류자격</p>
+          <input
+            type="text"
+            value={residenceStatus}
+            onChange={(e) => setResidenceStatus(e.target.value)}
+            placeholder="체류자격 입력"
+            className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+          />
+        </div>
       </div>
 
       {/* Bottom button */}
-      {frontImage && (!needsBack || backImage) && (
-        <div className="px-4 pb-8 pt-4 shrink-0">
-          <Button variant="primary" size="full" onClick={onConfirm}>
-            등록 완료
-          </Button>
-        </div>
-      )}
+      <div className="px-4 py-6 shrink-0">
+        <Button
+          variant={isFormComplete ? "primary" : "primaryDisabled"}
+          size="full"
+          disabled={!isFormComplete}
+          onClick={onConfirm}
+        >
+          다음
+        </Button>
+      </div>
 
-      {/* Back guide dialog */}
-      {needsBack && showBackGuide && !backImage && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowBackGuide(false)} />
-          <div className="relative bg-white rounded-2xl w-[90%] max-w-sm mx-auto overflow-hidden">
-            <div className="px-6 pt-6 pb-4 text-center">
-              <p className="text-lg font-bold text-slate-900 mb-1">앞면 촬영 완료</p>
-              <p className="text-sm text-slate-500">이제 신분증의 뒷면을 촬영해주세요.</p>
-            </div>
-            <div className="px-6 pb-6">
-              <Button
-                variant="primary"
-                size="full"
-                onClick={() => {
-                  setShowBackGuide(false)
-                  onTakeBack()
-                }}
-              >
-                뒷면 촬영하기
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
