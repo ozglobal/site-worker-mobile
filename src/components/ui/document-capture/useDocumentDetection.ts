@@ -95,9 +95,9 @@ export function useDocumentDetection() {
       const fw = Math.round(frameRect.width * scaleX)
       const fh = Math.round(frameRect.height * scaleY)
 
-      // Inner edge strips: inset 10% from frame border to avoid fingers/shadows at edges
-      const insetX = Math.round(fw * 0.10)
-      const insetY = Math.round(fh * 0.10)
+      // Inner edge strips: inset 18% from frame border — allows ~80-85% fill
+      const insetX = Math.round(fw * 0.18)
+      const insetY = Math.round(fh * 0.18)
       const stripW = Math.max(Math.round(fw * 0.08), 2)
       const stripH = Math.max(Math.round(fh * 0.08), 2)
 
