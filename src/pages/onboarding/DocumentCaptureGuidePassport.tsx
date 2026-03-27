@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import { Button } from "@/components/ui/button"
-import { DocumentCapture } from "@/components/ui/document-capture/DocumentCapture"
+import { DocumentCapture } from "@/components/ui/document-capture/document-capture"
 import { uploadDocument } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 

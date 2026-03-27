@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { DocumentCamera } from "./DocumentCamera"
-import { PreviewView } from "./PreviewView"
+import { DocumentCamera } from "./document-camera"
+import { PreviewView } from "./preview-view"
 
 interface DocumentCaptureProps {
   /** Called with the final base64 JPEG image when user confirms */

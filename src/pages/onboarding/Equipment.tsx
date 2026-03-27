@@ -36,7 +36,7 @@ const equipmentTypes = [
   { id: "tower-crane", name: "27. 타워크레인" },
 ]
 
-export function OnboardingEquipmentsPage() {
+export function OnboardingEquipmentPage() {
   const navigate = useNavigate()
   const [selectedEquipment, setSelectedEquipment] = useState("")
   const [certFile, setCertFile] = useState<File | null>(null)

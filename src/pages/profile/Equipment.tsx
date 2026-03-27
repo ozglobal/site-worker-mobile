@@ -40,7 +40,7 @@ const equipmentTypes = [
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 const CERT_FILE_KEY = "equipment-cert"
 
-export function EquipmentsPage() {
+export function EquipmentPage() {
   const navigate = useNavigate()
   const engineer = engineerStorage.get()
   const [selectedEquipment, setSelectedEquipment] = useState(engineer?.machine || "")

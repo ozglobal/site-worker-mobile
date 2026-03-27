@@ -10,7 +10,7 @@ import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
 import { updateWorkerAddress } from "@/lib/profile"
 // TODO: uncomment when 주소검색 API is ready
-// import { AddressSearchDialog } from "@/components/ui/AddressSearchDialog"
+// import { AddressSearchDialog } from "@/components/ui/address-search-dialog"
 // import SearchIcon from "@mui/icons-material/Search"
 
 export function MyInfoPage() {

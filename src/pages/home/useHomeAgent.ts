@@ -15,7 +15,7 @@ import { useLocationAgent } from "./agents/location"
 import { useCalendarAgent } from "./agents/calendar"
 import { useNotificationAgent } from "./agents/notification"
 import type { Location, Site, TodayWorkRecord } from "./home.types"
-import type { QRCodeData } from "@/components/ui/QrScanner"
+import type { QRCodeData } from "@/components/ui/qr-scanner"
 
 // ============================================
 // Types

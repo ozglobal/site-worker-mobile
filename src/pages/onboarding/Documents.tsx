@@ -8,9 +8,9 @@ import { ProgressBar } from "@/components/ui/progress-bar"
 import { Spinner } from "@/components/ui/spinner"
 import { uploadDocument, type DocumentType } from "@/lib/profile"
 import { type IdCardType } from "@/components/ui/id-card-upload-dialog"
-import { IdCardCamera } from "@/components/ui/id-card-capture/IdCardCamera"
-import { IdCardPreview } from "@/components/ui/id-card-capture/IdCardPreview"
-import { DocumentCapture } from "@/components/ui/document-capture/DocumentCapture"
+import { IdCardCamera } from "@/components/ui/id-card-capture/id-card-camera"
+import { IdCardPreview } from "@/components/ui/id-card-capture/id-card-preview"
+import { DocumentCapture } from "@/components/ui/document-capture/document-capture"
 import { useToast } from "@/contexts/ToastContext"
 
 interface DocumentItem {

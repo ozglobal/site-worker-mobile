@@ -5,7 +5,7 @@ import { IconTrash } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { ProgressBar } from "@/components/ui/progress-bar"
 
-export function OnboardingEquipmentsListPage() {
+export function OnboardingEquipmentListPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const incoming = location.state as { name?: string; expiryDate?: string } | null
