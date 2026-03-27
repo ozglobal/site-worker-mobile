@@ -54,7 +54,7 @@ export function OnboardingIdCardPreviewPage() {
       setTimeout(() => {
         contentRef.current?.scrollTo({ top: contentRef.current.scrollHeight, behavior: "smooth" })
         nationalityRef.current?.focus()
-      }, 300)
+      }, 500)
     }
   }
 
@@ -213,7 +213,7 @@ export function OnboardingIdCardPreviewPage() {
               type="text"
               value={permitDate}
               onChange={(e) => setPermitDate(e.target.value)}
-              onFocus={(e) => { e.target.type = "date" }}
+              onFocus={(e) => { e.target.type = "date"; e.target.showPicker?.() }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="허가일자"
               className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
@@ -223,7 +223,7 @@ export function OnboardingIdCardPreviewPage() {
               type="text"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
-              onFocus={(e) => { e.target.type = "date" }}
+              onFocus={(e) => { e.target.type = "date"; e.target.showPicker?.() }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="만료일자"
               className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"

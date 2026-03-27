@@ -298,7 +298,7 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
               {/* Countdown */}
               {countdown !== null && !stable && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white drop-shadow-lg">{countdown}</span>
+                  <span className="text-8xl font-bold text-green-400 drop-shadow-lg">{countdown}</span>
                 </div>
               )}
             </div>
