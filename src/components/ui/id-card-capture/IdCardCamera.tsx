@@ -294,6 +294,13 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
               <div className={`absolute -top-[3px] -right-[3px] w-6 h-6 border-t-[4px] border-r-[4px] rounded-tr-xl transition-colors ${cornerColor}`} />
               <div className={`absolute -bottom-[3px] -left-[3px] w-6 h-6 border-b-[4px] border-l-[4px] rounded-bl-xl transition-colors ${cornerColor}`} />
               <div className={`absolute -bottom-[3px] -right-[3px] w-6 h-6 border-b-[4px] border-r-[4px] rounded-br-xl transition-colors ${cornerColor}`} />
+
+              {/* Countdown */}
+              {countdown !== null && !stable && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white drop-shadow-lg">{countdown}</span>
+                </div>
+              )}
             </div>
           </div>
         )}

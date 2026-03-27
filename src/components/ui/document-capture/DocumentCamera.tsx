@@ -254,6 +254,13 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
             <div className={`absolute -top-[7px] -right-[7px] w-6 h-6 border-t-[4px] border-r-[4px] rounded-tr-lg transition-colors ${detected ? "border-green-400" : "border-yellow-400"}`} />
             <div className={`absolute -bottom-[7px] -left-[7px] w-6 h-6 border-b-[4px] border-l-[4px] rounded-bl-lg transition-colors ${detected ? "border-green-400" : "border-yellow-400"}`} />
             <div className={`absolute -bottom-[7px] -right-[7px] w-6 h-6 border-b-[4px] border-r-[4px] rounded-br-lg transition-colors ${detected ? "border-green-400" : "border-yellow-400"}`} />
+
+            {/* Countdown */}
+            {countdown !== null && !stable && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white drop-shadow-lg">{countdown}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
