@@ -41,19 +41,23 @@ export function OnboardingMyAccountPage() {
 
   const isFormValid = selectedBank && accountNumber.length >= 10
 
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
   useEffect(() => {
     const viewport = window.visualViewport
     if (!viewport) return
     const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
+      const keyboardVisible = window.innerHeight - viewport.height > 150
+      setViewportHeight(keyboardVisible ? viewport.height : null)
     }
     viewport.addEventListener("resize", handleResize)
     return () => viewport.removeEventListener("resize", handleResize)
   }, [])
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white">
+    <div
+      className="flex flex-col overflow-hidden bg-white"
+      style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh" }}
+    >
       {/* Header with back button */}
       <div className="flex items-center px-4 h-14 shrink-0">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2">
@@ -129,7 +133,7 @@ export function OnboardingMyAccountPage() {
         </div>
 
           {/* Action Button */}
-          <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
+          <div className={`px-4 py-6 ${viewportHeight ? "" : "mt-auto"}`}>
             <Button
               variant={isFormValid ? "primary" : "primaryDisabled"}
               size="full"

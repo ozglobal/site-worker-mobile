@@ -21,6 +21,9 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [detected, setDetected] = useState(false)
   const [stable, setStable] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const detectCountRef = useRef(0)
+  const capturedRef = useRef(false)
   const [frameRect, setFrameRect] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
   const { detect, checkStability, resetStability } = useDocumentDetection()
@@ -127,9 +130,18 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
       const rect = computeFrameRect()
 
       const result = detect(video, rect, vw, vh)
-      setDetected(result.isDocumentDetected)
-
       const isStable = checkStability(result.isDocumentDetected)
+
+      if (result.isDocumentDetected) {
+        detectCountRef.current++
+        const remaining = Math.ceil((10 - detectCountRef.current) / 10 * 3)
+        setCountdown(Math.max(remaining, 1))
+      } else {
+        detectCountRef.current = 0
+        setCountdown(null)
+      }
+
+      setDetected(result.isDocumentDetected)
       setStable(isStable)
     }
 
@@ -158,10 +170,12 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
     onCapture(base64)
   }, [computeFrameRect, onCapture, playShutter])
 
-  // Auto-capture disabled — user must tap capture button
+  // Auto-capture on stable detection
   useEffect(() => {
-    if (stable) {
+    if (stable && !capturedRef.current) {
+      capturedRef.current = true
       navigator.vibrate?.(50)
+      handleCapture()
     }
   }, [stable, handleCapture])
 
@@ -169,8 +183,9 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
   const getGuideText = () => {
     if (cameraError) return cameraError
     if (!cameraReady) return "카메라 준비 중..."
-    if (detected) return "문서가 감지되었습니다. 촬영 버튼을 눌러주세요"
-    return "문서를 프레임 안에 맞춰주세요"
+    if (stable) return "촬영 중..."
+    if (countdown !== null) return `${countdown}`
+    return "문서를 영역 안에 맞춰주세요"
   }
 
   const borderColor = stable
@@ -287,7 +302,7 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
 
         {/* Hint */}
         <p className="text-center text-xs text-white/50 mt-3">
-          문서를 프레임에 맞추고 촬영 버튼을 눌러주세요
+          문서를 프레임에 맞추면 자동으로 촬영됩니다
         </p>
       </div>
     </div>

@@ -23,6 +23,8 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
   const [error, setError] = useState<string | null>(null)
   const [detected, setDetected] = useState(false)
   const [stable, setStable] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const detectCountRef = useRef(0)
   const [frameRect, setFrameRect] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
   const { play: playShutter } = useShutterSound()
@@ -109,6 +111,16 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
 
       const { isDocumentDetected } = detect(video, rect, vw, vh)
       const isStable = checkStability(isDocumentDetected)
+
+      if (isDocumentDetected) {
+        detectCountRef.current++
+        // STABLE_THRESHOLD is 10 (2.5s). Map to 3...2...1 countdown
+        const remaining = Math.ceil((10 - detectCountRef.current) / 10 * 3)
+        setCountdown(Math.max(remaining, 1))
+      } else {
+        detectCountRef.current = 0
+        setCountdown(null)
+      }
 
       setDetected(isDocumentDetected)
       setStable(isStable)
@@ -296,7 +308,7 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
       {/* Guide text */}
       <div className="text-center py-4">
         <p className={`text-lg font-medium transition-colors ${detected ? "text-green-400" : "text-gray-400"}`}>
-          {stable ? "자동 촬영 중..." : detected ? "인식 중..." : `영역 안에 ${title}을 맞춰주세요`}
+          {stable ? "촬영 중..." : countdown !== null ? `${countdown}` : `영역 안에 ${title}을 맞춰주세요`}
         </p>
       </div>
 
