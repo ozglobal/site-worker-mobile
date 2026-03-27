@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import CameraAltIcon from "@mui/icons-material/CameraAlt"
@@ -28,6 +28,7 @@ export function OnboardingIdCardPreviewPage() {
   const [cameraSide, setCameraSide] = useState<"front" | "back">("front")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const buttonRef = useRef<HTMLDivElement>(null)
   const isFormComplete = frontImageUrl && backImageUrl && nationality && residenceStatus && permitDate && expiryDate
 
   // Auto-open camera for front side on first load
@@ -88,26 +89,8 @@ export function OnboardingIdCardPreviewPage() {
     navigate("/onboarding/documents", { replace: true, state: { completed: docId } })
   }
 
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      const keyboardVisible = window.innerHeight - viewport.height > 150
-      setViewportHeight(keyboardVisible ? viewport.height : null)
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
-  }, [])
-
-  // Only shrink container to keep button visible after 만료일자 is filled
-  const shrinkForKeyboard = viewportHeight && expiryDate
-
   return (
-    <div
-      className="flex flex-col bg-white"
-      style={{ height: shrinkForKeyboard ? `${viewportHeight}px` : "100vh" }}
-    >
+    <div className="flex h-screen flex-col bg-white">
       {/* Header */}
       <div className="flex items-center h-14 px-4 shrink-0">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2">
@@ -211,6 +194,7 @@ export function OnboardingIdCardPreviewPage() {
             type="text"
             value={residenceStatus}
             onChange={(e) => setResidenceStatus(e.target.value)}
+            onFocus={() => setTimeout(() => buttonRef.current?.scrollIntoView({ behavior: "smooth" }), 300)}
             placeholder="체류자격 입력"
             className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
           />
@@ -244,7 +228,7 @@ export function OnboardingIdCardPreviewPage() {
       </div>
 
       {/* Bottom button */}
-      <div className="px-4 py-6 shrink-0">
+      <div ref={buttonRef} className="px-4 py-6 shrink-0">
         <Button
           variant={isFormComplete && !isSubmitting ? "primary" : "primaryDisabled"}
           size="full"
