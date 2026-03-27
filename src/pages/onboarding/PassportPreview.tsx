@@ -104,7 +104,7 @@ export function OnboardingPassportPreviewPage() {
           disabled={!isFormComplete || isSubmitting}
           onClick={handleSubmit}
         >
-          {isSubmitting ? "등록 중..." : "다음"}
+          {isSubmitting ? "등록 중..." : "등록하기"}
         </Button>
       </div>
 

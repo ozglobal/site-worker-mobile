@@ -11,14 +11,19 @@ interface PaymentMethod {
 
 const paymentMethods: PaymentMethod[] = [
   {
-    id: "company",
-    title: "회사로 지급",
-    subtitle: "소속된 용역 업체로 급여 지급",
-  },
-  {
     id: "personal",
     title: "본인 계좌로 지급",
     subtitle: "본인이 입력한 계좌로 직접 지급",
+  },
+  {
+    id: "family",
+    title: "가족 계좌로 지급",
+    subtitle: "가족 명의 계좌로 급여 지급",
+  },
+  {
+    id: "company",
+    title: "소속 회사로 지급",
+    subtitle: "소속된 용역 업체로 급여 지급",
   },
 ]
 
@@ -33,9 +38,11 @@ export function OnboardingCompanyAccountPage() {
   const handleSelect = (id: string) => {
     setSelected(id)
     if (id === "company") {
-      navigate("/onboarding/outsourcing-documents")
+      navigate("/onboarding/documents")
     } else if (id === "personal") {
       navigate("/onboarding/my-account")
+    } else if (id === "family") {
+      navigate("/onboarding/family-account")
     }
   }
 

@@ -53,7 +53,11 @@ export function OnboardingEngineerPage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
-        <div className="px-4 py-6 space-y-5">
+        <div className="px-4 pt-4 pb-6">
+          <h1 className="text-lg font-bold text-slate-900">장비기사 분류를 선택해주세요</h1>
+          <p className="mt-1 text-sm text-gray-500">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
+        </div>
+        <div className="px-4 pt-2 space-y-5">
           {/* Engineer Type Selection */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-3">

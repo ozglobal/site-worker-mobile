@@ -25,6 +25,7 @@ const banks: Bank[] = [
 export function OnboardingFamilyAccountPage() {
   const navigate = useNavigate()
   const [familyName, setFamilyName] = useState("")
+  const [relationship, setRelationship] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
 
@@ -33,7 +34,7 @@ export function OnboardingFamilyAccountPage() {
     navigate("/onboarding/documents")
   }
 
-  const isFormValid = familyName && selectedBank && accountNumber.length >= 10
+  const isFormValid = familyName && relationship && selectedBank && accountNumber.length >= 10
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -79,6 +80,23 @@ export function OnboardingFamilyAccountPage() {
             />
           </div>
 
+          {/* Relationship */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              예금주와의 관계
+            </label>
+            <Select
+              options={[
+                { value: "parent", label: "부모" },
+                { value: "spouse", label: "배우자" },
+                { value: "child", label: "자녀" },
+              ]}
+              value={relationship}
+              onChange={setRelationship}
+              placeholder="관계 선택"
+            />
+          </div>
+
           {/* Bank Select */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -116,7 +134,7 @@ export function OnboardingFamilyAccountPage() {
               disabled={!isFormValid}
               onClick={handleSubmit}
             >
-              저장
+              다음
             </Button>
           </div>
         </div>

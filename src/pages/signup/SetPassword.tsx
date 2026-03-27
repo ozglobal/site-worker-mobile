@@ -109,16 +109,16 @@ export function SetPasswordPage() {
                 <p className="text-sm text-red-500">패스워드는 최대 64자까지 설정할 수 있습니다.</p>
               )}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-                <span className={`text-xs ${formData.newPassword.length >= 8 ? "text-green-500" : "text-slate-400"}`}>
+                <span className={`text-sm ${formData.newPassword.length >= 8 ? "text-green-600" : "text-red-500"}`}>
                   {formData.newPassword.length >= 8 ? "\u2713" : "\u2022"} 8자 이상
                 </span>
-                <span className={`text-xs ${hasAlphabet ? "text-green-500" : "text-slate-400"}`}>
+                <span className={`text-sm ${hasAlphabet ? "text-green-600" : "text-red-500"}`}>
                   {hasAlphabet ? "\u2713" : "\u2022"} 영문 포함
                 </span>
-                <span className={`text-xs ${hasNumeric ? "text-green-500" : "text-slate-400"}`}>
+                <span className={`text-sm ${hasNumeric ? "text-green-600" : "text-red-500"}`}>
                   {hasNumeric ? "\u2713" : "\u2022"} 숫자 포함
                 </span>
-                <span className={`text-xs ${hasSpecial ? "text-green-500" : "text-slate-400"}`}>
+                <span className={`text-sm ${hasSpecial ? "text-green-600" : "text-red-500"}`}>
                   {hasSpecial ? "\u2713" : "\u2022"} 특수문자 포함
                 </span>
               </div>

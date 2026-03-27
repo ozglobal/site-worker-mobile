@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
@@ -20,11 +20,15 @@ export function DomesticInfoPage() {
     formData.name.trim() !== "" &&
     formData.ssnFirst.trim().length === 6 &&
     formData.ssnSecond.trim().length === 7 &&
-    formData.phone.trim() !== "" &&
     formData.address.trim() !== ""
 
+  const nameRef = useRef<HTMLInputElement>(null)
   const ssnSecondRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    nameRef.current?.focus()
+  }, [])
 
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
@@ -80,6 +84,11 @@ export function DomesticInfoPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">이름</label>
               <Input
+                ref={nameRef}
+                inputMode="text"
+                enterKeyHint="next"
+                autoComplete="name"
+                lang="ko"
                 maxLength={7}
                 value={formData.name}
                 onChange={handleChange("name")}
@@ -104,15 +113,22 @@ export function DomesticInfoPage() {
                   className="flex-1 bg-white"
                 />
                 <span className="text-slate-400">-</span>
-                <Input
-                  ref={ssnSecondRef}
-                  inputMode="numeric"
-                  maxLength={7}
-                  value={formData.ssnSecond}
-                  onChange={handleChange("ssnSecond")}
-                  placeholder="뒤 7자리"
-                  className="flex-1 bg-white"
-                />
+                <div className="relative flex-1">
+                  <Input
+                    ref={ssnSecondRef}
+                    inputMode="numeric"
+                    maxLength={7}
+                    value={formData.ssnSecond}
+                    onChange={handleChange("ssnSecond")}
+                    placeholder="뒤 7자리"
+                    className="bg-white text-transparent caret-slate-900"
+                  />
+                  <div className="absolute inset-0 flex items-center px-4 pointer-events-none text-base text-slate-900">
+                    {formData.ssnSecond.length > 0
+                      ? formData.ssnSecond[0] + "●".repeat(formData.ssnSecond.length - 1)
+                      : ""}
+                  </div>
+                </div>
               </div>
             </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
@@ -39,20 +39,8 @@ export function PassportInfoPage() {
     return () => viewport.removeEventListener("resize", handleResize)
   }, [])
 
-  const [birthdateTouched, setBirthdateTouched] = useState(false)
-  const birthdateRef = useRef<HTMLInputElement>(null)
-
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
-    if (field === "birthdate") setBirthdateTouched(false)
-  }
-
-  const handleBirthdateBlur = () => {
-    const len = formData.birthdate.length
-    if (len > 0 && len < 8) {
-      setBirthdateTouched(true)
-      birthdateRef.current?.focus()
-    }
   }
 
   const handleSave = () => {
@@ -148,8 +136,12 @@ export function PassportInfoPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">여권번호</label>
               <Input
+                maxLength={12}
                 value={formData.passport}
-                onChange={handleChange("passport")}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase()
+                  setFormData(prev => ({ ...prev, passport: value }))
+                }}
                 placeholder="여권번호"
                 className="bg-white"
               />
@@ -173,18 +165,19 @@ export function PassportInfoPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">생년월일</label>
               <Input
-                ref={birthdateRef}
                 inputMode="numeric"
-                maxLength={8}
+                maxLength={10}
                 value={formData.birthdate}
-                onChange={handleChange("birthdate")}
-                onBlur={handleBirthdateBlur}
-                placeholder="8자리 (예: 19901231)"
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 8)
+                  let formatted = digits
+                  if (digits.length > 4) formatted = digits.slice(0, 4) + "-" + digits.slice(4)
+                  if (digits.length > 6) formatted = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6)
+                  setFormData(prev => ({ ...prev, birthdate: formatted }))
+                }}
+                placeholder="yyyy-mm-dd"
                 className="bg-white"
               />
-              {birthdateTouched && formData.birthdate.length > 0 && formData.birthdate.length < 8 && (
-                <p className="text-sm text-red-500">생년월일을 8자리로 입력해주세요 (예: 19901231)</p>
-              )}
             </div>
 
             {/* 주소 */}

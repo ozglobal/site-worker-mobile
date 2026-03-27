@@ -1,13 +1,21 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline"
+import { IconTrash } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { ProgressBar } from "@/components/ui/progress-bar"
 
 export function OnboardingEquipmentsListPage() {
   const navigate = useNavigate()
-  const [items, setItems] = useState<string[]>(["굴삭기"])
+  const location = useLocation()
+  const incoming = location.state as { name?: string; expiryDate?: string } | null
+
+  const [items, setItems] = useState<{ name: string; expiryDate: string }[]>(() => {
+    if (incoming?.name && incoming?.expiryDate) {
+      return [{ name: incoming.name, expiryDate: incoming.expiryDate }]
+    }
+    return []
+  })
 
   const handleAdd = () => {
     navigate("/onboarding/equipments")
@@ -18,7 +26,7 @@ export function OnboardingEquipmentsListPage() {
   }
 
   const handleSubmit = () => {
-    navigate("/onboarding/company-account")
+    navigate("/onboarding/documents")
   }
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
@@ -58,16 +66,19 @@ export function OnboardingEquipmentsListPage() {
                 key={index}
                 className="flex items-center justify-between p-4 rounded-xl bg-gray-50"
               >
-                <span className="font-medium text-slate-900">{item}</span>
+                <div>
+                  <p className="text-base font-bold text-slate-900">{item.name.replace(/^\d+\.\s*/, "")}</p>
+                  <p className="text-sm text-slate-500 mt-1">자격증 만료일: {item.expiryDate}</p>
+                </div>
                 <button onClick={() => handleDelete(index)} className="p-1">
-                  <DeleteOutlineIcon className="h-5 w-5 text-red-500" />
+                  <IconTrash className="h-5 w-5 text-red-500" stroke={1.5} />
                 </button>
               </div>
             ))}
 
             <button
               onClick={handleAdd}
-              className="w-full py-4 rounded-xl bg-blue-50 text-primary font-medium"
+              className="flex items-center justify-center w-full h-12 rounded-lg border border-[#E5E5E5] bg-white text-base font-medium text-slate-900 shadow-sm"
             >
               장비 추가 등록
             </button>

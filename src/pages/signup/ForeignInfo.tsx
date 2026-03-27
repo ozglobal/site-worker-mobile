@@ -21,7 +21,6 @@ export function ForeignInfoPage() {
     formData.name.trim() !== "" &&
     formData.ssnFirst.trim().length === 6 &&
     formData.ssnSecond.trim().length === 7 &&
-    formData.phone.trim() !== "" &&
     formData.address.trim() !== ""
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
@@ -86,6 +85,8 @@ export function ForeignInfoPage() {
               <label className="text-sm font-medium text-slate-700">한글 이름</label>
               <p className="text-sm text-slate-500">현장에서 사용할 짧은 한글 이름을 입력해 주세요.</p>
               <Input
+                inputMode="text"
+                lang="ko"
                 maxLength={6}
                 value={formData.name}
                 onChange={handleChange("name")}
@@ -101,9 +102,11 @@ export function ForeignInfoPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">영문 이름</label>
               <Input
+                inputMode="text"
+                lang="en"
                 value={formData.englishName}
                 onChange={handleChange("englishName")}
-                placeholder="영문 이름"
+                placeholder="English name"
                 className="bg-white"
               />
             </div>
@@ -121,15 +124,22 @@ export function ForeignInfoPage() {
                   className="flex-1 bg-white"
                 />
                 <span className="text-slate-400">-</span>
-                <Input
-                  ref={ssnSecondRef}
-                  inputMode="numeric"
-                  maxLength={7}
-                  value={formData.ssnSecond}
-                  onChange={handleChange("ssnSecond")}
-                  placeholder="뒤 7자리"
-                  className="flex-1 bg-white"
-                />
+                <div className="relative flex-1">
+                  <Input
+                    ref={ssnSecondRef}
+                    inputMode="numeric"
+                    maxLength={7}
+                    value={formData.ssnSecond}
+                    onChange={handleChange("ssnSecond")}
+                    placeholder="뒤 7자리"
+                    className="bg-white text-transparent caret-slate-900"
+                  />
+                  <div className="absolute inset-0 flex items-center px-4 pointer-events-none text-base text-slate-900">
+                    {formData.ssnSecond.length > 0
+                      ? formData.ssnSecond[0] + "●".repeat(formData.ssnSecond.length - 1)
+                      : ""}
+                  </div>
+                </div>
               </div>
             </div>
 

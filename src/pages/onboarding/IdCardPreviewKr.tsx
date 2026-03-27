@@ -22,6 +22,7 @@ export function OnboardingIdCardPreviewKrPage() {
   const [showCamera, setShowCamera] = useState(false)
   const [cameraSide, setCameraSide] = useState<"front" | "back">("front")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
 
   const isFormComplete = !!frontImageUrl
 
@@ -80,7 +81,8 @@ export function OnboardingIdCardPreviewKrPage() {
     }
 
     setIsSubmitting(false)
-    navigate("/onboarding/documents", { replace: true, state: { completed: docId } })
+    setIsSubmitted(true)
+    setTimeout(() => navigate("/onboarding/documents", { replace: true, state: { completed: docId } }), 1000)
   }
 
   return (

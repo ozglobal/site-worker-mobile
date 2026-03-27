@@ -2,20 +2,47 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
-import ChevronRightIcon from "@mui/icons-material/ChevronRight"
+import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
 import { ProgressBar } from "@/components/ui/progress-bar"
 
-const companies = [
-  { id: "lotte", name: "롯데건설" },
-  { id: "kyungnam", name: "경남기업" },
-  { id: "kyeryong", name: "계룡건설산업" },
-  { id: "kwangshin", name: "광신종합건설" },
+const equipmentTypes = [
+  { id: "bulldozer", name: "1. 불도저" },
+  { id: "excavator", name: "2. 굴착기" },
+  { id: "loader", name: "3. 로더" },
+  { id: "forklift", name: "4. 지게차" },
+  { id: "scraper", name: "5. 스크레이퍼" },
+  { id: "dump-truck", name: "6. 덤프트럭" },
+  { id: "crane", name: "7. 기중기" },
+  { id: "motor-grader", name: "8. 모터그레이더" },
+  { id: "roller", name: "9. 롤러" },
+  { id: "subgrade-stabilizer", name: "10. 노상안정기" },
+  { id: "concrete-batching-plant", name: "11. 콘크리트 뱃칭플랜트" },
+  { id: "concrete-finisher", name: "12. 콘크리트 피니셔" },
+  { id: "concrete-spreader", name: "13. 콘크리트 살포기" },
+  { id: "concrete-mixer-truck", name: "14. 콘크리트 믹서트럭" },
+  { id: "concrete-pump", name: "15. 콘크리트 펌프" },
+  { id: "asphalt-mixing-plant", name: "16. 아스팔트 믹싱플랜트" },
+  { id: "asphalt-finisher", name: "17. 아스팔트 피니셔" },
+  { id: "asphalt-spreader", name: "18. 아스팔트 살포기" },
+  { id: "aggregate-spreader", name: "19. 골재 살포기" },
+  { id: "crusher", name: "20. 쇄석기" },
+  { id: "air-compressor", name: "21. 공기압축기" },
+  { id: "boring-machine", name: "22. 천공기" },
+  { id: "pile-driver", name: "23. 항타 및 항발기" },
+  { id: "gravel-collector", name: "24. 자갈채취기" },
+  { id: "survey-line", name: "25. 준설선" },
+  { id: "special-construction", name: "26. 특수건설기계" },
+  { id: "tower-crane", name: "27. 타워크레인" },
 ]
 
 export function OnboardingEquipmentsPage() {
   const navigate = useNavigate()
-  const [selectedCompany, setSelectedCompany] = useState("")
+  const [selectedEquipment, setSelectedEquipment] = useState("")
+  const [certFile, setCertFile] = useState<File | null>(null)
+  const [expiryDate, setExpiryDate] = useState("")
+
+  const isFormValid = selectedEquipment && certFile && expiryDate
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -44,7 +71,7 @@ export function OnboardingEquipmentsPage() {
         <div className="flex flex-col min-h-full">
         {/* Title */}
         <div className="px-4 pt-4 pb-2">
-          <h1 className="text-lg font-bold text-slate-900">장비 정보를 입력해주세요</h1>
+          <h1 className="text-lg font-bold text-slate-900">장비 정보를 등록해주세요</h1>
           <p className="mt-1 text-sm text-gray-500">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
         </div>
 
@@ -55,9 +82,9 @@ export function OnboardingEquipmentsPage() {
               장비 종류
             </label>
             <Select
-              options={companies.map((c) => ({ value: c.id, label: c.name }))}
-              value={selectedCompany}
-              onChange={setSelectedCompany}
+              options={equipmentTypes.map((t) => ({ value: t.id, label: t.name }))}
+              value={selectedEquipment}
+              onChange={setSelectedEquipment}
               placeholder="장비 선택"
             />
           </div>
@@ -67,31 +94,57 @@ export function OnboardingEquipmentsPage() {
             <div className="flex gap-3">
               <ErrorOutlineIcon className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-slate-700">내 장비를 찾을 수 없나요?</p>
+                <p className="text-sm font-semibold text-slate-700">내 장비를 찾을 수 없나요?</p>
                 <p className="text-sm text-slate-500 mt-1">목록에 장비가 보이지 않을 경우 현장 관리자에게 등록을 요청해주세요.</p>
               </div>
             </div>
           </div>
 
           {/* 장비 자격증 */}
-          <button
-            onClick={() => navigate("/onboarding/equipments-list")}
-            className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-white text-left"
-          >
-            <div>
-              <p className="font-bold text-slate-900">장비 자격증</p>
-              <p className="text-sm text-slate-500 mt-1">선택된 파일 없음</p>
-            </div>
-            <div className="flex items-center shrink-0 ml-4">
-              <div className="flex items-center text-slate-400">
-                <span className="text-sm">등록</span>
-                <ChevronRightIcon className="h-5 w-5" />
-              </div>
-            </div>
-          </button>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              장비 자격증
+            </label>
+            <label className="flex items-center w-full h-12 px-4 rounded-lg border border-gray-200 bg-white cursor-pointer">
+              <span className="font-medium text-slate-900 mr-2">파일 선택</span>
+              <span className="text-sm text-slate-400 truncate">{certFile ? certFile.name : "선택된 파일 없음"}</span>
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={(e) => setCertFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+            </label>
+            <label className="block text-sm font-medium text-slate-700 mt-4 mb-2">
+              자격증 만료일
+            </label>
+            <input
+              type="text"
+              value={expiryDate}
+              onChange={(e) => { setExpiryDate(e.target.value); if (e.target.value) setTimeout(() => e.target.blur(), 100) }}
+              onFocus={(e) => { const el = e.target; el.type = "date"; requestAnimationFrame(() => el.showPicker?.()) }}
+              onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
+              placeholder="만료일 입력"
+              className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+            />
+          </div>
         </div>
         </div>
       </main>
+
+      <div className="px-4 py-6 shrink-0">
+        <Button
+          variant={isFormValid ? "primary" : "primaryDisabled"}
+          size="full"
+          disabled={!isFormValid}
+          onClick={() => {
+            const equipmentName = equipmentTypes.find((t) => t.id === selectedEquipment)?.name || selectedEquipment
+            navigate("/onboarding/equipments-list", { state: { name: equipmentName, expiryDate: expiryDate } })
+          }}
+        >
+          등록하기
+        </Button>
+      </div>
     </div>
   )
 }

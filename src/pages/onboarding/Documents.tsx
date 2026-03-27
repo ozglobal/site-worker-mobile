@@ -71,6 +71,8 @@ const documents: DocumentItem[] = [
   },
 ]
 
+export { documents, type DocumentItem }
+
 export function OnboardingDocumentsPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -87,6 +89,12 @@ export function OnboardingDocumentsPage() {
   const [backImageUrl, setBackImageUrl] = useState<string | null>(null)
   const [frontFile, setFrontFile] = useState<File | null>(null)
   const [backFile, setBackFile] = useState<File | null>(null)
+
+  // Filter documents by caller-provided IDs, or show all
+  const locationState = location.state as { startCapture?: string; completed?: string; docIds?: string[] } | null
+  const visibleDocs = locationState?.docIds
+    ? documents.filter((d) => locationState.docIds!.includes(d.id))
+    : documents
 
   // Handle return from capture guide page
   useEffect(() => {
@@ -248,7 +256,7 @@ export function OnboardingDocumentsPage() {
       {/* Document cards */}
       <div className="flex-1 overflow-y-auto px-4">
         <div className="space-y-3">
-          {documents.map((doc) => {
+          {visibleDocs.map((doc) => {
             const isIdCard = doc.id === "id-card"
             const isUploading = isIdCard
               ? uploading === "id-card-front" || uploading === "id-card-back"
@@ -297,7 +305,7 @@ export function OnboardingDocumentsPage() {
           className="flex-1 bg-gray-100 border-0 text-slate-900 hover:bg-gray-200"
           onClick={handleRegisterLater}
         >
-          건너뛰기
+          나중에 하기
         </Button>
         <Button
           variant="primary"

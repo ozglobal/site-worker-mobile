@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
@@ -33,10 +32,6 @@ export function OnboardingMyAccountPage() {
   const handleSubmit = () => {
     // TODO: Save account info
     navigate("/onboarding/documents")
-  }
-
-  const handleFamilyProxy = () => {
-    navigate("/onboarding/family-account")
   }
 
   const isFormValid = selectedBank && accountNumber.length >= 10
@@ -82,23 +77,6 @@ export function OnboardingMyAccountPage() {
             </label>
             <div className="w-full h-12 px-4 flex items-center rounded-lg border border-gray-200 bg-gray-50 text-slate-500">
               {accountHolder}
-            </div>
-          </div>
-
-          {/* Info Box */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex gap-3">
-              <ErrorOutlineIcon className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-slate-700">본인 명의 계좌가 아닌가요?</p>
-                <p className="text-sm text-slate-500 mt-1">가족 명의 계좌로 대리 수령이 가능합니다.</p>
-                <button
-                  onClick={handleFamilyProxy}
-                  className="text-sm text-primary font-medium mt-2"
-                >
-                  가족 대리수령 신청하기
-                </button>
-              </div>
             </div>
           </div>
 
