@@ -29,6 +29,7 @@ export function OnboardingIdCardPreviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const nationalityRef = useRef<HTMLSelectElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const isFormComplete = frontImageUrl && backImageUrl && nationality && residenceStatus && permitDate && expiryDate
 
   // Auto-open camera for front side on first load
@@ -50,7 +51,10 @@ export function OnboardingIdCardPreviewPage() {
       if (backImageUrl) URL.revokeObjectURL(backImageUrl)
       setBackFile(file)
       setBackImageUrl(url)
-      setTimeout(() => nationalityRef.current?.focus(), 300)
+      setTimeout(() => {
+        contentRef.current?.scrollTo({ top: contentRef.current.scrollHeight, behavior: "smooth" })
+        nationalityRef.current?.focus()
+      }, 300)
     }
   }
 
@@ -101,7 +105,7 @@ export function OnboardingIdCardPreviewPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4">
+      <div ref={contentRef} className="flex-1 overflow-y-auto px-4">
         {/* Front */}
         <div className="mb-6">
           <p className="font-bold text-slate-900 mb-3">앞면</p>
@@ -111,7 +115,7 @@ export function OnboardingIdCardPreviewPage() {
                 src={frontImageUrl}
                 alt="신분증 앞면"
                 className="w-full rounded-lg bg-gray-200 object-cover"
-                style={{ aspectRatio: "85.6 / 53.98" }}
+                style={{ aspectRatio: "85.6 / 58" }}
               />
               <button
                 onClick={handleRetakeFront}
@@ -124,7 +128,7 @@ export function OnboardingIdCardPreviewPage() {
             <button
               onClick={handleRetakeFront}
               className="w-full rounded-lg bg-gray-200 flex flex-col items-center justify-center"
-              style={{ aspectRatio: "85.6 / 53.98" }}
+              style={{ aspectRatio: "85.6 / 58" }}
             >
               <CameraAltIcon className="h-8 w-8 text-gray-400 mb-1" />
               <span className="text-sm text-gray-400">앞면 촬영</span>
@@ -141,7 +145,7 @@ export function OnboardingIdCardPreviewPage() {
                 src={backImageUrl}
                 alt="신분증 뒷면"
                 className="w-full rounded-lg bg-gray-200 object-cover"
-                style={{ aspectRatio: "85.6 / 53.98" }}
+                style={{ aspectRatio: "85.6 / 58" }}
               />
               <button
                 onClick={handleRetakeBack}
@@ -154,7 +158,7 @@ export function OnboardingIdCardPreviewPage() {
             <button
               onClick={handleTakeBack}
               className="w-full rounded-lg bg-gray-200 flex flex-col items-center justify-center"
-              style={{ aspectRatio: "85.6 / 53.98" }}
+              style={{ aspectRatio: "85.6 / 58" }}
             >
               <CameraAltIcon className="h-8 w-8 text-gray-400 mb-1" />
               <span className="text-sm text-gray-400">뒷면 촬영</span>
@@ -206,23 +210,17 @@ export function OnboardingIdCardPreviewPage() {
           <p className="font-bold text-slate-900 mb-2">체류기간</p>
           <div className="flex items-center gap-2">
             <input
-              type="text"
+              type="date"
               value={permitDate}
               onChange={(e) => setPermitDate(e.target.value)}
-              onFocus={(e) => { e.target.type = "date" }}
-              onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
-              placeholder="허가일자"
-              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900"
             />
             <span className="text-gray-400 shrink-0">~</span>
             <input
-              type="text"
+              type="date"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
-              onFocus={(e) => { e.target.type = "date" }}
-              onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
-              placeholder="만료일자"
-              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900"
             />
           </div>
         </div>
