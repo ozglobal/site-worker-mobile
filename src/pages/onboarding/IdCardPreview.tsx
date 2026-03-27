@@ -210,32 +210,38 @@ export function OnboardingIdCardPreviewPage() {
           <p className="font-bold text-slate-900 mb-2">체류기간</p>
           <div className="flex items-center gap-2">
             <input
-              type="date"
+              type="text"
               value={permitDate}
               onChange={(e) => setPermitDate(e.target.value)}
-              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900"
+              onFocus={(e) => { e.target.type = "date" }}
+              onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
+              placeholder="허가일자"
+              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
             />
             <span className="text-gray-400 shrink-0">~</span>
             <input
-              type="date"
+              type="text"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
-              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900"
+              onFocus={(e) => { e.target.type = "date" }}
+              onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
+              placeholder="만료일자"
+              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
             />
           </div>
         </div>
-      </div>
 
-      {/* Bottom button */}
-      <div className="px-4 py-6 shrink-0">
-        <Button
-          variant={isFormComplete && !isSubmitting ? "primary" : "primaryDisabled"}
-          size="full"
-          disabled={!isFormComplete || isSubmitting}
-          onClick={handleSubmit}
-        >
-          {isSubmitting ? "등록 중..." : "등록하기"}
-        </Button>
+        {/* Bottom button */}
+        <div className="px-4 py-6">
+          <Button
+            variant={isFormComplete && !isSubmitting ? "primary" : "primaryDisabled"}
+            size="full"
+            disabled={!isFormComplete || isSubmitting}
+            onClick={handleSubmit}
+          >
+            {isSubmitting ? "등록 중..." : "등록하기"}
+          </Button>
+        </div>
       </div>
 
       {/* Camera */}
