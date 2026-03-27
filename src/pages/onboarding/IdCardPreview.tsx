@@ -30,6 +30,7 @@ export function OnboardingIdCardPreviewPage() {
 
   const nationalityRef = useRef<HTMLSelectElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const expiryDateRef = useRef<HTMLInputElement>(null)
   const isFormComplete = frontImageUrl && backImageUrl && nationality && residenceStatus && permitDate && expiryDate
 
   // Auto-open camera for front side on first load
@@ -215,20 +216,19 @@ export function OnboardingIdCardPreviewPage() {
             <input
               type="text"
               value={permitDate}
-              onChange={(e) => setPermitDate(e.target.value)}
-              onFocus={(e) => { e.target.type = "date" }}
-              onClick={(e) => { (e.target as HTMLInputElement).showPicker?.() }}
+              onChange={(e) => { setPermitDate(e.target.value); if (e.target.value) { e.target.blur(); setTimeout(() => expiryDateRef.current?.focus(), 100) } }}
+              onFocus={(e) => { const el = e.target; el.type = "date"; requestAnimationFrame(() => el.showPicker?.()) }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="허가일자"
               className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
             />
             <span className="text-gray-400 shrink-0">~</span>
             <input
+              ref={expiryDateRef}
               type="text"
               value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-              onFocus={(e) => { e.target.type = "date" }}
-              onClick={(e) => { (e.target as HTMLInputElement).showPicker?.() }}
+              onChange={(e) => { setExpiryDate(e.target.value); if (e.target.value) e.target.blur() }}
+              onFocus={(e) => { const el = e.target; el.type = "date"; requestAnimationFrame(() => el.showPicker?.()) }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="만료일자"
               className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
