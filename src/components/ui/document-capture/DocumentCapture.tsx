@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { CameraView } from "./CameraView"
+import { DocumentCamera } from "./DocumentCamera"
 import { PreviewView } from "./PreviewView"
 
 interface DocumentCaptureProps {
@@ -32,7 +32,7 @@ export function DocumentCapture({ onConfirm, onClose }: DocumentCaptureProps) {
   }
 
   if (step === "camera") {
-    return <CameraView onCapture={handleCapture} onClose={onClose} />
+    return <DocumentCamera onCapture={handleCapture} onClose={onClose} />
   }
 
   if (step === "preview" && capturedImage) {

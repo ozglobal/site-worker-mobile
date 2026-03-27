@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import CloseIcon from "@mui/icons-material/Close"
 import { useDocumentDetection } from "./useDocumentDetection"
-import { cropToFrame } from "./utils/cropToFrame"
+import { cropToFrame } from "./cropToFrame"
+import { useShutterSound } from "../camera-utils/useShutterSound"
 
-interface CameraViewProps {
+interface DocumentCameraProps {
   onCapture: (imageBase64: string) => void
   onClose: () => void
 }
 
 const A4_RATIO = 1 / 1.414 // width / height
 
-export function CameraView({ onCapture, onClose }: CameraViewProps) {
+export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -23,6 +24,7 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
   const [frameRect, setFrameRect] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
   const { detect, checkStability, resetStability } = useDocumentDetection()
+  const { play: playShutter } = useShutterSound()
 
   // Calculate frame rect based on container size
   const computeFrameRect = useCallback(() => {
@@ -65,6 +67,13 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
         }
 
         streamRef.current = stream
+
+        // Enable continuous autofocus if supported
+        const track = stream.getVideoTracks()[0]
+        const capabilities = track.getCapabilities?.()
+        if ((capabilities as any)?.focusMode?.includes("continuous")) {
+          await track.applyConstraints({ advanced: [{ focusMode: "continuous" } as any] })
+        }
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream
@@ -133,45 +142,13 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
     }
   }, [cameraReady, detect, checkStability, computeFrameRect])
 
-  // Shutter sound
-  const shutterSoundRef = useRef<HTMLAudioElement | null>(null)
-  useEffect(() => {
-    // Generate a short shutter click sound using AudioContext
-    try {
-      const audioCtx = new AudioContext()
-      const duration = 0.15
-      const sampleRate = audioCtx.sampleRate
-      const buffer = audioCtx.createBuffer(1, sampleRate * duration, sampleRate)
-      const data = buffer.getChannelData(0)
-      for (let i = 0; i < data.length; i++) {
-        const t = i / sampleRate
-        data[i] = Math.exp(-t * 40) * (Math.random() * 2 - 1) * 0.5
-      }
-      const blob = new Blob(
-        [encodeWav(buffer)],
-        { type: "audio/wav" }
-      )
-      const url = URL.createObjectURL(blob)
-      shutterSoundRef.current = new Audio(url)
-      shutterSoundRef.current.volume = 0.6
-      audioCtx.close()
-    } catch {
-      // Audio not supported — silent fallback
-    }
-  }, [])
-
   // Handle capture
   const handleCapture = useCallback(() => {
     const video = videoRef.current
     const container = containerRef.current
     if (!video || !container) return
 
-    // Play shutter sound
-    if (shutterSoundRef.current) {
-      shutterSoundRef.current.currentTime = 0
-      shutterSoundRef.current.play().catch(() => {})
-    }
-    navigator.vibrate?.(50)
+    playShutter()
 
     const vw = container.clientWidth
     const vh = container.clientHeight
@@ -179,7 +156,7 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
 
     const base64 = cropToFrame(video, rect, vw, vh, 0.92)
     onCapture(base64)
-  }, [computeFrameRect, onCapture])
+  }, [computeFrameRect, onCapture, playShutter])
 
   // Auto-capture disabled — user must tap capture button
   useEffect(() => {
@@ -315,42 +292,4 @@ export function CameraView({ onCapture, onClose }: CameraViewProps) {
       </div>
     </div>
   )
-}
-
-/** Encode an AudioBuffer as a WAV ArrayBuffer */
-function encodeWav(buffer: AudioBuffer): ArrayBuffer {
-  const numChannels = 1
-  const sampleRate = buffer.sampleRate
-  const data = buffer.getChannelData(0)
-  const byteRate = sampleRate * numChannels * 2
-  const blockAlign = numChannels * 2
-  const dataSize = data.length * 2
-  const headerSize = 44
-  const buf = new ArrayBuffer(headerSize + dataSize)
-  const view = new DataView(buf)
-
-  const writeString = (offset: number, str: string) => {
-    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i))
-  }
-
-  writeString(0, "RIFF")
-  view.setUint32(4, 36 + dataSize, true)
-  writeString(8, "WAVE")
-  writeString(12, "fmt ")
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, numChannels, true)
-  view.setUint32(24, sampleRate, true)
-  view.setUint32(28, byteRate, true)
-  view.setUint16(32, blockAlign, true)
-  view.setUint16(34, 16, true)
-  writeString(36, "data")
-  view.setUint32(40, dataSize, true)
-
-  for (let i = 0; i < data.length; i++) {
-    const sample = Math.max(-1, Math.min(1, data[i]))
-    view.setInt16(headerSize + i * 2, sample * 0x7fff, true)
-  }
-
-  return buf
 }

@@ -4,7 +4,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import CameraAltIcon from "@mui/icons-material/CameraAlt"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import { Button } from "@/components/ui/button"
-import { IdCardCamera } from "@/components/ui/IdCardCamera"
+import { IdCardCamera } from "@/components/ui/id-card-capture/IdCardCamera"
 import { uploadDocument } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 

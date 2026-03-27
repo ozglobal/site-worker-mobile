@@ -8,8 +8,8 @@ import { ProgressBar } from "@/components/ui/progress-bar"
 import { Spinner } from "@/components/ui/spinner"
 import { uploadDocument, type DocumentType } from "@/lib/profile"
 import { IdCardTypeDialog, type IdCardType } from "@/components/ui/id-card-upload-dialog"
-import { IdCardCamera } from "@/components/ui/IdCardCamera"
-import { IdCardPreview } from "@/components/ui/IdCardPreview"
+import { IdCardCamera } from "@/components/ui/id-card-capture/IdCardCamera"
+import { IdCardPreview } from "@/components/ui/id-card-capture/IdCardPreview"
 import { useToast } from "@/contexts/ToastContext"
 
 interface DocumentItem {
