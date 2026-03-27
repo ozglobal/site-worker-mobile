@@ -216,7 +216,7 @@ export function OnboardingIdCardPreviewPage() {
             <input
               type="text"
               value={permitDate}
-              onChange={(e) => { setPermitDate(e.target.value); if (e.target.value) { e.target.blur(); setTimeout(() => expiryDateRef.current?.focus(), 100) } }}
+              onChange={(e) => { setPermitDate(e.target.value); if (e.target.value) { e.target.blur(); setTimeout(() => expiryDateRef.current?.click(), 100) } }}
               onFocus={(e) => { const el = e.target; el.type = "date"; requestAnimationFrame(() => el.showPicker?.()) }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="허가일자"
