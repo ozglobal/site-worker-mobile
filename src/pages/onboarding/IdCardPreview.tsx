@@ -173,7 +173,10 @@ export function OnboardingIdCardPreviewPage() {
             <select
               ref={nationalityRef}
               value={nationality}
-              onChange={(e) => setNationality(e.target.value)}
+              onChange={(e) => {
+                setNationality(e.target.value)
+                setTimeout(() => contentRef.current?.scrollTo({ top: contentRef.current.scrollHeight, behavior: "smooth" }), 100)
+              }}
               className="w-full h-12 px-4 pr-10 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 appearance-none"
             >
               <option value="" disabled>국적 선택</option>
@@ -213,7 +216,8 @@ export function OnboardingIdCardPreviewPage() {
               type="text"
               value={permitDate}
               onChange={(e) => setPermitDate(e.target.value)}
-              onFocus={(e) => { e.target.type = "date"; e.target.showPicker?.() }}
+              onFocus={(e) => { e.target.type = "date" }}
+              onClick={(e) => { (e.target as HTMLInputElement).showPicker?.() }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="허가일자"
               className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
@@ -223,7 +227,8 @@ export function OnboardingIdCardPreviewPage() {
               type="text"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
-              onFocus={(e) => { e.target.type = "date"; e.target.showPicker?.() }}
+              onFocus={(e) => { e.target.type = "date" }}
+              onClick={(e) => { (e.target as HTMLInputElement).showPicker?.() }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="만료일자"
               className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
