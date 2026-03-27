@@ -88,8 +88,26 @@ export function OnboardingIdCardPreviewPage() {
     navigate("/onboarding/documents", { replace: true, state: { completed: docId } })
   }
 
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const handleResize = () => {
+      const keyboardVisible = window.innerHeight - viewport.height > 150
+      setViewportHeight(keyboardVisible ? viewport.height : null)
+    }
+    viewport.addEventListener("resize", handleResize)
+    return () => viewport.removeEventListener("resize", handleResize)
+  }, [])
+
+  // Only shrink container to keep button visible after 만료일자 is filled
+  const shrinkForKeyboard = viewportHeight && expiryDate
+
   return (
-    <div className="flex h-screen flex-col bg-white">
+    <div
+      className="flex flex-col bg-white"
+      style={{ height: shrinkForKeyboard ? `${viewportHeight}px` : "100vh" }}
+    >
       {/* Header */}
       <div className="flex items-center h-14 px-4 shrink-0">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2">
@@ -209,7 +227,7 @@ export function OnboardingIdCardPreviewPage() {
               onFocus={(e) => { e.target.type = "date" }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="허가일자"
-              className="flex-1 min-w-0 h-12 px-3 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
             />
             <span className="text-gray-400 shrink-0">~</span>
             <input
@@ -219,7 +237,7 @@ export function OnboardingIdCardPreviewPage() {
               onFocus={(e) => { e.target.type = "date" }}
               onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
               placeholder="만료일자"
-              className="flex-1 min-w-0 h-12 px-3 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+              className="flex-1 min-w-0 h-12 pl-3 pr-1 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
             />
           </div>
         </div>
