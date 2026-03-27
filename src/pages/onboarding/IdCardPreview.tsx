@@ -28,7 +28,7 @@ export function OnboardingIdCardPreviewPage() {
   const [cameraSide, setCameraSide] = useState<"front" | "back">("front")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const buttonRef = useRef<HTMLDivElement>(null)
+  const nationalityRef = useRef<HTMLSelectElement>(null)
   const isFormComplete = frontImageUrl && backImageUrl && nationality && residenceStatus && permitDate && expiryDate
 
   // Auto-open camera for front side on first load
@@ -50,6 +50,7 @@ export function OnboardingIdCardPreviewPage() {
       if (backImageUrl) URL.revokeObjectURL(backImageUrl)
       setBackFile(file)
       setBackImageUrl(url)
+      setTimeout(() => nationalityRef.current?.focus(), 300)
     }
   }
 
@@ -166,6 +167,7 @@ export function OnboardingIdCardPreviewPage() {
           <p className="font-bold text-slate-900 mb-2">국적</p>
           <div className="relative">
             <select
+              ref={nationalityRef}
               value={nationality}
               onChange={(e) => setNationality(e.target.value)}
               className="w-full h-12 px-4 pr-10 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 appearance-none"
@@ -194,7 +196,6 @@ export function OnboardingIdCardPreviewPage() {
             type="text"
             value={residenceStatus}
             onChange={(e) => setResidenceStatus(e.target.value)}
-            onFocus={() => setTimeout(() => buttonRef.current?.scrollIntoView({ behavior: "smooth" }), 300)}
             placeholder="체류자격 입력"
             className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
           />
@@ -228,7 +229,7 @@ export function OnboardingIdCardPreviewPage() {
       </div>
 
       {/* Bottom button */}
-      <div ref={buttonRef} className="px-4 py-6 shrink-0">
+      <div className="px-4 py-6 shrink-0">
         <Button
           variant={isFormComplete && !isSubmitting ? "primary" : "primaryDisabled"}
           size="full"
