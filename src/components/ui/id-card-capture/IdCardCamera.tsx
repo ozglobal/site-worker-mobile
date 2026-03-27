@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import CloseIcon from "@mui/icons-material/Close"
 import { useShutterSound } from "../camera-utils/useShutterSound"
+import { useDocumentDetection } from "../document-capture/useDocumentDetection"
 
 interface IdCardCameraProps {
   side: "front" | "back"
@@ -12,99 +13,11 @@ interface IdCardCameraProps {
 
 const CARD_ASPECT = 85.6 / 53.98 // width / height (~1.586)
 
-/**
- * Detect if a card-like rectangle exists inside the guide box area.
- * Samples edges of a centered card-shaped region and checks for
- * contrast (brightness difference) between inside and border pixels.
- */
-function detectCard(video: HTMLVideoElement, canvas: HTMLCanvasElement): boolean {
-  const ctx = canvas.getContext("2d", { willReadFrequently: true })
-  if (!ctx) return false
-
-  const vw = video.videoWidth
-  const vh = video.videoHeight
-  if (vw === 0 || vh === 0) return false
-
-  // Use a small analysis canvas for performance
-  const aw = 320
-  const ah = Math.round((vh / vw) * aw)
-  canvas.width = aw
-  canvas.height = ah
-  ctx.drawImage(video, 0, 0, aw, ah)
-
-  // Guide box region (matching the 90% width, card aspect ratio centered)
-  const boxW = Math.round(aw * 0.85)
-  const boxH = Math.round(boxW / CARD_ASPECT)
-  const boxX = Math.round((aw - boxW) / 2)
-  const boxY = Math.round((ah - boxH) / 2)
-
-  const imageData = ctx.getImageData(0, 0, aw, ah)
-  const data = imageData.data
-
-  const brightness = (x: number, y: number): number => {
-    const i = (y * aw + x) * 4
-    return (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114)
-  }
-
-  // Sample points along the edges of the guide box
-  // Compare pixels just inside vs just outside the box
-  const margin = Math.max(Math.round(boxW * 0.14), 3)
-  const samples = 16
-  let edgeContrast = 0
-  let sampleCount = 0
-
-  // Top and bottom edges
-  for (let i = 0; i < samples; i++) {
-    const x = boxX + Math.round((boxW * (i + 0.5)) / samples)
-    // Top edge
-    const topIn = brightness(x, boxY + margin)
-    const topOut = brightness(x, boxY - margin)
-    if (boxY - margin >= 0) {
-      edgeContrast += Math.abs(topIn - topOut)
-      sampleCount++
-    }
-    // Bottom edge
-    const botIn = brightness(x, boxY + boxH - margin)
-    const botOut = brightness(x, boxY + boxH + margin)
-    if (boxY + boxH + margin < ah) {
-      edgeContrast += Math.abs(botIn - botOut)
-      sampleCount++
-    }
-  }
-
-  // Left and right edges
-  for (let i = 0; i < samples; i++) {
-    const y = boxY + Math.round((boxH * (i + 0.5)) / samples)
-    // Left edge
-    const leftIn = brightness(boxX + margin, y)
-    const leftOut = brightness(boxX - margin, y)
-    if (boxX - margin >= 0) {
-      edgeContrast += Math.abs(leftIn - leftOut)
-      sampleCount++
-    }
-    // Right edge
-    const rightIn = brightness(boxX + boxW - margin, y)
-    const rightOut = brightness(boxX + boxW + margin, y)
-    if (boxX + boxW + margin < aw) {
-      edgeContrast += Math.abs(rightIn - rightOut)
-      sampleCount++
-    }
-  }
-
-  if (sampleCount === 0) return false
-  const avgContrast = edgeContrast / sampleCount
-
-  // Threshold: card edges typically have contrast > 15
-  return avgContrast > 15
-}
-
 export function IdCardCamera({ side, title = "신분증", showSide = true, onCapture, onClose }: IdCardCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const detectionCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const detectionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const stableCountRef = useRef(0)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [detected, setDetected] = useState(false)
@@ -112,6 +25,7 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
   const [frameRect, setFrameRect] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
   const { play: playShutter } = useShutterSound()
+  const { detect, checkStability } = useDocumentDetection()
 
   // Calculate frame rect based on container size
   const computeFrameRect = useCallback(() => {
@@ -182,33 +96,21 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
   useEffect(() => {
     if (!isReady) return
 
-    if (!detectionCanvasRef.current) {
-      detectionCanvasRef.current = document.createElement("canvas")
-    }
-
-    const STABLE_THRESHOLD = 6 // ~1.5 seconds at 250ms interval
+    const container = containerRef.current
 
     detectionTimerRef.current = setInterval(() => {
       const video = videoRef.current
-      const canvas = detectionCanvasRef.current
-      if (!video || !canvas) return
+      if (!video || !container) return
 
-      const cardDetected = detectCard(video, canvas)
+      const vw = container.clientWidth
+      const vh = container.clientHeight
+      const rect = computeFrameRect()
 
-      if (cardDetected) {
-        stableCountRef.current++
-        setDetected(true)
+      const { isDocumentDetected } = detect(video, rect, vw, vh)
+      const isStable = checkStability(isDocumentDetected)
 
-        if (stableCountRef.current >= STABLE_THRESHOLD) {
-          setStable(true)
-        }
-      } else {
-        stableCountRef.current = Math.max(0, stableCountRef.current - 2)
-        if (stableCountRef.current === 0) {
-          setDetected(false)
-        }
-        setStable(false)
-      }
+      setDetected(isDocumentDetected)
+      setStable(isStable)
     }, 250)
 
     return () => {
@@ -217,7 +119,7 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
         detectionTimerRef.current = null
       }
     }
-  }, [isReady])
+  }, [isReady, detect, checkStability, computeFrameRect])
 
   // Vibrate on stable detection
   useEffect(() => {
