@@ -55,8 +55,8 @@ export function OnboardingMyAccountPage() {
 
   return (
     <div
-      className="flex flex-col overflow-hidden bg-white"
-      style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh" }}
+      className="fixed inset-0 flex flex-col bg-white"
+      style={{ height: viewportHeight ? `${viewportHeight}px` : undefined }}
     >
       {/* Header with back button */}
       <div className="flex items-center px-4 h-14 shrink-0">
@@ -68,8 +68,7 @@ export function OnboardingMyAccountPage() {
       {/* Progress bar */}
       <ProgressBar value={40} />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="flex flex-col min-h-full">
+      <main className="flex-1 overflow-hidden">
         {/* Title */}
         <div className="px-4 pt-4 pb-2">
           <h1 className="text-lg font-bold text-slate-900">본인 계좌 정보를 입력해주세요</h1>
@@ -131,20 +130,19 @@ export function OnboardingMyAccountPage() {
           </div>
 
         </div>
-
-          {/* Action Button */}
-          <div className={`px-4 py-6 ${viewportHeight ? "" : "mt-auto"}`}>
-            <Button
-              variant={isFormValid ? "primary" : "primaryDisabled"}
-              size="full"
-              disabled={!isFormValid}
-              onClick={handleSubmit}
-            >
-              다음
-            </Button>
-          </div>
-        </div>
       </main>
+
+      {/* Action Button - outside main so it's always visible */}
+      <div className="px-4 py-4 shrink-0">
+        <Button
+          variant={isFormValid ? "primary" : "primaryDisabled"}
+          size="full"
+          disabled={!isFormValid}
+          onClick={handleSubmit}
+        >
+          다음
+        </Button>
+      </div>
     </div>
   )
 }

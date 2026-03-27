@@ -18,7 +18,7 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-white overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-white overflow-hidden">
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-8">
         <div className="text-8xl mb-8">👋</div>
