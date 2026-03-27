@@ -18,6 +18,7 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
   const containerRef = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const detectionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const capturedRef = useRef(false)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [detected, setDetected] = useState(false)
@@ -121,12 +122,14 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
     }
   }, [isReady, detect, checkStability, computeFrameRect])
 
-  // Vibrate on stable detection
+  // Auto-capture on stable detection
   useEffect(() => {
-    if (stable) {
+    if (stable && !capturedRef.current) {
+      capturedRef.current = true
       navigator.vibrate?.(50)
+      doCapture()
     }
-  }, [stable])
+  }, [stable, doCapture])
 
   // Start camera
   useEffect(() => {
@@ -292,8 +295,8 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
 
       {/* Guide text */}
       <div className="text-center py-4">
-        <p className={`text-sm transition-colors ${detected ? "text-green-400" : "text-gray-400"}`}>
-          {detected ? `${title}이 인식되었습니다. 촬영 버튼을 눌러주세요` : `영역 안에 ${title}을 맞춰주세요`}
+        <p className={`text-lg font-medium transition-colors ${detected ? "text-green-400" : "text-gray-400"}`}>
+          {stable ? "자동 촬영 중..." : detected ? "인식 중..." : `영역 안에 ${title}을 맞춰주세요`}
         </p>
       </div>
 
