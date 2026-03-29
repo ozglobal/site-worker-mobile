@@ -51,7 +51,7 @@ import { FamilyAccountPage } from './pages/profile/FamilyAccount';
 import { ChangePasswordPage } from './pages/profile/ChangePassword';
 import { PayrollAccountPage } from './pages/profile/PayrollAccount';
 import { SosokPage } from './pages/profile/Sosok';
-import { CalendarPage, ListPage } from './pages/attendance';
+import { CalendarPage, ListPage, DailyDetailPage } from './pages/attendance';
 import { ContractPage } from './pages/contract';
 import { ScheduleAddPage } from './pages/test/ScheduleAdd';
 
@@ -120,6 +120,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/home" element={<Home />} />
       <Route path="/attendance" element={<CalendarPage />} />
       <Route path="/attendance/list" element={<ListPage />} />
+      <Route path="/attendance/detail/:date" element={<DailyDetailPage />} />
       <Route path="/contract" element={<ContractPage />} />
       <Route path="/profile" element={<MyInfoPage />} />
       <Route path="/profile/affiliation" element={<AffiliationPage />} />

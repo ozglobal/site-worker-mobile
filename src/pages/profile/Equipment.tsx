@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
@@ -42,6 +42,7 @@ const CERT_FILE_KEY = "equipment-cert"
 
 export function EquipmentPage() {
   const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const engineer = engineerStorage.get()
   const [selectedEquipment, setSelectedEquipment] = useState(engineer?.machine || "")
   const [certFile, setCertFile] = useState<File | null>(null)
@@ -103,7 +104,7 @@ export function EquipmentPage() {
     }
   }
 
-  const isFormValid = selectedEquipment !== ""
+  const isFormValid = selectedEquipment !== "" && (certFile !== null || cachedFileName !== null)
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -143,7 +144,7 @@ export function EquipmentPage() {
             <Select
               options={equipmentTypes.map((t) => ({ value: t.id, label: t.name }))}
               value={selectedEquipment}
-              onChange={setSelectedEquipment}
+              onChange={(v) => { setSelectedEquipment(v); setTimeout(() => fileInputRef.current?.click(), 300) }}
               placeholder="장비 선택"
             />
           </div>
@@ -172,6 +173,7 @@ export function EquipmentPage() {
               <input
                 type="file"
                 accept="image/*,.pdf"
+                ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
               />

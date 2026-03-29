@@ -243,6 +243,9 @@ export function useHomeAgent(): HomeAgentReturn {
           siteName: record.siteName || "",
           checkInTime: record.checkInTime ? new Date(record.checkInTime).toISOString() : "",
           checkOutTime: record.checkOutTime ? new Date(record.checkOutTime).toISOString() : undefined,
+          workEffort: record.workEffort,
+          dailyWageSnapshot: record.dailyWageSnapshot,
+          expectedWage: record.expectedWage,
         })),
     [attendance.todayRecords]
   )

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
@@ -32,6 +32,8 @@ export function MyAccountPage() {
   const navigate = useNavigate()
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
   const { showSuccess, showError } = useToast()
+  const accountNumberRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [accountHolder, setAccountHolder] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
@@ -69,7 +71,7 @@ export function MyAccountPage() {
     navigate("/profile/family-account")
   }
 
-  const isFormValid = selectedBank && accountNumber.length >= 10
+  const isFormValid = selectedBank && accountNumber.length >= 10 && certificateFile !== null
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -143,7 +145,7 @@ export function MyAccountPage() {
             <Select
               options={banks.map((b) => ({ value: b.id, label: b.name }))}
               value={selectedBank}
-              onChange={setSelectedBank}
+              onChange={(v) => { setSelectedBank(v); setTimeout(() => accountNumberRef.current?.focus(), 300) }}
               placeholder="은행 선택"
             />
           </div>
@@ -154,6 +156,7 @@ export function MyAccountPage() {
               계좌번호
             </label>
             <Input
+              ref={accountNumberRef}
               type="text"
               inputMode="numeric"
               value={accountNumber}
@@ -175,6 +178,7 @@ export function MyAccountPage() {
               <input
                 type="file"
                 accept="image/*,.pdf"
+                ref={fileInputRef}
                 className="hidden"
                 onChange={(e) => setCertificateFile(e.target.files?.[0] || null)}
               />

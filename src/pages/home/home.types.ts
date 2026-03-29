@@ -29,4 +29,7 @@ export interface TodayWorkRecord {
   siteName: string
   checkInTime: string
   checkOutTime?: string
+  workEffort?: number
+  dailyWageSnapshot?: number
+  expectedWage?: number
 }

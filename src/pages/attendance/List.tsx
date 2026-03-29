@@ -8,16 +8,56 @@ import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { recordsToSiteLegend, groupRecordsByDate, getSiteColor } from "@/utils/attendance"
 import { formatTimestamp, formatCurrency } from "@/utils/format"
+import { CorrectionDialog } from "@/components/ui/correction-dialog"
+import { submitCorrectionRequest } from "@/lib/attendance"
+import { reportError } from "@/lib/errorReporter"
+import { useToast } from "@/contexts/ToastContext"
 
 const currentYear = new Date().getFullYear()
 const currentMonth = new Date().getMonth() + 1
 
 export function ListPage() {
   const navigate = useNavigate()
+  const { showSuccess, showError } = useToast()
   const [year, setYear] = useState(currentYear)
   const [month, setMonth] = useState(currentMonth)
   const viewMode: ViewMode = "list"
   const [selectedSite, setSelectedSite] = useState("")
+
+  // Correction dialog state
+  const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
+  const [correctionSiteName, setCorrectionSiteName] = useState("")
+  const [correctionTimeRange, setCorrectionTimeRange] = useState("")
+  const [correctionWorkEffort, setCorrectionWorkEffort] = useState("")
+  const [correctionDailyWage, setCorrectionDailyWage] = useState("")
+  const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
+
+  const openCorrectionDialog = (record: { id: string; siteName: string; checkInTime: number; checkOutTime?: number; workEffort?: number; dailyWageSnapshot?: number }) => {
+    setCorrectionSiteName(record.siteName)
+    setCorrectionTimeRange(`${formatTimestamp(record.checkInTime)} - ${formatTimestamp(record.checkOutTime)}`)
+    setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "1.0")
+    setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
+    setCorrectionAttendanceId(record.id)
+    setShowCorrectionDialog(true)
+  }
+
+  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string }) => {
+    if (!correctionAttendanceId) return
+    const result = await submitCorrectionRequest({
+      attendanceId: correctionAttendanceId,
+      requestType: data.workEffort,
+      requestedValue: data.dailyWage,
+      reason: data.reason,
+    })
+    if (result.success) {
+      showSuccess("정정 요청이 제출되었습니다.")
+      setShowCorrectionDialog(false)
+      setCorrectionAttendanceId(null)
+    } else {
+      reportError("CORRECTION_SUBMIT_FAIL", result.error)
+      showError(result.error)
+    }
+  }
   const { data, isError, refetch } = useMonthlyAttendance(year, month)
   const records = data?.records || []
   const sites = useMemo(() => recordsToSiteLegend(records), [records])
@@ -93,8 +133,6 @@ export function ListPage() {
     }
   }
 
-  const getBorderColor = (siteId: string) => getSiteColor(siteId, sites)
-
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <AppHeader showLeftAction={false} title="시재건설" showRightAction={true} className="shrink-0" />
@@ -156,57 +194,91 @@ export function ListPage() {
         {/* Site Selector */}
         <div className="px-4 pt-2 pb-6">
           <SiteCombobox
-            options={sites.map((s) => ({ value: s.id, label: s.name }))}
+            options={sites.map((s) => ({ value: s.id, label: s.name, color: s.color }))}
             value={selectedSite}
             onChange={setSelectedSite}
           />
         </div>
 
-        {/* Daily Attendance Cards */}
-        {dayGroups.map((group) => (
-          <div key={group.date} className="px-4 pb-4">
-            <div className="flex justify-between items-center mb-3">
-              <h4 className="text-base font-semibold text-slate-900">
-                {group.dayOfMonth}일 {group.dayName}
-              </h4>
-              <span className="text-base font-semibold text-slate-900">
-                {formatCurrency(group.totalExpectedWage)}
-              </span>
-            </div>
 
-            {group.records.map((record, index) => (
-              <div
-                key={record.id || `${group.date}-${index}`}
-                className={`bg-white rounded-xl border border-slate-200 p-4 ${
-                  index < group.records.length - 1 ? "mb-3" : ""
-                }`}
-              >
-                <span className={`inline-block px-2.5 py-1 text-xs font-medium border rounded mb-3 ${
-                  record.complete ? "text-slate-500 border-slate-300" : "text-[#007DCA] border-[#007DCA]"
-                }`}>
-                  {record.complete ? "퇴근 완료" : "근무 중"}
-                </span>
-                <div
-                  className="border-l-4 pl-3"
-                  style={{ borderColor: getBorderColor(record.siteId) }}
-                >
-                  <div className="flex justify-between items-start">
-                    <p className="text-base font-semibold text-slate-900">{record.siteName}</p>
-                    <span className="text-base font-semibold text-slate-900 shrink-0 ml-2">
-                      {formatCurrency(record.expectedWage)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-[#007DCA] mt-1">
-                    {formatCurrency(record.dailyWageSnapshot)} / 1공수
-                  </p>
-                  <p className="text-sm text-[#007DCA] mt-1">
-                    {formatTimestamp(record.checkInTime)} - {formatTimestamp(record.checkOutTime)} · {record.workEffort || 0}공수
-                  </p>
-                </div>
+        {/* Daily Attendance Cards */}
+        {dayGroups.map((group) => {
+          const isGroupToday = group.date === `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`
+          return (
+            <div key={group.date} className="px-4 pb-6">
+              {/* Date Header */}
+              <div className="mb-3">
+                <h4 className="text-sm font-semibold text-slate-700">
+                  {group.dayOfMonth}일 {group.dayName}{isGroupToday ? " (오늘)" : ""}
+                </h4>
               </div>
-            ))}
-          </div>
-        ))}
+
+              {/* Records */}
+              <div className="space-y-3">
+                {group.records.map((record, index) => (
+                  <div
+                    key={record.id || `${group.date}-${index}`}
+                    className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4"
+                  >
+                    {/* Status Badge */}
+                    <span
+                      className={`inline-block text-xs font-medium px-2.5 py-1 rounded ${
+                        record.hasCheckedOut
+                          ? "text-slate-600 bg-slate-100"
+                          : "text-green-700 bg-green-100"
+                      }`}
+                    >
+                      {record.hasCheckedOut ? "퇴근 완료" : "근무중"}
+                    </span>
+
+                    {/* Site Name & Time */}
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">{record.siteName}</h3>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {formatTimestamp(record.checkInTime)} - {formatTimestamp(record.checkOutTime)}
+                      </p>
+                    </div>
+
+                    {/* Work Info Table */}
+                    <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                      <div className="px-4 py-2.5 flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-900">{record.recordType || "일반"}</span>
+                        {isGroupToday && (
+                          <button
+                            onClick={() => openCorrectionDialog(record)}
+                            className="text-sm font-medium text-[#007DCA] flex items-center gap-0.5"
+                          >
+                            정정 요청 <span>→</span>
+                          </button>
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between px-4 py-2.5">
+                          <span className="text-sm text-slate-600">공수</span>
+                          <span className="text-sm font-medium text-slate-900">
+                            {record.workEffort != null ? `${record.workEffort}공수` : "-"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5">
+                          <span className="text-sm text-slate-600">적용단가</span>
+                          <span className="text-sm font-medium text-slate-900">
+                            {formatCurrency(record.dailyWageSnapshot)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
+                          <span className="text-sm text-slate-600">예상 임금(세전)</span>
+                          <span className="text-sm font-medium text-slate-900">
+                            {formatCurrency(record.expectedWage)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
 
         {/* Error state */}
         {isError && (
@@ -222,6 +294,17 @@ export function ListPage() {
       </div>
 
       <AppBottomNav active="attendance" className="shrink-0" onNavigate={handleNavigation} />
+
+      {showCorrectionDialog && (
+        <CorrectionDialog
+          siteName={correctionSiteName}
+          timeRange={correctionTimeRange}
+          initialWorkEffort={correctionWorkEffort}
+          initialDailyWage={correctionDailyWage}
+          onClose={() => { setShowCorrectionDialog(false); setCorrectionAttendanceId(null) }}
+          onSubmit={handleCorrectionSubmit}
+        />
+      )}
     </div>
   )
 }

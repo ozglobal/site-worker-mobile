@@ -1,0 +1,222 @@
+import { useState, useMemo, useCallback } from "react"
+import { useNavigate, useParams } from "react-router-dom"
+import { AppTopBar } from "@/components/layout/AppTopBar"
+import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
+import ChevronRightIcon from "@mui/icons-material/ChevronRight"
+import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
+import { formatTimestamp, formatCurrency } from "@/utils/format"
+import { CorrectionDialog } from "@/components/ui/correction-dialog"
+import { submitCorrectionRequest } from "@/lib/attendance"
+import { reportError } from "@/lib/errorReporter"
+import { useToast } from "@/contexts/ToastContext"
+import { Spinner } from "@/components/ui/spinner"
+
+export function DailyDetailPage() {
+  const navigate = useNavigate()
+  const { showSuccess, showError } = useToast()
+  const { date } = useParams<{ date: string }>()
+
+  // Correction dialog state
+  const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
+  const [correctionSiteName, setCorrectionSiteName] = useState("")
+  const [correctionTimeRange, setCorrectionTimeRange] = useState("")
+  const [correctionWorkEffort, setCorrectionWorkEffort] = useState("")
+  const [correctionDailyWage, setCorrectionDailyWage] = useState("")
+  const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
+
+  const openCorrectionDialog = (record: { id: string; siteName: string; checkInTime: number; checkOutTime?: number; workEffort?: number; dailyWageSnapshot?: number }) => {
+    setCorrectionSiteName(record.siteName)
+    setCorrectionTimeRange(`${formatTimestamp(record.checkInTime)} - ${formatTimestamp(record.checkOutTime)}`)
+    setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "1.0")
+    setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
+    setCorrectionAttendanceId(record.id)
+    setShowCorrectionDialog(true)
+  }
+
+  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string }) => {
+    if (!correctionAttendanceId) return
+    const result = await submitCorrectionRequest({
+      attendanceId: correctionAttendanceId,
+      requestType: data.workEffort,
+      requestedValue: data.dailyWage,
+      reason: data.reason,
+    })
+    if (result.success) {
+      showSuccess("정정 요청이 제출되었습니다.")
+      setShowCorrectionDialog(false)
+      setCorrectionAttendanceId(null)
+    } else {
+      reportError("CORRECTION_SUBMIT_FAIL", result.error)
+      showError(result.error)
+    }
+  }
+
+  const [yearStr, monthStr] = (date || "").split("-")
+  const year = parseInt(yearStr, 10)
+  const month = parseInt(monthStr, 10)
+
+  const { data, isLoading } = useMonthlyAttendance(year, month)
+
+  const records = useMemo(() => {
+    if (!data) return []
+    return data.records.filter((r) => r.effectiveDate === date)
+  }, [data, date])
+
+  const today = useMemo(() => {
+    const d = new Date()
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, "0")
+    const day = String(d.getDate()).padStart(2, "0")
+    return `${y}-${m}-${day}`
+  }, [])
+
+  const isToday = date === today
+
+  const handleNavigation = (item: NavItem) => {
+    if (item === "home") navigate("/home")
+    else if (item === "attendance") navigate("/attendance")
+    else if (item === "contract") navigate("/contract")
+    else if (item === "profile") navigate("/profile")
+  }
+
+  // Format date for display: "2025년 12월 24일"
+  const displayDate = useMemo(() => {
+    if (!date) return ""
+    const [y, m, d] = date.split("-")
+    return `${y}년 ${parseInt(m, 10)}월 ${parseInt(d, 10)}일`
+  }, [date])
+
+  const navigateDay = useCallback((offset: number) => {
+    if (!date) return
+    const d = new Date(date)
+    d.setDate(d.getDate() + offset)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, "0")
+    const day = String(d.getDate()).padStart(2, "0")
+    navigate(`/attendance/detail/${y}-${m}-${day}`, { replace: true })
+  }, [date, navigate])
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-white">
+      <AppTopBar title="상세내역" onBack={() => navigate(-1)} className="shrink-0" />
+
+      {/* Date Picker */}
+      <div className="flex items-center justify-between px-4 h-12 bg-white shrink-0 mt-2">
+        <button onClick={() => navigateDay(-1)} className="p-1">
+          <ChevronLeftIcon className="h-6 w-6 text-slate-900" />
+        </button>
+        <span className="text-base font-bold text-slate-900">{displayDate}</span>
+        <button onClick={() => navigateDay(1)} className="p-1">
+          <ChevronRightIcon className="h-6 w-6 text-slate-900" />
+        </button>
+      </div>
+
+      {/* Info Banner */}
+      <div className="px-4 pt-4 shrink-0">
+        <div className="bg-slate-100 rounded-xl p-4 flex gap-3">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0 mt-0.5">
+            <path
+              d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z"
+              stroke="#94A3B8"
+              strokeWidth="1.5"
+            />
+            <path d="M10 6V11" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="10" cy="14" r="1" fill="#94A3B8" />
+          </svg>
+          <p className="text-sm text-gray-700">
+            현장 단가나 공수 정정은 근무 당일만 요청할 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <main className="flex-1 overflow-y-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <Spinner />
+          </div>
+        ) : (
+          <div className="px-4 py-4 space-y-4">
+            {/* Attendance Records */}
+            {records.length > 0 ? (
+              records.map((record) => (
+                <div key={record.id} className="bg-white rounded-xl p-5 space-y-4 shadow-md border border-slate-200">
+                  {/* Status Badge */}
+                  <span
+                    className={`inline-block text-xs font-medium px-2.5 py-1 rounded ${
+                      record.hasCheckedOut
+                        ? "text-slate-600 bg-slate-100"
+                        : "text-green-700 bg-green-100"
+                    }`}
+                  >
+                    {record.hasCheckedOut ? "퇴근 완료" : "근무중"}
+                  </span>
+
+                  {/* Site Name & Time */}
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">{record.siteName}</h3>
+                    <p className="text-sm text-slate-500 mt-1">
+                      {formatTimestamp(record.checkInTime)} - {record.checkOutTime ? formatTimestamp(record.checkOutTime) : ""}
+                    </p>
+                  </div>
+
+                  {/* Work Info Table */}
+                  <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                    <div className="px-4 py-2.5 flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-900">{record.recordType || "일반"}</span>
+                      {isToday && (
+                        <button
+                          onClick={() => openCorrectionDialog(record)}
+                          className="text-sm font-medium text-[#007DCA] flex items-center gap-0.5"
+                        >
+                          정정 요청 <span>→</span>
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between px-4 py-2.5">
+                        <span className="text-sm text-slate-600">공수</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          {record.workEffort != null ? `${record.workEffort}공수` : "-"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between px-4 py-2.5">
+                        <span className="text-sm text-slate-600">적용 단가</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          {formatCurrency(record.dailyWageSnapshot)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
+                        <span className="text-sm text-slate-600">예상 임금(세전)</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          {formatCurrency(record.expectedWage)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="bg-white rounded-xl p-5 shadow-md border border-slate-200">
+                <p className="text-sm text-slate-500 text-center">해당 날짜에 출근 기록이 없습니다.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      <AppBottomNav active="attendance" onNavigate={handleNavigation} className="shrink-0" />
+
+      {showCorrectionDialog && (
+        <CorrectionDialog
+          siteName={correctionSiteName}
+          timeRange={correctionTimeRange}
+          initialWorkEffort={correctionWorkEffort}
+          initialDailyWage={correctionDailyWage}
+          onClose={() => { setShowCorrectionDialog(false); setCorrectionAttendanceId(null) }}
+          onSubmit={handleCorrectionSubmit}
+        />
+      )}
+    </div>
+  )
+}

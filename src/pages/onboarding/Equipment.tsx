@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
@@ -38,6 +38,8 @@ const equipmentTypes = [
 
 export function OnboardingEquipmentPage() {
   const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const expiryInputRef = useRef<HTMLInputElement>(null)
   const [selectedEquipment, setSelectedEquipment] = useState("")
   const [certFile, setCertFile] = useState<File | null>(null)
   const [expiryDate, setExpiryDate] = useState("")
@@ -84,7 +86,7 @@ export function OnboardingEquipmentPage() {
             <Select
               options={equipmentTypes.map((t) => ({ value: t.id, label: t.name }))}
               value={selectedEquipment}
-              onChange={setSelectedEquipment}
+              onChange={(v) => { setSelectedEquipment(v); setTimeout(() => fileInputRef.current?.click(), 300) }}
               placeholder="장비 선택"
             />
           </div>
@@ -111,7 +113,12 @@ export function OnboardingEquipmentPage() {
               <input
                 type="file"
                 accept="image/*,.pdf"
-                onChange={(e) => setCertFile(e.target.files?.[0] || null)}
+                ref={fileInputRef}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null
+                  setCertFile(file)
+                  if (file) setTimeout(() => { expiryInputRef.current?.focus() }, 300)
+                }}
                 className="hidden"
               />
             </label>
@@ -119,6 +126,7 @@ export function OnboardingEquipmentPage() {
               자격증 만료일
             </label>
             <input
+              ref={expiryInputRef}
               type="text"
               value={expiryDate}
               onChange={(e) => { setExpiryDate(e.target.value); if (e.target.value) setTimeout(() => e.target.blur(), 100) }}

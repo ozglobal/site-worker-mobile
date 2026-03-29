@@ -14,6 +14,7 @@ import CheckIcon from "@mui/icons-material/Check"
 export interface SiteOption {
   value: string
   label: string
+  color?: string
 }
 
 interface SiteComboboxProps {
@@ -79,6 +80,9 @@ export function SiteCombobox({
                     setOpen(false)
                   }}
                 >
+                  {option.color && (
+                    <span className="w-2 h-2 rounded-full shrink-0 mr-2" style={{ backgroundColor: option.color }} />
+                  )}
                   <span className="flex-1">{option.label}</span>
                   {value === option.value && (
                     <CheckIcon sx={{ fontSize: 16 }} className="text-primary shrink-0" />

@@ -74,7 +74,7 @@ export function CalendarPage() {
 
       <div className="px-4 shrink-0">
         <SiteCombobox
-          options={sites.map((s) => ({ value: s.id, label: s.name }))}
+          options={sites.map((s) => ({ value: s.id, label: s.name, color: s.color }))}
           value={selectedSite}
           onChange={setSelectedSite}
         />
@@ -91,28 +91,23 @@ export function CalendarPage() {
           locale={ko}
           events={selectedSite ? events.filter((e) => e.siteId === selectedSite) : events}
           className="w-full"
+          onSelect={(date) => {
+            if (date) {
+              const y = date.getFullYear()
+              const m = String(date.getMonth() + 1).padStart(2, "0")
+              const d = String(date.getDate()).padStart(2, "0")
+              navigate(`/attendance/detail/${y}-${m}-${d}`)
+            }
+          }}
         />
-        {sites.length > 0 && (
-          <div className="px-4 pt-1 pb-3 space-y-1">
-            {sites.map((site) => (
-              <div key={site.id} className="flex items-center gap-3">
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: site.color }}
-                />
-                <span className="text-xs text-slate-700">{site.name}</span>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* Monthly Summary Card */}
-        <div className="px-4 pt-3 pb-4">
+        <div className="px-4 pt-6 pb-4">
           <div className="bg-slate-100 rounded-xl p-5">
             <h3 className="text-lg font-bold text-slate-900 mb-4">이번 달 요약</h3>
 
             {/* 총 출역일 */}
-            <div className="flex justify-between items-center pb-4 border-b border-slate-200">
+            <div className="flex justify-between items-center pb-4">
               <span className="text-sm text-slate-600">총 출역일</span>
               <span className="text-sm font-semibold text-slate-900">{attendanceDays}일</span>
             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ const banks: Bank[] = [
 
 export function OnboardingMyAccountPage() {
   const navigate = useNavigate()
+  const accountNumberRef = useRef<HTMLInputElement>(null)
   const [accountHolder] = useState(getWorkerName() || "")
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
@@ -88,7 +89,7 @@ export function OnboardingMyAccountPage() {
             <Select
               options={banks.map((b) => ({ value: b.id, label: b.name }))}
               value={selectedBank}
-              onChange={setSelectedBank}
+              onChange={(v) => { setSelectedBank(v); setTimeout(() => accountNumberRef.current?.focus(), 300) }}
               placeholder="은행 선택"
             />
           </div>
@@ -99,6 +100,7 @@ export function OnboardingMyAccountPage() {
               계좌번호
             </label>
             <Input
+              ref={accountNumberRef}
               type="text"
               inputMode="numeric"
               value={accountNumber}
