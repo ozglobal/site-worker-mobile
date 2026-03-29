@@ -40,7 +40,7 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
     const frameH = frameW / A4_RATIO
     const maxH = vh * 0.75
 
-    const finalH = Math.min(frameH, maxH)
+    const finalH = Math.min(frameH, maxH) + 2
     const finalW = finalH * A4_RATIO
 
     const x = (vw - finalW) / 2
@@ -185,7 +185,7 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
     if (!cameraReady) return "카메라 준비 중..."
     if (stable) return "촬영 중..."
     if (countdown !== null) return `${countdown}`
-    return "문서를 영역 안에 맞춰주세요"
+    return "문서를 사각형 영역 안에 맞춰주세요."
   }
 
   const borderColor = stable

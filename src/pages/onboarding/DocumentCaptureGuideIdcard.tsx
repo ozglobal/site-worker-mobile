@@ -9,8 +9,9 @@ export function OnboardingDocumentCaptureGuideIdcardPage() {
   const docTitle = state?.title || "신분증"
 
   const steps = [
-    `가이드 영역에 맞추어 반드시 ${docTitle} 원본으로 촬영해주세요.`,
-    `${docTitle} 표면에 빛이 반사되지 않도록 주의해주세요.`,
+    `가이드 영역에 맞추어 반드시 원본으로 촬영해주세요.`,
+    `어두운 배경에서 촬영해주세요.`,
+    `표면에 빛이 반사되지 않도록 주의해주세요.`,
     "훼손이 심하거나 알아보기 어려운 사진의 경우 다시 제출해야할 수 있습니다.",
   ]
 

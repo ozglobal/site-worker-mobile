@@ -38,7 +38,7 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
     const vw = container.clientWidth
     const vh = container.clientHeight
     const frameW = Math.min(vw * 0.9, 400)
-    const frameH = frameW / CARD_ASPECT
+    const frameH = frameW / CARD_ASPECT + 2
     const x = (vw - frameW) / 2
     const y = (vh - frameH) / 2
 
@@ -315,7 +315,7 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
       {/* Guide text */}
       <div className="text-center py-4">
         <p className={`text-lg font-medium transition-colors ${detected ? "text-green-400" : "text-gray-400"}`}>
-          {stable ? "촬영 중..." : countdown !== null ? `${countdown}` : `영역 안에 ${title}을 맞춰주세요`}
+          {stable ? "촬영 중..." : countdown !== null ? `${countdown}` : "가이드 영역 안에 맞추면 자동으로 촬영됩니다."}
         </p>
       </div>
 

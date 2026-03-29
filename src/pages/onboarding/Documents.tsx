@@ -24,7 +24,7 @@ const documents: DocumentItem[] = [
   {
     id: "id-card",
     apiType: "id_card_front",
-    title: "주민등록증",
+    title: "주민등록증(운전면허증)",
     description: "",
   },
   {

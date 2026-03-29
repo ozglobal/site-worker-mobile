@@ -29,7 +29,7 @@ export function IdCardTypeDialog({ onSelect, onCancel }: IdCardTypeDialogProps) 
               <BadgeIcon className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-slate-900">주민등록증 또는 외국인등록증</p>
+              <p className="font-semibold text-slate-900">신분증</p>
               <p className="text-xs text-slate-500 mt-0.5">앞면, 뒷면 촬영</p>
             </div>
           </button>
