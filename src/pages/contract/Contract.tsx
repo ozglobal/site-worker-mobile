@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Badge } from "@/components/ui/badge"
+import { AlertBanner } from "@/components/ui/alert-banner"
 import { useContracts } from "@/lib/queries/useContracts"
 import { fetchSigningLink, fetchDocumentPdf } from "@/lib/contract"
 import { useToast } from "@/contexts/ToastContext"
@@ -70,6 +71,16 @@ export function ContractPage() {
       <AppHeader showLeftAction={false} title="시재건설" showRightAction={true} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
+        {/* Unsigned Contract Alert */}
+        {!isLoading && !isError && contracts.some((c) => c.status === "sent") && (
+          <div className="px-4 pt-4">
+            <AlertBanner
+              title="서명되지 않은 근로계약서가 있어요"
+              description="월말까지 서명되지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
+            />
+          </div>
+        )}
+
         {/* Year Selector */}
         <div className="px-4 pt-4 pb-2 relative">
           <button
@@ -135,7 +146,7 @@ export function ContractPage() {
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      미완료
+                      서명 필요
                     </span>
                   ) : contract.status === "in_progress" ? (
                     <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 font-medium text-xs px-2 py-0.5">
@@ -151,14 +162,11 @@ export function ContractPage() {
                         <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
                       </svg>
-                      완료
+                      서명 완료
                     </Badge>
                   )}
                   <span className="text-base font-semibold text-slate-900">
                     {contract.title}
-                  </span>
-                  <span className="text-sm text-slate-400">
-                    {contract.createTime?.slice(0, 10)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-slate-400">

@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-export interface AffiliationCardProps {
+export interface WorkerTypeCardProps {
   icon: React.ReactNode
   title: string
   subtitle: string
@@ -11,7 +11,7 @@ export interface AffiliationCardProps {
   className?: string
 }
 
-export function AffiliationCard({
+export function WorkerTypeCard({
   icon,
   title,
   subtitle,
@@ -19,7 +19,7 @@ export function AffiliationCard({
   onActionClick,
   onClick,
   className,
-}: AffiliationCardProps) {
+}: WorkerTypeCardProps) {
   return (
     <div
       onClick={onClick}

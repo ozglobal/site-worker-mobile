@@ -1,16 +1,17 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import { AffiliationCard } from "@/components/ui/affiliation-card"
+import { AppHeader } from "@/components/layout/AppHeader"
+import { WorkerTypeCard } from "@/components/ui/worker-type-card"
+import { ProgressBar } from "@/components/ui/progress-bar"
 
-interface AffiliationType {
+interface WorkerTypeOption {
   id: string
   icon: string
   title: string
   subtitle: string
 }
 
-const affiliationTypes: AffiliationType[] = [
+const workerTypes: WorkerTypeOption[] = [
   {
     id: "general",
     icon: "👷",
@@ -37,7 +38,7 @@ const affiliationTypes: AffiliationType[] = [
   },
 ]
 
-export function AffiliationPage() {
+export function OnboardingWorkerTypePage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -48,38 +49,44 @@ export function AffiliationPage() {
   const handleSelect = (id: string) => {
     setSelected(id)
     if (id === "general" || id === "specialty") {
-      navigate("/profile/my-account")
+      navigate("/onboarding/payroll-account")
     } else if (id === "service") {
-      navigate("/profile/outsourcing")
+      navigate("/onboarding/outsourcing")
     } else if (id === "equipment") {
-      navigate("/profile/engineer")
+      navigate("/onboarding/engineer")
     }
   }
 
   return (
     <div className="flex h-screen flex-col bg-white">
-      {/* Header with back button */}
-      <div className="flex items-center px-4 py-4 shrink-0">
-        <button onClick={handleBack} className="p-2 -ml-2">
-          <ArrowBackIcon className="h-6 w-6 text-slate-900" />
-        </button>
-      </div>
+      <AppHeader
+        showLeftAction={true}
+        title=""
+        showRightAction={false}
+        onLeftActionClick={handleBack}
+        className="shrink-0"
+      />
+
+      {/* Progress bar */}
+      <ProgressBar value={20} />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4">
+      <div className="flex-1 overflow-y-auto">
         {/* Title */}
-        <h1 className="text-lg font-bold text-slate-900 mb-2">소속을 선택해주세요</h1>
-        <p className="text-slate-500 mb-6">선택한 소속은 나중에 언제든지 변경할 수 있어요.</p>
+        <div className="px-4 pt-4 pb-6">
+          <h1 className="text-lg font-bold text-slate-900">회원 유형을 선택해주세요</h1>
+          <p className="mt-1 text-sm text-gray-500">선택한 소속은 나중에 언제든지 변경할 수 있어요.</p>
+        </div>
 
-        {/* Affiliation Cards */}
-        <div className="space-y-3">
-          {affiliationTypes.map((type) => (
+        {/* Worker Type Cards */}
+        <div className="px-4 space-y-3">
+          {workerTypes.map((type) => (
             <button
               key={type.id}
               onClick={() => handleSelect(type.id)}
               className="w-full text-left"
             >
-              <AffiliationCard
+              <WorkerTypeCard
                 icon={type.icon}
                 title={type.title}
                 subtitle={type.subtitle}

@@ -9,7 +9,7 @@ export function OnboardingPage() {
 
   const handleRegisterNow = () => {
     onboardingStorage.markCompleted()
-    navigate("/onboarding/affiliation")
+    navigate("/onboarding/worker-type")
   }
 
   const handleRegisterLater = () => {

@@ -24,10 +24,10 @@ import { SignUpCompletePage } from './pages/signup/SignupComplete';
 import { NiceApiPage } from './pages/signup/NiceApiPage';
 import { Home } from './pages/home';
 import { MyInfoPage } from './pages/profile';
-import { AffiliationPage } from './pages/profile/Affiliation';
+import { WorkerTypePage } from './pages/profile/WorkerType';
 import { MyInfoPage as MyInfoDetailPage } from './pages/profile/MyInfo';
 import { OnboardingPage } from './pages/onboarding';
-import { OnboardingAffiliationPage } from './pages/onboarding/Affiliation';
+import { OnboardingWorkerTypePage } from './pages/onboarding/WorkerType';
 import { OnboardingMyAccountPage } from './pages/onboarding/MyAccount';
 import { OnboardingOutsourcingPage } from './pages/onboarding/Outsourcing';
 import { OnboardingEngineerPage } from './pages/onboarding/Engineer';
@@ -50,7 +50,6 @@ import { EquipmentPage } from './pages/profile/Equipment';
 import { FamilyAccountPage } from './pages/profile/FamilyAccount';
 import { ChangePasswordPage } from './pages/profile/ChangePassword';
 import { PayrollAccountPage } from './pages/profile/PayrollAccount';
-import { SosokPage } from './pages/profile/Sosok';
 import { CalendarPage, ListPage, DailyDetailPage } from './pages/attendance';
 import { ContractPage } from './pages/contract';
 import { ScheduleAddPage } from './pages/test/ScheduleAdd';
@@ -80,7 +79,7 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/onboarding" element={<OnboardingPage />} />
-      <Route path="/onboarding/affiliation" element={<OnboardingAffiliationPage />} />
+      <Route path="/onboarding/worker-type" element={<OnboardingWorkerTypePage />} />
       <Route path="/onboarding/my-account" element={<OnboardingMyAccountPage />} />
       <Route path="/onboarding/outsourcing" element={<OnboardingOutsourcingPage />} />
       <Route path="/onboarding/engineer" element={<OnboardingEngineerPage />} />
@@ -102,7 +101,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/profile/engineer" element={<EngineerPage />} />
       <Route path="/profile/equipments" element={<EquipmentPage />} />
       <Route path="/profile/payroll-account" element={<PayrollAccountPage />} />
-      <Route path="/profile/sosok" element={<SosokPage />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/login/sms-verification" element={<PublicRoute><SmsVerificationPage /></PublicRoute>} />
       <Route path="/login/set-password" element={<PublicRoute><LoginSetPasswordPage /></PublicRoute>} />
@@ -123,7 +121,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/attendance/detail/:date" element={<DailyDetailPage />} />
       <Route path="/contract" element={<ContractPage />} />
       <Route path="/profile" element={<MyInfoPage />} />
-      <Route path="/profile/affiliation" element={<AffiliationPage />} />
+      <Route path="/profile/worker-type" element={<WorkerTypePage />} />
       <Route path="/profile/myinfo" element={<MyInfoDetailPage />} />
       <Route path="/change-password" element={<ChangePasswordPage />} />
       <Route path="/test/schedule-add" element={<ScheduleAddPage />} />

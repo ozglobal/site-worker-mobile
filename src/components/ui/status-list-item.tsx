@@ -57,13 +57,13 @@ function StatusIcon({ status }: { status: StatusType }) {
 export function StatusListItem({
   title,
   subtitle,
-  status = "incomplete",
+  status,
   statusLabel,
   onClick,
   className,
 }: StatusListItemProps) {
-  const styles = statusStyles[status]
-  const label = statusLabel || defaultStatusLabels[status]
+  const styles = status ? statusStyles[status] : null
+  const label = status ? (statusLabel || defaultStatusLabels[status]) : ""
 
   return (
     <button
@@ -79,15 +79,17 @@ export function StatusListItem({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <span
-          className={cn(
-            "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium",
-            styles.badge
-          )}
-        >
-          <StatusIcon status={status} />
-          {label}
-        </span>
+        {status && styles && (
+          <span
+            className={cn(
+              "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium",
+              styles.badge
+            )}
+          >
+            <StatusIcon status={status} />
+            {label}
+          </span>
+        )}
         <svg
           className="h-5 w-5 text-gray-400"
           fill="none"

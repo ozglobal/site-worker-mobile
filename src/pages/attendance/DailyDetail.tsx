@@ -6,6 +6,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
 import { formatTimestamp, formatCurrency } from "@/utils/format"
+import { AlertBanner } from "@/components/ui/alert-banner"
 import { CorrectionDialog } from "@/components/ui/correction-dialog"
 import { submitCorrectionRequest } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
@@ -114,20 +115,10 @@ export function DailyDetailPage() {
 
       {/* Info Banner */}
       <div className="px-4 pt-4 shrink-0">
-        <div className="bg-slate-100 rounded-xl p-4 flex gap-3">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0 mt-0.5">
-            <path
-              d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z"
-              stroke="#94A3B8"
-              strokeWidth="1.5"
-            />
-            <path d="M10 6V11" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx="10" cy="14" r="1" fill="#94A3B8" />
-          </svg>
-          <p className="text-sm text-gray-700">
-            현장 단가나 공수 정정은 근무 당일만 요청할 수 있습니다.
-          </p>
-        </div>
+        <AlertBanner
+          variant="info"
+          title="현장 단가나 공수 정정은 근무 당일만 요청할 수 있습니다."
+        />
       </div>
 
       <main className="flex-1 overflow-y-auto">

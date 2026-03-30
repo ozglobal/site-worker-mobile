@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { AlertBanner } from "@/components/ui/alert-banner"
-import { AffiliationCard } from "@/components/ui/affiliation-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
 import { IdCardTypeDialog, type IdCardType } from "@/components/ui/id-card-upload-dialog"
@@ -151,71 +150,26 @@ export function MyInfoPage() {
       <AppHeader showLeftAction={false} title="시재건설" showRightAction={true} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
-        <div className="px-4 py-4">
+        <div className="px-4 pt-4">
           <AlertBanner
-            variant="error"
             title="필수 정보 입력이 완료되지 않았어요"
-            description="급여 지급을 위해 월말까지 반드시 작성을 완료해주세요."
-          />
-        </div>
-
-        {/* 내 소속 Section */}
-        <div className="px-4 mt-2">
-          <p className="text-sm font-medium text-slate-500 mb-3">내 소속</p>
-          <AffiliationCard
-            icon="👷"
-            title="일반"
-            subtitle="건설사 소속 근로자"
-            actionLabel="변경"
-            onClick={() => navigate("/profile/affiliation")}
+            description="프로필 설정을 눌러 회원 정보 입력을 완료해주세요."
           />
         </div>
 
         {/* 내 정보 Section */}
         <div className="mt-6">
-          <p className="text-sm font-medium text-slate-500 px-4 mb-2">내 정보</p>
           <div className="bg-white rounded-xl mx-4 border border-gray-100">
             <StatusListItem
-              title="내 프로필"
-              subtitle="연락처 및 기본 정보"
-              status={isMyInfoComplete ? "complete" : "incomplete"}
+              title="프로필 설정"
+              subtitle="내 정보 · 유형 관리"
               onClick={() => navigate("/profile/myinfo")}
             />
             <StatusListItem
-              title="계좌 정보"
+              title="계좌 설정"
               subtitle="급여 받을 계좌"
               status="incomplete"
               onClick={() => navigate("/profile/my-account")}
-            />
-            <StatusListItem
-              title="신분증"
-              subtitle="주민등록증, 외국인등록증 또는 여권"
-              status={
-                uploading === "id_card_front" || uploading === "id_card_back"
-                  ? "pending"
-                  : hasDocument("id_card_front") && hasDocument("id_card_back")
-                    ? "complete"
-                    : "incomplete"
-              }
-              onClick={handleIdCardUpload}
-            />
-            <StatusListItem
-              title="안전교육 이수증"
-              subtitle="기초안전보건교육 이수증"
-              status={uploading === "safety_cert" ? "pending" : hasDocument("safety_cert") ? "complete" : "incomplete"}
-              onClick={() => handleUpload("safety_cert", "안전교육 이수증")}
-            />
-            <StatusListItem
-              title="사업자등록증"
-              subtitle="법인 사업자등록증"
-              status={uploading === "business_license" ? "pending" : hasDocument("business_license") ? "complete" : "incomplete"}
-              onClick={() => handleUpload("business_license", "사업자등록증")}
-            />
-            <StatusListItem
-              title="위임장"
-              subtitle="급여 타인명의 지급 동의서"
-              status={uploading === "proxy_general" ? "pending" : hasDocument("proxy_general") ? "complete" : "incomplete"}
-              onClick={() => handleUpload("proxy_general", "위임장")}
               className="border-b-0"
             />
           </div>

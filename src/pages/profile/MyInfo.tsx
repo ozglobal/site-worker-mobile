@@ -109,14 +109,48 @@ export function MyInfoPage() {
         ) : (
         <div className="flex flex-col min-h-full">
         <div className="px-4 py-6 space-y-6">
+          {/* 회원 유형 */}
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-2">회원 유형</p>
+            <button
+              onClick={() => navigate("/profile/worker-type")}
+              className="w-full bg-amber-50 border border-amber-500 rounded-xl p-4 flex items-center gap-3 text-left"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0">
+                <path
+                  d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z"
+                  stroke="#D97706"
+                  strokeWidth="1.5"
+                />
+                <path d="M10 6V11" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="10" cy="14" r="1" fill="#D97706" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-base font-bold text-slate-900">회원 유형을 먼저 선택해주세요</p>
+                <p className="text-sm text-slate-500 mt-0.5">기본 유형에 따라 제출할 서류가 달라져요</p>
+              </div>
+              <svg className="h-5 w-5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
           {/* 이름 */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">이름</label>
             <Input
+              inputMode="text"
+              enterKeyHint="next"
+              autoComplete="name"
+              lang="ko"
+              maxLength={7}
               value={formData.name}
-              disabled
-              className="bg-gray-100"
+              onChange={handleChange("name")}
+              placeholder="이름"
             />
+            {formData.name.length >= 7 && (
+              <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다.</p>
+            )}
           </div>
 
           {/* 주민등록번호 */}
@@ -124,22 +158,29 @@ export function MyInfoPage() {
             <label className="text-sm font-medium text-slate-700">주민등록번호</label>
             <div className="flex items-center gap-2">
               <Input
-                id="ssnFirst"
                 inputMode="numeric"
                 maxLength={6}
                 value={formData.ssnFirst}
-                disabled
-                className="flex-1 bg-gray-100"
+                onChange={handleChange("ssnFirst")}
+                placeholder="앞 6자리"
+                className="flex-1"
               />
               <span className="text-slate-400">-</span>
-              <Input
-                id="ssnSecond"
-                inputMode="numeric"
-                maxLength={7}
-                value={formData.ssnSecond}
-                disabled
-                className="flex-1 bg-gray-100"
-              />
+              <div className="relative flex-1">
+                <Input
+                  inputMode="numeric"
+                  maxLength={7}
+                  value={formData.ssnSecond}
+                  onChange={handleChange("ssnSecond")}
+                  placeholder="뒤 7자리"
+                  className="text-transparent caret-slate-900"
+                />
+                <div className="absolute inset-0 flex items-center px-4 pointer-events-none text-base text-slate-900">
+                  {formData.ssnSecond.length > 0
+                    ? formData.ssnSecond[0] + "●".repeat(formData.ssnSecond.length - 1)
+                    : ""}
+                </div>
+              </div>
             </div>
           </div>
 
