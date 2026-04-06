@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { AppHeader } from "@/components/layout/AppHeader"
 import { WorkerTypeCard } from "@/components/ui/worker-type-card"
+import { ProgressBar } from "@/components/ui/progress-bar"
 
 interface WorkerTypeOption {
   id: string
@@ -37,7 +38,26 @@ const workerTypes: WorkerTypeOption[] = [
   },
 ]
 
-export function WorkerTypePage() {
+const routeMap = {
+  onboarding: {
+    general: "/onboarding/payroll-account",
+    specialty: "/onboarding/payroll-account",
+    service: "/onboarding/outsourcing",
+    equipment: "/onboarding/engineer",
+  },
+  profile: {
+    general: "/profile/my-account",
+    specialty: "/profile/my-account",
+    service: "/profile/outsourcing",
+    equipment: "/profile/engineer",
+  },
+} as const
+
+interface WorkerTypePageProps {
+  mode?: "onboarding" | "profile"
+}
+
+export function WorkerTypePage({ mode = "profile" }: WorkerTypePageProps) {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -47,32 +67,31 @@ export function WorkerTypePage() {
 
   const handleSelect = (id: string) => {
     setSelected(id)
-    if (id === "general" || id === "specialty") {
-      navigate("/profile/my-account")
-    } else if (id === "service") {
-      navigate("/profile/outsourcing")
-    } else if (id === "equipment") {
-      navigate("/profile/engineer")
-    }
+    const route = routeMap[mode][id as keyof (typeof routeMap)["onboarding"]]
+    if (route) navigate(route)
   }
 
   return (
     <div className="flex h-screen flex-col bg-white">
-      {/* Header with back button */}
-      <div className="flex items-center px-4 py-4 shrink-0">
-        <button onClick={handleBack} className="p-2 -ml-2">
-          <ArrowBackIcon className="h-6 w-6 text-slate-900" />
-        </button>
-      </div>
+      <AppHeader
+        showLeftAction={true}
+        title=""
+        showRightAction={false}
+        onLeftActionClick={handleBack}
+        className="shrink-0"
+      />
+
+      {mode === "onboarding" && <ProgressBar value={20} />}
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4">
-        {/* Title */}
-        <h1 className="text-lg font-bold text-slate-900 mb-2">소속을 선택해주세요</h1>
-        <p className="text-slate-500 mb-6">선택한 소속은 나중에 언제든지 변경할 수 있어요.</p>
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 pt-4 pb-6">
+          <h1 className="text-lg font-bold text-slate-900">회원 유형을 선택해주세요</h1>
+          <p className="mt-1 text-sm text-gray-500">선택한 회원 유형은 나중에 언제든지 변경할 수 있어요.</p>
+        </div>
 
         {/* Worker Type Cards */}
-        <div className="space-y-3">
+        <div className="px-4 space-y-3">
           {workerTypes.map((type) => (
             <button
               key={type.id}

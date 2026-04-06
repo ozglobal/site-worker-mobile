@@ -96,7 +96,7 @@ export function OnboardingDocumentsPage() {
     ? documents.filter((d) => locationState.docIds!.includes(d.id))
     : documents
 
-  // Handle return from capture guide page
+  // Handle return from capture guide page or auto-start capture
   useEffect(() => {
     const state = location.state as { startCapture?: string; completed?: string } | null
     if (state?.startCapture === "id-card") {
@@ -104,6 +104,13 @@ export function OnboardingDocumentsPage() {
       setIdCardSide("front")
       setShowCamera(true)
       navigate(location.pathname, { replace: true, state: null })
+    } else if (state?.startCapture) {
+      const doc = documents.find(d => d.id === state.startCapture)
+      if (doc) {
+        setCaptureDoc(doc)
+        setShowDocCapture(true)
+        navigate(location.pathname, { replace: true, state: null })
+      }
     }
     if (state?.completed === "id-card") {
       setUploaded((prev) => ({ ...prev, "id-card-front": true, "id-card-back": true }))

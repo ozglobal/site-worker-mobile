@@ -2,8 +2,10 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledInput } from "@/components/ui/labeled-input"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useHoneypot } from "@/hooks/useHoneypot"
+import { signupStorage } from "@/lib/storage"
 
 function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11)
@@ -15,6 +17,9 @@ function formatPhoneNumber(value: string): string {
 export function NiceApiPage() {
   const navigate = useNavigate()
   const { honeypotProps, isBotDetected } = useHoneypot()
+  const [name, setName] = useState("")
+  const [ssnFirst, setSsnFirst] = useState("")
+  const [ssnSecond, setSsnSecond] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
   const [showVerificationInput, setShowVerificationInput] = useState(false)
   const [verificationCode, setVerificationCode] = useState("")
@@ -54,25 +59,59 @@ export function NiceApiPage() {
               Backend API call이 보내준 <br></br>NICE 휴대폰 본인확인 서비스 페이지
             </p>
 
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Backend는 NICE API 로부터 성명, 성별, 생년월일, 내/외국인, 휴대폰번호, 주민등록번호 값을 받아 frontend로 보내준다.
-              <br></br>Frontend는 받은 정보를 서비스 이용약관 동의 페이지 다음에 나올 회원정보 입력 페이지에 표시한다.
-            </p>
+            {/* 이름 */}
+            <LabeledInput
+              label="이름"
+              inputMode="text"
+              placeholder="이름 입력"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
 
-            {showVerificationInput && (
-              <LabeledInput
-                label="인증번호"
-                type="text"
-                placeholder="인증번호 입력"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-              />
-            )}
+            {/* 주민등록번호 */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">주민등록번호</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={ssnFirst}
+                  onChange={(e) => setSsnFirst(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="앞 6자리"
+                  className="flex-1"
+                />
+                <span className="text-slate-400">-</span>
+                <Input
+                  inputMode="numeric"
+                  maxLength={7}
+                  value={ssnSecond}
+                  onChange={(e) => setSsnSecond(e.target.value.replace(/\D/g, "").slice(0, 7))}
+                  placeholder="뒤 7자리"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            {/* 휴대폰번호 */}
+            <LabeledInput
+              label="휴대폰번호"
+              inputMode="numeric"
+              placeholder="숫자만 입력"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 11))}
+            />
 
             <Button
               variant="primary"
               size="full"
-              onClick={() => navigate("/signup/agreement")}
+              onClick={() => {
+                signupStorage.setPhone(phoneNumber)
+                signupStorage.setData({
+                  nameKo: name,
+                  idNumber: `${ssnFirst}-${ssnSecond}`,
+                })
+                navigate("/signup/agreement")
+              }}
             >
               다음
             </Button>

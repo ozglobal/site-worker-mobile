@@ -2,11 +2,17 @@ import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { OptionCard } from "@/components/ui/option-card"
 import { ProgressBar } from "@/components/ui/progress-bar"
-import { useToast } from "@/contexts/ToastContext"
 
-export function PayrollAccountPage() {
+interface PayrollAccountPageProps {
+  mode?: "onboarding" | "profile"
+}
+
+export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps) {
   const navigate = useNavigate()
-  const { showSuccess } = useToast()
+
+  const routes = mode === "onboarding"
+    ? { myAccount: "/onboarding/my-account", familyAccount: "/onboarding/family-account" }
+    : { myAccount: "/profile/my-account", familyAccount: "/profile/family-account" }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -18,31 +24,24 @@ export function PayrollAccountPage() {
         className="shrink-0"
       />
 
-      <main className="flex-1 overflow-y-auto px-4">
-        <ProgressBar value={50} />
+      {mode === "onboarding" && <ProgressBar value={40} />}
 
-        <p className="text-lg font-bold text-slate-900 mb-2 leading-tight">
-          급여 지급 방식을 알려주세요
-        </p>
-        <p className="text-sm text-slate-500 mb-8">
-          입력한 정보는 나중에 언제든지 변경할 수 있어요.
-        </p>
+      <main className="flex-1 overflow-y-auto px-4 pt-4">
+        <div className="pb-6">
+          <h1 className="text-lg font-bold text-slate-900">급여 지급 방식을 알려주세요</h1>
+          <p className="mt-1 text-sm text-gray-500">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
+        </div>
 
         <div className="space-y-3">
           <OptionCard
-            title="회사로 지급"
-            description="소속된 용역 업체로 급여 지급"
-            onClick={() => showSuccess("소속된 용역 업체로 급여가 지급되도록 설정되었습니다.")}
-          />
-          <OptionCard
             title="본인 계좌로 지급"
             description="본인이 입력한 계좌로 직접 지급"
-            onClick={() => navigate("/onboarding/my-account")}
+            onClick={() => navigate(routes.myAccount)}
           />
           <OptionCard
             title="가족 계좌로 지급"
             description="가족 명의 계좌로 급여 지급"
-            onClick={() => navigate("/profile/family-account")}
+            onClick={() => navigate(routes.familyAccount)}
           />
         </div>
       </main>

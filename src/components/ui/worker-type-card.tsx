@@ -38,7 +38,7 @@ export function WorkerTypeCard({
         <p className="text-sm text-slate-500 truncate">{subtitle}</p>
       </div>
 
-      {(onActionClick || (onClick && actionLabel)) && (
+      {onActionClick && (
         <span className="flex items-center gap-1 text-sm text-primary font-medium shrink-0">
           {actionLabel}
           <span>{">"}</span>

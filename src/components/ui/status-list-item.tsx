@@ -14,7 +14,7 @@ export interface StatusListItemProps {
 
 const statusStyles: Record<StatusType, { badge: string; icon: string }> = {
   incomplete: {
-    badge: "bg-red-50 text-red-600 text-sm",
+    badge: "bg-red-100 text-red-600 text-sm",
     icon: "text-red-600",
   },
   complete: {

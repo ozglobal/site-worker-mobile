@@ -9,12 +9,14 @@ export function DomesticInfoPage() {
   const navigate = useNavigate()
 
   const savedPhone = signupStorage.getPhone()
+  const savedData = signupStorage.getData()
+  const [savedSsnFirst = "", savedSsnSecond = ""] = (savedData.idNumber || "").split("-")
   const [formData, setFormData] = useState({
-    name: "",
-    ssnFirst: "",
-    ssnSecond: "",
+    name: savedData.nameKo || "",
+    ssnFirst: savedSsnFirst,
+    ssnSecond: savedSsnSecond,
     phone: savedPhone,
-    address: "",
+    address: savedData.address || "",
   })
   const allFieldsFilled =
     formData.name.trim() !== "" &&
@@ -27,7 +29,7 @@ export function DomesticInfoPage() {
   const addressRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    nameRef.current?.focus()
+    addressRef.current?.focus()
   }, [])
 
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,6 +70,34 @@ export function DomesticInfoPage() {
               회원 정보를 입력해주세요
             </p>
 
+            {/* 이름 */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">이름</label>
+              <Input
+                value={formData.name}
+                disabled
+                className="bg-gray-100"
+              />
+            </div>
+
+            {/* 주민등록번호 */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">주민등록번호</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={formData.ssnFirst}
+                  disabled
+                  className="flex-1 bg-gray-100"
+                />
+                <span className="text-slate-400">-</span>
+                <Input
+                  value={formData.ssnSecond}
+                  disabled
+                  className="flex-1 bg-gray-100"
+                />
+              </div>
+            </div>
+
             {/* 휴대폰 번호 */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">휴대폰 번호</label>
@@ -78,58 +108,6 @@ export function DomesticInfoPage() {
                 disabled
                 className="bg-gray-100"
               />
-            </div>
-
-            {/* 이름 */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">이름</label>
-              <Input
-                ref={nameRef}
-                inputMode="text"
-                enterKeyHint="next"
-                autoComplete="name"
-                lang="ko"
-                maxLength={7}
-                value={formData.name}
-                onChange={handleChange("name")}
-                placeholder="이름"
-                className="bg-white"
-              />
-              {formData.name.length >= 7 && (
-                <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다.</p>
-              )}
-            </div>
-
-            {/* 주민등록번호 */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">주민등록번호</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={formData.ssnFirst}
-                  onChange={handleChange("ssnFirst")}
-                  placeholder="앞 6자리"
-                  className="flex-1 bg-white"
-                />
-                <span className="text-slate-400">-</span>
-                <div className="relative flex-1">
-                  <Input
-                    ref={ssnSecondRef}
-                    inputMode="numeric"
-                    maxLength={7}
-                    value={formData.ssnSecond}
-                    onChange={handleChange("ssnSecond")}
-                    placeholder="뒤 7자리"
-                    className="bg-white text-transparent caret-slate-900"
-                  />
-                  <div className="absolute inset-0 flex items-center px-4 pointer-events-none text-base text-slate-900">
-                    {formData.ssnSecond.length > 0
-                      ? formData.ssnSecond[0] + "●".repeat(formData.ssnSecond.length - 1)
-                      : ""}
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* 주소 */}

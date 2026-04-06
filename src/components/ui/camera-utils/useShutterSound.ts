@@ -68,8 +68,14 @@ export function useShutterSound() {
     }
 
     return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ""
+        audioRef.current = null
+      }
       if (urlRef.current) {
         URL.revokeObjectURL(urlRef.current)
+        urlRef.current = null
       }
     }
   }, [])

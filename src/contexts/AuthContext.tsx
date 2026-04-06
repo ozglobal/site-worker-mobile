@@ -16,6 +16,8 @@ interface WorkerInfo {
   workerId: string | null
   workerName: string | null
   relatedSiteId: string | null
+  onboardingCompleted: boolean | null
+  requiredDocsCompleted: boolean | null
 }
 
 interface AuthContextType {

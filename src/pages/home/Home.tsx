@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { useToast } from "@/contexts/ToastContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { submitCorrectionRequest } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { CorrectionDialog } from "@/components/ui/correction-dialog"
@@ -20,6 +21,7 @@ import { useHomeAgent } from "./useHomeAgent"
 export function Home() {
   const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
+  const { worker } = useAuth()
   const {
     userName,
     currentDate,
@@ -109,18 +111,24 @@ export function Home() {
           </h1>
         </div>
 
-        <div className="px-4 shrink-0 space-y-3">
-          <AlertBanner
-            title="필수 정보 입력이 완료되지 않았어요"
-            description="내정보 메뉴에서 회원 정보 입력을 완료해주세요."
-            onClick={() => navigate("/profile")}
-          />
-          <AlertBanner
-            title="서명되지 않은 근로계약서가 있어요"
-            description="월말까지 서명되지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
-            onClick={() => navigate("/contract")}
-          />
-        </div>
+        {(worker?.onboardingCompleted === false || worker?.requiredDocsCompleted === false) && (
+          <div className="px-4 shrink-0 space-y-3">
+            {worker?.onboardingCompleted === false && (
+              <AlertBanner
+                title="필수 정보 입력이 완료되지 않았어요"
+                description="내정보 메뉴에서 회원 정보 입력을 완료해주세요."
+                onClick={() => navigate("/profile")}
+              />
+            )}
+            {worker?.requiredDocsCompleted === false && (
+              <AlertBanner
+                title="서명되지 않은 근로계약서가 있어요"
+                description="월말까지 서명되지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
+                onClick={() => navigate("/contract")}
+              />
+            )}
+          </div>
+        )}
 
         {/* Main Content - Scrollable */}
         <div className="flex-1 p-4 space-y-3 overflow-y-auto">

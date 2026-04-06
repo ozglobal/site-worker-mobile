@@ -89,7 +89,7 @@ export function SetPasswordPage() {
         <div className="flex flex-col min-h-full">
           <form autoComplete="off" onSubmit={e => e.preventDefault()} className="px-4 py-6 space-y-6">
             <p className="text-lg font-bold text-slate-900 mb-6 leading-tight">
-              비밀번호를 설정해주세요
+              로그인에 사용할 비밀번호를 설정해주세요
             </p>
 
             {/* 비밀번호 */}

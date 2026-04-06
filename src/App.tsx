@@ -27,17 +27,13 @@ import { MyInfoPage } from './pages/profile';
 import { WorkerTypePage } from './pages/profile/WorkerType';
 import { MyInfoPage as MyInfoDetailPage } from './pages/profile/MyInfo';
 import { OnboardingPage } from './pages/onboarding';
-import { OnboardingWorkerTypePage } from './pages/onboarding/WorkerType';
-import { OnboardingMyAccountPage } from './pages/onboarding/MyAccount';
 import { OnboardingOutsourcingPage } from './pages/onboarding/Outsourcing';
 import { OnboardingEngineerPage } from './pages/onboarding/Engineer';
-import { OnboardingFamilyAccountPage } from './pages/onboarding/FamilyAccount';
 import { OnboardingDocumentsPage } from './pages/onboarding/Documents';
 import { OnboardingCompanyAccountPage } from './pages/onboarding/CompanyAccount';
 import { OnboardingOutsourcingDocumentsPage } from './pages/onboarding/OutsourcingDocuments';
 import { OnboardingEquipmentPage } from './pages/onboarding/Equipment';
 import { OnboardingEquipmentListPage } from './pages/onboarding/EquipmentList';
-import { OnboardingPayrollAccountPage } from './pages/onboarding/PayrollAccount';
 import { OnboardingDocumentCaptureGuideIdcardPage } from './pages/onboarding/DocumentCaptureGuideIdcard';
 import { OnboardingDocumentCaptureGuidePassportPage } from './pages/onboarding/DocumentCaptureGuidePassport';
 import { OnboardingIdCardPreviewFrPage } from './pages/onboarding/IdCardPreviewFr';
@@ -79,17 +75,17 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/onboarding" element={<OnboardingPage />} />
-      <Route path="/onboarding/worker-type" element={<OnboardingWorkerTypePage />} />
-      <Route path="/onboarding/my-account" element={<OnboardingMyAccountPage />} />
+      <Route path="/onboarding/worker-type" element={<WorkerTypePage mode="onboarding" />} />
+      <Route path="/onboarding/my-account" element={<MyAccountPage mode="onboarding" />} />
       <Route path="/onboarding/outsourcing" element={<OnboardingOutsourcingPage />} />
       <Route path="/onboarding/engineer" element={<OnboardingEngineerPage />} />
-      <Route path="/onboarding/family-account" element={<OnboardingFamilyAccountPage />} />
+      <Route path="/onboarding/family-account" element={<FamilyAccountPage mode="onboarding" />} />
       <Route path="/onboarding/documents" element={<OnboardingDocumentsPage />} />
       <Route path="/onboarding/company-account" element={<OnboardingCompanyAccountPage />} />
       <Route path="/onboarding/outsourcing-documents" element={<OnboardingOutsourcingDocumentsPage />} />
       <Route path="/onboarding/equipments" element={<OnboardingEquipmentPage />} />
       <Route path="/onboarding/equipments-list" element={<OnboardingEquipmentListPage />} />
-      <Route path="/onboarding/payroll-account" element={<OnboardingPayrollAccountPage />} />
+      <Route path="/onboarding/payroll-account" element={<PayrollAccountPage mode="onboarding" />} />
       <Route path="/onboarding/documents/capture-guide-idcard" element={<OnboardingDocumentCaptureGuideIdcardPage />} />
       <Route path="/onboarding/documents/capture-guide-passport" element={<OnboardingDocumentCaptureGuidePassportPage />} />
       <Route path="/onboarding/documents/id-card-preview" element={<OnboardingIdCardPreviewFrPage />} />

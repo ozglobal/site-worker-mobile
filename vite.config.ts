@@ -59,7 +59,7 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: 'https://workerm.eformsign.io',
+        target: 'https://workerm.kwork365.com',
         changeOrigin: true,
         secure: true,
       },

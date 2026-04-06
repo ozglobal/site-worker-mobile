@@ -12,7 +12,7 @@ export function AgreementPage() {
 
   const handleNext = () => {
     signupStorage.setData({ personalInfoConsent: true })
-    navigate("/signup/domestic-foreign")
+    navigate("/signup/domestic-info")
   }
 
   return (

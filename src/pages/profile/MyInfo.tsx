@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Input } from "@/components/ui/input"
+import { WorkerTypeCard } from "@/components/ui/worker-type-card"
+import { ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
 import { updateWorkerAddress } from "@/lib/profile"
+import { workerTypeStorage } from "@/lib/storage"
 // TODO: uncomment when 주소검색 API is ready
 // import { AddressSearchDialog } from "@/components/ui/address-search-dialog"
 // import SearchIcon from "@mui/icons-material/Search"
@@ -18,6 +21,17 @@ export function MyInfoPage() {
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
   const { showSuccess, showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false)
+  const [workerType, setWorkerType] = useState(workerTypeStorage.get())
+  const [workerTypeOpen, setWorkerTypeOpen] = useState(false)
+
+  const workerTypeOptions = [
+    { id: "general", icon: "👷", title: "일반", subtitle: "건설사 소속 직영 근로자" },
+    { id: "service", icon: "🏢", title: "용역", subtitle: "용역업체 소속 근로자" },
+    { id: "specialty", icon: "🔧", title: "주요공종", subtitle: "전문 공종 근로자" },
+    { id: "equipment", icon: "🚜", title: "장비기사", subtitle: "건설 기계 운전 기사" },
+  ]
+  const selectedWorkerType = workerTypeOptions.find(o => o.id === workerType)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -42,8 +56,9 @@ export function MyInfoPage() {
     }
   }, [profile])
 
-  const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData)
-  const isFormValid = !!(formData.name && formData.ssnFirst && formData.ssnSecond && formData.phone && formData.address)
+  const [originalWorkerType] = useState(() => workerTypeStorage.get())
+  const hasChanges = formData.address !== originalData.address || workerType !== originalWorkerType
+  const isFormValid = !!(formData.name && formData.ssnFirst && formData.ssnSecond && formData.phone && formData.address && workerType)
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -73,8 +88,10 @@ export function MyInfoPage() {
     try {
       const result = await updateWorkerAddress(formData.address)
       if (result.success) {
+        workerTypeStorage.set(workerType)
         await refetch()
         showSuccess("저장되었습니다.")
+        navigate("/profile")
       } else {
         showError(result.error)
       }
@@ -109,90 +126,43 @@ export function MyInfoPage() {
         ) : (
         <div className="flex flex-col min-h-full">
         <div className="px-4 py-6 space-y-6">
-          {/* 회원 유형 */}
-          <div>
-            <p className="text-sm font-medium text-slate-700 mb-2">회원 유형</p>
-            <button
-              onClick={() => navigate("/profile/worker-type")}
-              className="w-full bg-amber-50 border border-amber-500 rounded-xl p-4 flex items-center gap-3 text-left"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0">
-                <path
-                  d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z"
-                  stroke="#D97706"
-                  strokeWidth="1.5"
-                />
-                <path d="M10 6V11" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
-                <circle cx="10" cy="14" r="1" fill="#D97706" />
-              </svg>
-              <div className="flex-1">
-                <p className="text-base font-bold text-slate-900">회원 유형을 먼저 선택해주세요</p>
-                <p className="text-sm text-slate-500 mt-0.5">기본 유형에 따라 제출할 서류가 달라져요</p>
-              </div>
-              <svg className="h-5 w-5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-
           {/* 이름 */}
-          <div className="space-y-2">
+          <div className="space-y-2" onClick={() => setShowVerifyDialog(true)}>
             <label className="text-sm font-medium text-slate-700">이름</label>
             <Input
-              inputMode="text"
-              enterKeyHint="next"
-              autoComplete="name"
-              lang="ko"
-              maxLength={7}
               value={formData.name}
-              onChange={handleChange("name")}
-              placeholder="이름"
+              readOnly
+              className="bg-white pointer-events-none"
             />
-            {formData.name.length >= 7 && (
-              <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다.</p>
-            )}
           </div>
 
           {/* 주민등록번호 */}
-          <div className="space-y-2">
+          <div className="space-y-2" onClick={() => setShowVerifyDialog(true)}>
             <label className="text-sm font-medium text-slate-700">주민등록번호</label>
             <div className="flex items-center gap-2">
               <Input
-                inputMode="numeric"
-                maxLength={6}
                 value={formData.ssnFirst}
-                onChange={handleChange("ssnFirst")}
-                placeholder="앞 6자리"
-                className="flex-1"
+                readOnly
+                className="flex-1 bg-white pointer-events-none"
               />
               <span className="text-slate-400">-</span>
-              <div className="relative flex-1">
-                <Input
-                  inputMode="numeric"
-                  maxLength={7}
-                  value={formData.ssnSecond}
-                  onChange={handleChange("ssnSecond")}
-                  placeholder="뒤 7자리"
-                  className="text-transparent caret-slate-900"
-                />
-                <div className="absolute inset-0 flex items-center px-4 pointer-events-none text-base text-slate-900">
-                  {formData.ssnSecond.length > 0
-                    ? formData.ssnSecond[0] + "●".repeat(formData.ssnSecond.length - 1)
-                    : ""}
-                </div>
-              </div>
+              <Input
+                value={formData.ssnSecond}
+                readOnly
+                className="flex-1 bg-white pointer-events-none"
+              />
             </div>
           </div>
 
           {/* 연락처 */}
-          <div className="space-y-2">
+          <div className="space-y-2" onClick={() => setShowVerifyDialog(true)}>
             <label className="text-sm font-medium text-slate-700">연락처</label>
             <Input
               id="phone"
               type="tel"
               value={formData.phone}
-              disabled
-              className="bg-gray-100"
+              readOnly
+              className="bg-white pointer-events-none"
             />
           </div>
 
@@ -206,6 +176,44 @@ export function MyInfoPage() {
               placeholder="주소 입력"
               className="bg-white"
             />
+          </div>
+
+          {/* 회원 유형 */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">회원 유형 <span className="font-normal text-slate-400">( 회원 유형에 따라 제출할 서류가 달라져요. )</span></label>
+            <button
+              type="button"
+              onClick={() => setWorkerTypeOpen(!workerTypeOpen)}
+              className="flex h-12 w-full items-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 shadow-sm"
+            >
+              {selectedWorkerType ? (
+                <>
+                  <span className="text-xl">{selectedWorkerType.icon}</span>
+                  <span className="font-bold text-slate-900">{selectedWorkerType.title}</span>
+                  <span className="text-sm text-slate-500">{selectedWorkerType.subtitle}</span>
+                </>
+              ) : (
+                <span className="text-base text-slate-400">회원 유형을 선택해주세요</span>
+              )}
+              <ChevronDown className={`ml-auto w-5 h-5 text-slate-400 shrink-0 transition-transform ${workerTypeOpen ? "rotate-180" : ""}`} />
+            </button>
+            {workerTypeOpen && (
+              <div className="rounded-xl border border-gray-200 shadow-sm divide-y divide-gray-100 overflow-hidden">
+                {workerTypeOptions.map((type) => (
+                  <div
+                    key={type.id}
+                    onClick={() => { setWorkerType(type.id); setWorkerTypeOpen(false) }}
+                    className={`flex items-center gap-2 px-4 py-3 cursor-pointer active:bg-gray-50 ${
+                      workerType === type.id ? "bg-primary/5" : "bg-white"
+                    }`}
+                  >
+                    <span className="text-xl">{type.icon}</span>
+                    <span className="font-bold text-slate-900">{type.title}</span>
+                    <span className="text-sm text-slate-500">{type.subtitle}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
@@ -239,6 +247,40 @@ export function MyInfoPage() {
         />
       )}
       */}
+
+      {/* 본인인증 Dialog */}
+      {showVerifyDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowVerifyDialog(false)} />
+          <div className="relative z-10 w-[calc(100%-2rem)] max-w-sm bg-white rounded-2xl shadow-xl p-6">
+            <h2 className="text-lg font-bold text-slate-900 text-center mb-3">정보 변경이 필요하신가요?</h2>
+            <p className="text-sm text-slate-500 text-center leading-relaxed mb-6">
+              인증 완료된 정보는 본인 인증을 다시 진행한 이후 변경할 수 있습니다.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                size="full"
+                onClick={() => setShowVerifyDialog(false)}
+                className="flex-1 bg-gray-100 border-0 text-slate-900 hover:bg-gray-200"
+              >
+                닫기
+              </Button>
+              <Button
+                variant="primary"
+                size="full"
+                onClick={() => {
+                  setShowVerifyDialog(false)
+                  navigate("/signup/nice-api")
+                }}
+                className="flex-1"
+              >
+                본인인증
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -213,6 +213,16 @@ export const engineerStorage = {
 }
 
 // ============================================
+// Worker Type Storage (selected worker type)
+// ============================================
+
+export const workerTypeStorage = {
+  get: (): string => localStorage.getItem('worker_type') || '',
+  set: (type: string): void => localStorage.setItem('worker_type', type),
+  clear: (): void => removeStorageItem('worker_type'),
+}
+
+// ============================================
 // Onboarding Storage (one-time flag)
 // ============================================
 
