@@ -439,3 +439,23 @@ export const submitCorrectionRequest = async (
   }
 }
 
+export const purgeAttendance = async (id: string): Promise<ApiResult<void>> => {
+  const endpoint = `/system/attendance/${id}/purge`
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'DELETE',
+      headers: { 'accept': '*/*' },
+    })
+
+    if (!response.ok) {
+      const data = await safeJson(response) as Record<string, unknown> | null
+      return { success: false, error: (data?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch (error) {
+    reportError('ATTENDANCE_PURGE_FAIL', error instanceof Error ? error.message : 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+

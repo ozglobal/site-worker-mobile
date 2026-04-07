@@ -192,8 +192,8 @@ export function MyInfoPage() {
               })) : [
                 { id: "id_card", name: "주민등록증(운전면허증)", status: "NOT_SUBMITTED" },
                 { id: "alien_card", name: "외국인등록증", status: "NOT_SUBMITTED" },
-                { id: "passport", name: "여권 사본", status: "NOT_SUBMITTED" },
-                { id: "bankbook", name: "통장 사본", status: "NOT_SUBMITTED" },
+                { id: "passport", name: "여권", status: "NOT_SUBMITTED" },
+                { id: "bankbook", name: "통장", status: "NOT_SUBMITTED" },
                 { id: "family_cert", name: "가족관계증명서", status: "NOT_SUBMITTED" },
                 { id: "labor_proxy", name: "노무비 위임장", status: "NOT_SUBMITTED" },
                 { id: "safety_cert", name: "기초안전보건교육 이수증", status: "NOT_SUBMITTED" },

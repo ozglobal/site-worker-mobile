@@ -7,6 +7,12 @@ export interface AttendanceState {
   checkInTime: string | null
   siteName: string
   siteAddress: string
+  workStart?: string
+  workEnd?: string
+  lunchStart?: string
+  lunchEnd?: string
+  breakStart?: string
+  breakEnd?: string
   checkOutCount: number
   isProcessing: boolean
 }

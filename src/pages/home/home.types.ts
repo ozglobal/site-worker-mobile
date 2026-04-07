@@ -26,6 +26,7 @@ export type AttendanceStatus = "checked-in" | "checked-out"
 export type PendingAction = "check-in" | "check-out" | null
 
 export interface TodayWorkRecord {
+  id: string
   siteName: string
   checkInTime: string
   checkOutTime?: string

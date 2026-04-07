@@ -36,6 +36,8 @@ export function Home() {
     actions,
   } = useHomeAgent()
 
+  const [showMaxCheckInTooltip, setShowMaxCheckInTooltip] = useState(false)
+
   // Correction request dialog state
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
   const [correctionWorkEffort, setCorrectionWorkEffort] = useState("")
@@ -150,7 +152,7 @@ export function Home() {
             <div className="p-4">
               {/* Work Site Info - only show when currently checked in */}
               {attendance.isCheckedIn && workSite.name && (
-                <div className="bg-slate-100 rounded-lg p-4 mb-4">
+                <div className="bg-neutral-100 rounded-xl p-5 mb-4">
                   <h3 className="text-lg font-bold text-slate-900 mb-1">
                     {workSite.name}
                   </h3>
@@ -160,11 +162,14 @@ export function Home() {
                       <span>{workSite.address}</span>
                     </div>
                   )}
-                  {attendance.dailyWageSnapshot != null && (
-                    <p className="text-sm text-[#007DCA] mt-1">
-                      {formatCurrency(attendance.dailyWageSnapshot)} / 1공수
-                    </p>
-                  )}
+
+                  {/* Schedule */}
+                  <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-2 gap-y-2 text-sm">
+                    <div className="flex justify-between pr-4"><span className="text-slate-500">출근</span><span className="text-slate-900">{workSite.workStart || ""}</span></div>
+                    <div className="flex justify-between pl-4"><span className="text-slate-500">퇴근</span><span className="text-slate-900">{workSite.workEnd || ""}</span></div>
+                    <div className="flex justify-between pr-4"><span className="text-slate-500">점심</span><span className="text-slate-900">{workSite.lunchStart && workSite.lunchEnd ? `${workSite.lunchStart} ~ ${workSite.lunchEnd}` : ""}</span></div>
+                    <div className="flex justify-between pl-4"><span className="text-slate-500">휴게</span><span className="text-slate-900">{workSite.breakStart && workSite.breakEnd ? `${workSite.breakStart} ~ ${workSite.breakEnd}` : ""}</span></div>
+                  </div>
                 </div>
               )}
 
@@ -198,51 +203,92 @@ export function Home() {
                       {attendance.isProcessing ? "처리 중..." : "퇴근하기"}
                     </Button>
                   </div>
-                ) : attendance.canCheckIn && (
-                  <Button variant={attendance.isProcessing ? "primaryDisabled" : "primary"} size="full" onClick={actions.clockIn} disabled={attendance.isProcessing}>
-                    {attendance.isProcessing ? "처리 중..." : "출근하기"}
-                  </Button>
+                ) : (
+                  <div
+                    className="relative"
+                    onMouseEnter={() => !attendance.canCheckIn && setShowMaxCheckInTooltip(true)}
+                    onMouseLeave={() => setShowMaxCheckInTooltip(false)}
+                    onTouchStart={() => !attendance.canCheckIn && setShowMaxCheckInTooltip(true)}
+                    onTouchEnd={() => setTimeout(() => setShowMaxCheckInTooltip(false), 2000)}
+                  >
+                    <Button
+                      variant={!attendance.canCheckIn || attendance.isProcessing ? "primaryDisabled" : "primary"}
+                      size="full"
+                      onClick={() => {
+                        if (!attendance.canCheckIn) return
+                        actions.clockIn()
+                      }}
+                    >
+                      {attendance.isProcessing ? "처리 중..." : "출근하기"}
+                    </Button>
+                    {showMaxCheckInTooltip && (
+                      <div className="mt-2 bg-slate-800 text-white text-sm text-center rounded-lg px-4 py-2.5">
+                        하루에 최대 두 개 현장에만 출근할 수 있습니다.
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
           </div>
 
+
           {/* Today's Work Status Card */}
-          <div className="bg-white rounded-lg shadow-sm">
-            <div className="px-4 py-3">
+          <div>
+            <div className="pt-4 pb-3">
               <h2 className="text-base font-bold text-slate-900">오늘 근무 기록</h2>
             </div>
+            {todayWorkRecords.length > 0 ? (
+              <div className="space-y-3">
+                {todayWorkRecords.map((record) => (
+                  <div key={record.id} className="bg-white rounded-xl p-4 shadow-sm">
+                    <h3 className="text-base font-bold text-slate-900">{record.siteName}</h3>
+                    <p className="text-sm text-slate-500 mt-1">
+                      {formatKstTime(record.checkInTime)} - {record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}
+                    </p>
 
-            <div className="px-4 pb-4 space-y-3">
-              {todayWorkRecords.length > 0 ? (
-                todayWorkRecords.map((record, index) => {
-                  const siteColor = sites.find((s) => s.name === record.siteName)?.color || "#cbd5e1"
-                  return (
-                    <div key={index}>
-                      {index > 0 && <div className="border-t border-slate-100 mb-3" />}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: siteColor }}
-                          />
-                          <div>
-                            <p className="text-sm font-medium text-slate-900">{record.siteName}</p>
-                            <p className="text-xs text-slate-500">
-                              {formatKstTime(record.checkInTime)} - {record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}
-                            </p>
-                          </div>
+                    <div className="mt-3 rounded-lg overflow-hidden bg-slate-50">
+                      <div className="px-4 py-2.5 flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-900">용역</span>
+                        <button
+                          onClick={() => {
+                            setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "0.5")
+                            setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
+                            setCorrectionAttendanceId(record.id)
+                            setShowCorrectionDialog(true)
+                          }}
+                          className="text-sm font-medium text-[#007DCA] flex items-center gap-0.5"
+                        >
+                          정정 요청 <span>→</span>
+                        </button>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between px-4 py-2.5">
+                          <span className="text-sm text-slate-600">공수</span>
+                          <span className="text-sm font-medium text-slate-900">
+                            {record.workEffort != null ? `${record.workEffort}공수` : "-"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5">
+                          <span className="text-sm text-slate-600">적용 단가</span>
+                          <span className="text-sm font-medium text-slate-900">
+                            {record.dailyWageSnapshot != null ? formatCurrency(record.dailyWageSnapshot) : "0원"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
+                          <span className="text-sm text-slate-600">예상 임금(세전)</span>
+                          <span className="text-sm font-medium text-slate-900">
+                            {record.expectedWage != null ? formatCurrency(record.expectedWage) : "0원"}
+                          </span>
                         </div>
                       </div>
                     </div>
-                  )
-                })
-              ) : (
-                <p className="text-sm text-slate-500 bg-slate-100 px-3 py-2 rounded-lg text-center">
-                  오늘 퇴근한 기록이 아직 없어요.
-                </p>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">당일 퇴근을 완료한 기록이 여기에 노출됩니다.</p>
+            )}
           </div>
 
           {/* Weekly Work Status Card - temporarily hidden
@@ -272,7 +318,7 @@ export function Home() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-slate-500 bg-slate-100 px-3 py-2 rounded-lg text-center">
+                <p className="text-sm text-slate-500 bg-neutral-100 px-3 py-2 rounded-lg text-center">
                   이번 주에 출근한 날이 아직 없어요
                 </p>
               )}
@@ -414,20 +460,8 @@ export function Home() {
                 </p>
               </div>
               <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                <div className="px-4 py-2.5 flex items-center justify-between">
+                <div className="px-4 py-2.5">
                   <span className="text-sm font-bold text-slate-900">용역</span>
-                  <button
-                    onClick={() => {
-                      setShowCheckoutDialog(false)
-                      setCorrectionWorkEffort("0.5")
-                      setCorrectionDailyWage(attendance.dailyWageSnapshot != null ? attendance.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
-
-                      setShowCorrectionDialog(true)
-                    }}
-                    className="text-sm font-medium text-[#007DCA] flex items-center gap-0.5"
-                  >
-                    정정 요청 <span>→</span>
-                  </button>
                 </div>
                 <div>
                   <div className="flex items-center justify-between px-4 py-2.5">
@@ -459,20 +493,8 @@ export function Home() {
                     </p>
                   </div>
                   <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                    <div className="px-4 py-2.5 flex items-center justify-between">
+                    <div className="px-4 py-2.5">
                       <span className="text-sm font-bold text-slate-900">용역</span>
-                      <button
-                        onClick={() => {
-                          setShowCheckoutDialog(false)
-                          setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "1.0")
-                          setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
-    
-                          setShowCorrectionDialog(true)
-                        }}
-                        className="text-sm font-medium text-[#007DCA] flex items-center gap-0.5"
-                      >
-                        정정 요청 <span>→</span>
-                      </button>
                     </div>
                     <div>
                       <div className="flex items-center justify-between px-4 py-2.5">

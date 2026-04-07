@@ -45,6 +45,12 @@ interface HomeAgentReturn {
     id: string
     name: string
     address: string
+    workStart?: string
+    workEnd?: string
+    lunchStart?: string
+    lunchEnd?: string
+    breakStart?: string
+    breakEnd?: string
   }
   sites: Site[]
 
@@ -219,8 +225,16 @@ export function useHomeAgent(): HomeAgentReturn {
       id: attendance.checkedInSiteId || "site-1",
       name: attendance.siteName,
       address: attendance.siteAddress,
+      workStart: attendance.workStart,
+      workEnd: attendance.workEnd,
+      lunchStart: attendance.lunchStart,
+      lunchEnd: attendance.lunchEnd,
+      breakStart: attendance.breakStart,
+      breakEnd: attendance.breakEnd,
     }),
-    [attendance.checkedInSiteId, attendance.siteName, attendance.siteAddress]
+    [attendance.checkedInSiteId, attendance.siteName, attendance.siteAddress,
+     attendance.workStart, attendance.workEnd, attendance.lunchStart, attendance.lunchEnd,
+     attendance.breakStart, attendance.breakEnd]
   )
 
   // Check if there's an active success/error notification
@@ -240,6 +254,7 @@ export function useHomeAgent(): HomeAgentReturn {
       attendance.todayRecords
         .filter((record) => record.hasCheckedOut)
         .map((record) => ({
+          id: record.id,
           siteName: record.siteName || "",
           checkInTime: record.checkInTime ? new Date(record.checkInTime).toISOString() : "",
           checkOutTime: record.checkOutTime ? new Date(record.checkOutTime).toISOString() : undefined,

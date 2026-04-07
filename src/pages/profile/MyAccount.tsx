@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
-import { uploadDocument } from "@/lib/profile"
+import { uploadDocument, updateBankAccount } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 import { getWorkerName } from "@/lib/auth"
 
@@ -62,12 +62,16 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
     if (isSubmitting) return
     setIsSubmitting(true)
     try {
-      if (certificateFile) {
-        const result = await uploadDocument("bankbook", certificateFile)
-        if (!result.success) {
-          showError("통장사본 업로드에 실패했습니다.")
-          return
-        }
+      const bankLabel = banks.find(b => b.id === selectedBank)?.name || selectedBank
+      const result = await updateBankAccount({
+        bankName: bankLabel,
+        bankAccount: accountNumber,
+        accountHolder,
+        wagePaymentTarget: "SELF",
+      })
+      if (!result.success) {
+        showError(result.error)
+        return
       }
       showSuccess("저장되었습니다.")
       navigate("/profile")

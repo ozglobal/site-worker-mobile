@@ -261,6 +261,37 @@ export const updateWorkerAddress = async (
   }
 }
 
+export const updateBankAccount = async (data: {
+  bankName: string
+  bankAccount: string
+  accountHolder: string
+  wagePaymentTarget: string
+}): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me/bank'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch (error) {
+    console.error('[PROFILE] updateBankAccount error:', error)
+    reportError('PROFILE_BANK_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
 export interface WorkerDocument {
   id: string
   documentType: string

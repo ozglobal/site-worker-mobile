@@ -41,6 +41,12 @@ export interface AttendanceAgentState {
   checkedInSiteId: string | null
   siteName: string
   siteAddress: string
+  workStart?: string
+  workEnd?: string
+  lunchStart?: string
+  lunchEnd?: string
+  breakStart?: string
+  breakEnd?: string
   dailyWageSnapshot: number | null
   checkInTime: string | null
   checkOutTime: string | null
@@ -94,6 +100,12 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
   const [siteName, setSiteName] = useState("")
   const [siteAddress, setSiteAddress] = useState("")
   const [dailyWageSnapshot, setDailyWageSnapshot] = useState<number | null>(null)
+  const [workStart, setWorkStart] = useState<string | undefined>()
+  const [workEnd, setWorkEnd] = useState<string | undefined>()
+  const [lunchStart, setLunchStart] = useState<string | undefined>()
+  const [lunchEnd, setLunchEnd] = useState<string | undefined>()
+  const [breakStart, setBreakStart] = useState<string | undefined>()
+  const [breakEnd, setBreakEnd] = useState<string | undefined>()
   const [checkInTime, setCheckInTime] = useState<string | null>(null)
   const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
   const [completedCount, setCompletedCount] = useState(0)
@@ -110,6 +122,13 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
       setSiteAddress(cached?.siteAddress || "")
       setDailyWageSnapshot(serverCheckIn.dailyWageSnapshot ?? cached?.dailyWageSnapshot ?? null)
       setCheckInTime(timestampToIso(serverCheckIn.checkInTime))
+      const sc = serverCheckIn as unknown as Record<string, unknown>
+      if (sc.workStart) setWorkStart(String(sc.workStart))
+      if (sc.workEnd) setWorkEnd(String(sc.workEnd))
+      if (sc.lunchStart) setLunchStart(String(sc.lunchStart))
+      if (sc.lunchEnd) setLunchEnd(String(sc.lunchEnd))
+      if (sc.breakStart) setBreakStart(String(sc.breakStart))
+      if (sc.breakEnd) setBreakEnd(String(sc.breakEnd))
     } else {
       // Only clear if we had data from server (not during initial load)
       if (!isProcessing) {
@@ -230,6 +249,12 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     checkedInSiteId,
     siteName,
     siteAddress,
+    workStart,
+    workEnd,
+    lunchStart,
+    lunchEnd,
+    breakStart,
+    breakEnd,
     dailyWageSnapshot,
     checkInTime,
     checkOutTime,
