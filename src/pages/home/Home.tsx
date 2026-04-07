@@ -7,6 +7,7 @@ import QRCodeScanner from "@/components/ui/qr-scanner"
 import { LocationPermissionPopup } from "@/components/ui/location-permission-popup"
 import { formatKstTime } from "@/utils/time"
 import { formatCurrency } from "@/utils/format"
+import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { AlertBanner } from "@/components/ui/alert-banner"
@@ -211,6 +212,11 @@ export function Home() {
                     onTouchStart={() => !attendance.canCheckIn && setShowMaxCheckInTooltip(true)}
                     onTouchEnd={() => setTimeout(() => setShowMaxCheckInTooltip(false), 2000)}
                   >
+                    {showMaxCheckInTooltip && (
+                      <div className="mb-2 bg-slate-800 text-white text-sm text-center rounded-lg px-4 py-2.5">
+                        하루에 최대 두 개 현장에만 출근할 수 있습니다.
+                      </div>
+                    )}
                     <Button
                       variant={!attendance.canCheckIn || attendance.isProcessing ? "primaryDisabled" : "primary"}
                       size="full"
@@ -221,11 +227,6 @@ export function Home() {
                     >
                       {attendance.isProcessing ? "처리 중..." : "출근하기"}
                     </Button>
-                    {showMaxCheckInTooltip && (
-                      <div className="mt-2 bg-slate-800 text-white text-sm text-center rounded-lg px-4 py-2.5">
-                        하루에 최대 두 개 현장에만 출근할 수 있습니다.
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -241,49 +242,22 @@ export function Home() {
             {todayWorkRecords.length > 0 ? (
               <div className="space-y-3">
                 {todayWorkRecords.map((record) => (
-                  <div key={record.id} className="bg-white rounded-xl p-4 shadow-sm">
-                    <h3 className="text-base font-bold text-slate-900">{record.siteName}</h3>
-                    <p className="text-sm text-slate-500 mt-1">
-                      {formatKstTime(record.checkInTime)} - {record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}
-                    </p>
-
-                    <div className="mt-3 rounded-lg overflow-hidden bg-slate-50">
-                      <div className="px-4 py-2.5 flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-900">용역</span>
-                        <button
-                          onClick={() => {
-                            setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "0.5")
-                            setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
-                            setCorrectionAttendanceId(record.id)
-                            setShowCorrectionDialog(true)
-                          }}
-                          className="text-sm font-medium text-[#007DCA] flex items-center gap-0.5"
-                        >
-                          정정 요청 <span>→</span>
-                        </button>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between px-4 py-2.5">
-                          <span className="text-sm text-slate-600">공수</span>
-                          <span className="text-sm font-medium text-slate-900">
-                            {record.workEffort != null ? `${record.workEffort}공수` : "-"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between px-4 py-2.5">
-                          <span className="text-sm text-slate-600">적용 단가</span>
-                          <span className="text-sm font-medium text-slate-900">
-                            {record.dailyWageSnapshot != null ? formatCurrency(record.dailyWageSnapshot) : "0원"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
-                          <span className="text-sm text-slate-600">예상 임금(세전)</span>
-                          <span className="text-sm font-medium text-slate-900">
-                            {record.expectedWage != null ? formatCurrency(record.expectedWage) : "0원"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <AttendanceRecordCard
+                    key={record.id}
+                    siteName={record.siteName}
+                    timeRange={`${formatKstTime(record.checkInTime)} - ${record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}`}
+                    recordType="용역"
+                    workEffort={record.workEffort}
+                    dailyWageSnapshot={record.dailyWageSnapshot}
+                    expectedWage={record.expectedWage}
+                    showCorrection
+                    onCorrectionClick={() => {
+                      setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "0.5")
+                      setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
+                      setCorrectionAttendanceId(record.id)
+                      setShowCorrectionDialog(true)
+                    }}
+                  />
                 ))}
               </div>
             ) : (

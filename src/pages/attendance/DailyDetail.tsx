@@ -12,6 +12,7 @@ import { submitCorrectionRequest } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
 import { Spinner } from "@/components/ui/spinner"
+import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
 
 export function DailyDetailPage() {
   const navigate = useNavigate()
@@ -131,64 +132,23 @@ export function DailyDetailPage() {
             {/* Attendance Records */}
             {records.length > 0 ? (
               records.map((record) => (
-                <div key={record.id} className="bg-white rounded-xl p-5 space-y-4 shadow-md border border-slate-200">
-                  {/* Status Badge */}
-                  <span
-                    className={`inline-block text-xs font-medium px-2.5 py-1 rounded ${
-                      record.hasCheckedOut
-                        ? "text-slate-600 bg-slate-100"
-                        : "text-green-700 bg-green-100"
-                    }`}
-                  >
-                    {record.hasCheckedOut ? "퇴근 완료" : "근무중"}
-                  </span>
-
-                  {/* Site Name & Time */}
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900">{record.siteName}</h3>
-                    <p className="text-sm text-slate-500 mt-1">
-                      {formatTimestamp(record.checkInTime)} - {record.checkOutTime ? formatTimestamp(record.checkOutTime) : ""}
-                    </p>
-                  </div>
-
-                  {/* Work Info Table */}
-                  <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                    <div className="px-4 py-2.5 flex items-center justify-between">
-                      <span className="text-sm font-bold text-slate-900">{record.recordType || "일반"}</span>
-                      {isToday && (
-                        <button
-                          onClick={() => openCorrectionDialog(record)}
-                          className="text-sm font-medium text-[#007DCA] flex items-center gap-0.5"
-                        >
-                          정정 요청 <span>→</span>
-                        </button>
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between px-4 py-2.5">
-                        <span className="text-sm text-slate-600">공수</span>
-                        <span className="text-sm font-medium text-slate-900">
-                          {record.workEffort != null ? `${record.workEffort}공수` : "-"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between px-4 py-2.5">
-                        <span className="text-sm text-slate-600">적용 단가</span>
-                        <span className="text-sm font-medium text-slate-900">
-                          {formatCurrency(record.dailyWageSnapshot)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
-                        <span className="text-sm text-slate-600">예상 임금(세전)</span>
-                        <span className="text-sm font-medium text-slate-900">
-                          {formatCurrency(record.expectedWage)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <AttendanceRecordCard
+                  key={record.id}
+                  siteName={record.siteName}
+                  timeRange={`${formatTimestamp(record.checkInTime)} - ${record.checkOutTime ? formatTimestamp(record.checkOutTime) : ""}`}
+                  recordType={record.recordType || "일반"}
+                  workEffort={record.workEffort}
+                  dailyWageSnapshot={record.dailyWageSnapshot}
+                  expectedWage={record.expectedWage}
+                  statusBadge={record.hasCheckedOut ? "퇴근 완료" : "근무중"}
+                  statusVariant={record.hasCheckedOut ? "default" : "active"}
+                  showCorrection={isToday}
+                  onCorrectionClick={() => openCorrectionDialog(record)}
+                  className="shadow-sm border border-slate-100 p-5"
+                />
               ))
             ) : (
-              <div className="bg-white rounded-xl p-5 shadow-md border border-slate-200">
+              <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
                 <p className="text-sm text-slate-500 text-center">해당 날짜에 출근 기록이 없습니다.</p>
               </div>
             )}

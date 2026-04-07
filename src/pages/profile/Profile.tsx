@@ -195,14 +195,13 @@ export function MyInfoPage() {
                 { id: "passport", name: "여권", status: "NOT_SUBMITTED" },
                 { id: "bankbook", name: "통장", status: "NOT_SUBMITTED" },
                 { id: "family_cert", name: "가족관계증명서", status: "NOT_SUBMITTED" },
-                { id: "labor_proxy", name: "노무비 위임장", status: "NOT_SUBMITTED" },
                 { id: "safety_cert", name: "기초안전보건교육 이수증", status: "NOT_SUBMITTED" },
                 { id: "business_cert", name: "사업자등록증", status: "NOT_SUBMITTED" },
               ]).map((doc, index, arr) => {
                 const { status, label } = mapDocStatus(doc.status)
                 const docIdMap: Record<string, string> = {
                   id_card: "id-card", alien_card: "foreign-card", passport: "passport",
-                  bankbook: "bankbook", family_cert: "family-cert", labor_proxy: "labor-proxy",
+                  bankbook: "bankbook", family_cert: "family-cert",
                   safety_cert: "safety-cert", business_cert: "business-cert",
                 }
                 const handleDocClick = () => {

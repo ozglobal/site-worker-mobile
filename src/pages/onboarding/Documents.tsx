@@ -58,12 +58,6 @@ const documents: DocumentItem[] = [
     description: "",
   },
   {
-    id: "labor-proxy",
-    apiType: "labor_proxy",
-    title: "노무비 위임장",
-    description: "",
-  },
-  {
     id: "business-cert",
     apiType: "business_cert",
     title: "사업자등록증",

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth"
+import { IconCalendarMonth } from "@tabler/icons-react"
 import FormatListBulletedOutlinedIcon from "@mui/icons-material/FormatListBulletedOutlined"
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
@@ -41,28 +41,28 @@ export function MonthSelector({
       </div>
 
       {/* View mode toggle */}
-      <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden">
+      <div className="inline-flex items-center rounded-lg bg-slate-100 p-1">
         <button
           onClick={() => onViewModeChange?.("calendar")}
           className={cn(
-            "flex items-center justify-center w-10 h-10 transition-colors",
+            "inline-flex items-center justify-center w-9 h-9 rounded-md text-sm font-medium transition-all",
             viewMode === "calendar"
-              ? "bg-white text-slate-900"
-              : "bg-slate-200 text-slate-400"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <CalendarMonthIcon sx={{ fontSize: 20 }} />
+          <IconCalendarMonth size={18} />
         </button>
         <button
           onClick={() => onViewModeChange?.("list")}
           className={cn(
-            "flex items-center justify-center w-10 h-10 transition-colors",
+            "inline-flex items-center justify-center w-9 h-9 rounded-md text-sm font-medium transition-all",
             viewMode === "list"
-              ? "bg-white text-slate-900"
-              : "bg-slate-200 text-slate-400"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <FormatListBulletedOutlinedIcon sx={{ fontSize: 20 }} />
+          <FormatListBulletedOutlinedIcon sx={{ fontSize: 18 }} />
         </button>
       </div>
     </div>
