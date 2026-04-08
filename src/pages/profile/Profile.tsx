@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { IdCardTypeDialog, type IdCardType } from "@/components/ui/id-card-upload-dialog"
 import { IdCardCamera } from "@/components/ui/id-card-capture/id-card-camera"
 import { IdCardPreview } from "@/components/ui/id-card-capture/id-card-preview"
-import { handleLogout } from "@/lib/auth"
+import { handleLogout, authFetch } from "@/lib/auth"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { uploadDocument, type DocumentType } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
@@ -259,6 +259,24 @@ export function MyInfoPage() {
           >
             로그아웃
           </Button>
+        </div>
+
+        {/* Test: Purge user data */}
+        <div className="px-4 pb-4">
+          <button
+            onClick={async () => {
+              const id = 1455
+              const res = await authFetch(`/api/system/user/${id}/purge`, { method: "DELETE" })
+              if (res.ok) {
+                showSuccess("사용자 데이터가 초기화되었습니다.")
+              } else {
+                showError("초기화 실패")
+              }
+            }}
+            className="text-xs text-slate-400 underline"
+          >
+            [TEST] 사용자 삭제
+          </button>
         </div>
       </main>
 

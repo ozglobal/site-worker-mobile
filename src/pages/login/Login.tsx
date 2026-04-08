@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/contexts/AuthContext"
 import { useHoneypot } from "@/hooks/useHoneypot"
-import { autoLoginStorage, onboardingStorage } from "@/lib/storage"
+import { autoLoginStorage } from "@/lib/storage"
 
 export function LoginPage() {
   const [phone, setPhone] = useState(() => autoLoginStorage.getCredentials()?.phone ?? "")
@@ -18,7 +18,6 @@ export function LoginPage() {
   const { login } = useAuth()
   const { honeypotProps, isBotDetected } = useHoneypot()
   const [autoLogin, setAutoLogin] = useState(() => autoLoginStorage.isEnabled())
-  const [isFirstLogin, setIsFirstLogin] = useState(false)
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
@@ -59,11 +58,6 @@ export function LoginPage() {
       } else {
         autoLoginStorage.disable()
         autoLoginStorage.clearCredentials()
-      }
-      if (isFirstLogin) {
-        onboardingStorage.clear()
-        window.location.href = '/onboarding'
-        return
       }
       navigate('/home')
     } else {
@@ -133,13 +127,6 @@ export function LoginPage() {
             }}
           />
           <span className="text-sm text-slate-500">자동 로그인</span>
-        </label>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <Checkbox
-            checked={isFirstLogin}
-            onCheckedChange={(checked) => setIsFirstLogin(checked === true)}
-          />
-          <span className="text-sm text-slate-500">첫 로그인</span>
         </label>
 
         {/* Honeypot */}

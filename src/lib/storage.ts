@@ -316,6 +316,7 @@ export const autoLoginStorage = {
 export const clearAllStorage = async (): Promise<void> => {
   authStorage.clear()
   workerStorage.clear()
+  workerTypeStorage.clear()
   checkinSiteStorage.clear()
   await fileStorage.clear()
 }

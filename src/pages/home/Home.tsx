@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import FmdGoodIcon from "@mui/icons-material/FmdGood"
+import MeetingRoomOutlinedIcon from "@mui/icons-material/MeetingRoomOutlined"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import QRCodeScanner from "@/components/ui/qr-scanner"
@@ -140,12 +141,13 @@ export function Home() {
             <div className="px-4 pt-3 flex items-center gap-2">
               <h2 className="text-base font-bold text-slate-900">현장 체크인</h2>
               <span
-                className={`text-sm font-semibold px-2 py-0.5 rounded ${
+                className={`flex items-center gap-1 text-sm font-semibold px-2 py-0.5 rounded ${
                   attendance.status === "근무 중"
                     ? "text-primary bg-primary/10"
                     : "text-slate-500 bg-slate-100"
                 }`}
               >
+                {attendance.status === "퇴근 완료" && <MeetingRoomOutlinedIcon sx={{ fontSize: 16 }} />}
                 {attendance.status}
               </span>
             </div>

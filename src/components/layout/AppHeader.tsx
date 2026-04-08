@@ -1,5 +1,8 @@
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import ArrowBack from "@mui/icons-material/ArrowBack"
+import { useUnreadCount } from "@/lib/queries/useNotices"
+import { NotificationPanel } from "@/components/NotificationPanel"
 
 // Tabler icon: bell
 const BellIcon = () => (
@@ -33,47 +36,64 @@ export function AppHeader({
   showLeftAction = false,
   title,
   showRightAction = true,
-  notificationCount = 0,
+  notificationCount,
   onLeftActionClick,
   onRightActionClick,
   className,
 }: AppHeaderProps) {
-  return (
-    <header
-      className={cn(
-        "flex h-14 w-full items-center justify-between bg-white",
-        className
-      )}
-    >
-      {/* Left section */}
-      <div className="flex items-center ml-4 gap-2">
-        {showLeftAction ? (
-          <button
-            onClick={onLeftActionClick}
-            className="w-10 h-10 flex items-center justify-center -ml-2"
-            aria-label="Menu"
-          >
-            <ArrowBack className="h-6 w-6 text-gray-800" />
-          </button>
-        ) : null}
-        <h1 className="text-base font-semibold text-slate-900">{title}</h1>
-      </div>
+  const [notifOpen, setNotifOpen] = useState(false)
+  const apiUnreadCount = useUnreadCount()
+  const badgeCount = notificationCount ?? apiUnreadCount
 
-      {/* Right action - Notification bell */}
-      {showRightAction ? (
-        <button
-          onClick={onRightActionClick}
-          className="relative w-10 h-10 flex items-center justify-center mr-2"
-          aria-label="Notifications"
-        >
-          <BellIcon />
-          {notificationCount > 0 && (
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-          )}
-        </button>
-      ) : (
-        <div className="w-10 mr-4" />
-      )}
-    </header>
+  const handleBellClick = () => {
+    if (onRightActionClick) {
+      onRightActionClick()
+    } else {
+      setNotifOpen(true)
+    }
+  }
+
+  return (
+    <>
+      <header
+        className={cn(
+          "flex h-14 w-full items-center justify-between bg-white",
+          className
+        )}
+      >
+        {/* Left section */}
+        <div className="flex items-center ml-4 gap-2">
+          {showLeftAction ? (
+            <button
+              onClick={onLeftActionClick}
+              className="w-10 h-10 flex items-center justify-center -ml-2"
+              aria-label="Menu"
+            >
+              <ArrowBack className="h-6 w-6 text-gray-800" />
+            </button>
+          ) : null}
+          <h1 className="text-base font-semibold text-slate-900">{title}</h1>
+        </div>
+
+        {/* Right action - Notification bell */}
+        {showRightAction ? (
+          <button
+            onClick={handleBellClick}
+            className="relative w-10 h-10 flex items-center justify-center mr-2"
+            aria-label="Notifications"
+          >
+            <BellIcon />
+            {badgeCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            )}
+          </button>
+        ) : (
+          <div className="w-10 mr-4" />
+        )}
+      </header>
+
+      {/* Notification Panel */}
+      <NotificationPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+    </>
   )
 }
