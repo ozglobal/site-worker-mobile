@@ -38,20 +38,31 @@ export function DailyDetailPage() {
 
   const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string }) => {
     if (!correctionAttendanceId) return
-    const result = await submitCorrectionRequest({
+    const effortResult = await submitCorrectionRequest({
       attendanceId: correctionAttendanceId,
-      requestType: data.workEffort,
+      requestType: "work_effort",
+      requestedValue: data.workEffort,
+      reason: data.reason,
+    })
+    if (!effortResult.success) {
+      reportError("CORRECTION_SUBMIT_FAIL", effortResult.error)
+      showError(effortResult.error)
+      return
+    }
+    const wageResult = await submitCorrectionRequest({
+      attendanceId: correctionAttendanceId,
+      requestType: "daily_wage",
       requestedValue: data.dailyWage,
       reason: data.reason,
     })
-    if (result.success) {
-      showSuccess("정정 요청이 제출되었습니다.")
-      setShowCorrectionDialog(false)
-      setCorrectionAttendanceId(null)
-    } else {
-      reportError("CORRECTION_SUBMIT_FAIL", result.error)
-      showError(result.error)
+    if (!wageResult.success) {
+      reportError("CORRECTION_SUBMIT_FAIL", wageResult.error)
+      showError(wageResult.error)
+      return
     }
+    showSuccess("정정 요청이 제출되었습니다.")
+    setShowCorrectionDialog(false)
+    setCorrectionAttendanceId(null)
   }
 
   const [yearStr, monthStr] = (date || "").split("-")

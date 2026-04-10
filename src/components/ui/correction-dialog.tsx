@@ -33,7 +33,7 @@ export function CorrectionDialog({
   }, [workEffort, dailyWage])
 
   const handleSubmit = async () => {
-    if (!reason.trim() || isSubmitting) return
+    if (reason.trim().length <= 4 || isSubmitting) return
     setIsSubmitting(true)
     try {
       await onSubmit({ workEffort, dailyWage: dailyWage.replace(/,/g, ""), reason: reason.trim() })
@@ -85,9 +85,8 @@ export function CorrectionDialog({
               <span className="text-slate-400">→</span>
               <div className="flex items-center gap-2">
                 <input
-                  type="number"
-                  step="0.5"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={workEffort}
                   onChange={(e) => setWorkEffort(e.target.value)}
                   className="w-24 h-10 text-center text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
@@ -136,7 +135,7 @@ export function CorrectionDialog({
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="요청사유를 입력해주세요..."
+              placeholder="요청사유를 입력해주세요 (5자 이상)"
               rows={4}
               className="w-full p-4 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
             />
@@ -146,10 +145,10 @@ export function CorrectionDialog({
         {/* Submit Button */}
         <div className="px-5 pb-5 pt-2">
           <Button
-            variant={isSubmitting || !reason.trim() ? "primaryDisabled" : "primary"}
+            variant={isSubmitting || reason.trim().length <= 4 ? "primaryDisabled" : "primary"}
             size="full"
             onClick={handleSubmit}
-            disabled={isSubmitting || !reason.trim()}
+            disabled={isSubmitting || reason.trim().length <= 4}
           >
             {isSubmitting ? "제출 중..." : "요청 제출하기"}
           </Button>

@@ -9,8 +9,9 @@ export function useNotices() {
       if (!result.success) throw new Error(result.error)
       return result.data
     },
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000, // background poll every 5 min
+    refetchOnWindowFocus: true, // refetch when user returns to app
   })
 }
 

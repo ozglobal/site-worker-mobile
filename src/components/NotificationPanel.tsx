@@ -103,10 +103,10 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
         onClick={handleClose}
       />
 
-      {/* Full-screen panel — slides up from bottom */}
+      {/* Full-screen panel — slides in from right */}
       <div
         className={`fixed inset-0 z-50 flex flex-col bg-white transition-transform duration-300 ease-out ${
-          entered && !closing ? 'translate-y-0' : 'translate-y-full'
+          entered && !closing ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header */}

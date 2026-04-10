@@ -18,6 +18,7 @@ export interface CheckInParams {
 export interface CheckOutParams {
   siteId: string
   checkInTime?: string
+  workEffort?: number | null
   location?: Location
 }
 
@@ -60,6 +61,7 @@ export interface AttendanceApiDeps {
   buildCheckOutRequest: (params: {
     siteId: string
     checkInTime?: string
+    workEffort?: number | null
     location?: Location
   }) => unknown
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -131,6 +133,7 @@ export async function executeCheckOutApi(
     const request = deps.buildCheckOutRequest({
       siteId: params.siteId,
       checkInTime: params.checkInTime,
+      workEffort: params.workEffort,
       location: params.location,
     })
 

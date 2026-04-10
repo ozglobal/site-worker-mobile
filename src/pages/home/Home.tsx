@@ -14,7 +14,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { useToast } from "@/contexts/ToastContext"
 import { useAuth } from "@/contexts/AuthContext"
-import { submitCorrectionRequest } from "@/lib/attendance"
+import { submitCorrectionRequest, purgeAttendance } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { CorrectionDialog } from "@/components/ui/correction-dialog"
 import { useHomeAgent } from "./useHomeAgent"
@@ -71,22 +71,34 @@ export function Home() {
       setCorrectionAttendanceId(attendanceId)
     }
 
-    // 2. Submit correction request
-    const result = await submitCorrectionRequest({
+    // 2. Submit correction requests (work_effort + daily_wage)
+    const effortResult = await submitCorrectionRequest({
       attendanceId,
-      requestType: data.workEffort,
+      requestType: "work_effort",
+      requestedValue: data.workEffort,
+      reason: data.reason,
+    })
+    if (!effortResult.success) {
+      reportError("CORRECTION_SUBMIT_FAIL", effortResult.error)
+      showError(effortResult.error)
+      return
+    }
+
+    const wageResult = await submitCorrectionRequest({
+      attendanceId,
+      requestType: "daily_wage",
       requestedValue: data.dailyWage,
       reason: data.reason,
     })
-
-    if (result.success) {
-      showSuccess("정정 요청이 제출되었습니다.")
-      setCorrectionAttendanceId(null)
-      setShowCorrectionDialog(false)
-    } else {
-      reportError("CORRECTION_SUBMIT_FAIL", result.error)
-      showError(result.error)
+    if (!wageResult.success) {
+      reportError("CORRECTION_SUBMIT_FAIL", wageResult.error)
+      showError(wageResult.error)
+      return
     }
+
+    showSuccess("정정 요청이 제출되었습니다.")
+    setCorrectionAttendanceId(null)
+    setShowCorrectionDialog(false)
   }
 
   const handleNavigation = (item: NavItem) => {
@@ -168,10 +180,10 @@ export function Home() {
 
                   {/* Schedule */}
                   <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-2 gap-y-2 text-sm">
-                    <div className="flex justify-between pr-4"><span className="text-slate-500">출근</span><span className="text-slate-900">{workSite.workStart || ""}</span></div>
-                    <div className="flex justify-between pl-4"><span className="text-slate-500">퇴근</span><span className="text-slate-900">{workSite.workEnd || ""}</span></div>
-                    <div className="flex justify-between pr-4"><span className="text-slate-500">점심</span><span className="text-slate-900">{workSite.lunchStart && workSite.lunchEnd ? `${workSite.lunchStart} ~ ${workSite.lunchEnd}` : ""}</span></div>
-                    <div className="flex justify-between pl-4"><span className="text-slate-500">휴게</span><span className="text-slate-900">{workSite.breakStart && workSite.breakEnd ? `${workSite.breakStart} ~ ${workSite.breakEnd}` : ""}</span></div>
+                    <div className="flex justify-between pr-4"><span className="text-slate-500">출근</span><span className="text-slate-900">{workSite.workStart || "no data"}</span></div>
+                    <div className="flex justify-between pl-4"><span className="text-slate-500">퇴근</span><span className="text-slate-900">{workSite.workEnd || "no data"}</span></div>
+                    <div className="flex justify-between pr-4"><span className="text-slate-500">점심</span><span className="text-slate-900">{workSite.lunchStart && workSite.lunchEnd ? `${workSite.lunchStart} ~ ${workSite.lunchEnd}` : "no data"}</span></div>
+                    <div className="flex justify-between pl-4"><span className="text-slate-500">휴게</span><span className="text-slate-900">{workSite.breakStart && workSite.breakEnd ? `${workSite.breakStart} ~ ${workSite.breakEnd}` : "no data"}</span></div>
                   </div>
                 </div>
               )}
@@ -244,22 +256,36 @@ export function Home() {
             {todayWorkRecords.length > 0 ? (
               <div className="space-y-3">
                 {todayWorkRecords.map((record) => (
-                  <AttendanceRecordCard
-                    key={record.id}
-                    siteName={record.siteName}
-                    timeRange={`${formatKstTime(record.checkInTime)} - ${record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}`}
-                    recordType="용역"
-                    workEffort={record.workEffort}
-                    dailyWageSnapshot={record.dailyWageSnapshot}
-                    expectedWage={record.expectedWage}
-                    showCorrection
-                    onCorrectionClick={() => {
-                      setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "0.5")
-                      setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
-                      setCorrectionAttendanceId(record.id)
-                      setShowCorrectionDialog(true)
-                    }}
-                  />
+                  <div key={record.id}>
+                    <AttendanceRecordCard
+                      siteName={record.siteName}
+                      timeRange={`${formatKstTime(record.checkInTime)} - ${record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}`}
+                      recordType="용역"
+                      workEffort={record.workEffort}
+                      dailyWageSnapshot={record.dailyWageSnapshot}
+                      expectedWage={record.expectedWage}
+                      showCorrection
+                      onCorrectionClick={() => {
+                        setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "0.5")
+                        setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
+                        setCorrectionAttendanceId(record.id)
+                        setShowCorrectionDialog(true)
+                      }}
+                    />
+                    <button
+                      onClick={async () => {
+                        const result = await purgeAttendance(record.id)
+                        if (result.success) {
+                          showSuccess("출근 기록이 삭제되었습니다.")
+                        } else {
+                          showError(result.error)
+                        }
+                      }}
+                      className="mt-1 text-xs text-slate-400 underline"
+                    >
+                      [TEST] 삭제
+                    </button>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -442,72 +468,22 @@ export function Home() {
                 <div>
                   <div className="flex items-center justify-between px-4 py-2.5">
                     <span className="text-sm text-slate-600">공수</span>
-                    <span className="text-sm font-medium text-slate-900">0.5공수</span>
+                    <span className="text-sm font-medium text-slate-900">{attendance.workEffort != null ? `${attendance.workEffort}공수` : "no data"}</span>
                   </div>
                   <div className="flex items-center justify-between px-4 py-2.5">
                     <span className="text-sm text-slate-600">적용 단가</span>
                     <span className="text-sm font-medium text-slate-900">
-                      {attendance.dailyWageSnapshot != null ? formatCurrency(attendance.dailyWageSnapshot) : "0원"}
+                      {attendance.dailyWageSnapshot != null ? formatCurrency(attendance.dailyWageSnapshot) : "no data"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
                     <span className="text-sm text-slate-600">예상 임금(세전)</span>
                     <span className="text-sm font-medium text-slate-900">
-                      {attendance.dailyWageSnapshot != null ? formatCurrency(attendance.dailyWageSnapshot * 0.5) : "0원"}
+                      {attendance.dailyWageSnapshot != null && attendance.workEffort != null ? formatCurrency(attendance.dailyWageSnapshot * attendance.workEffort) : "no data"}
                     </span>
                   </div>
                 </div>
               </div>
-
-              {/* Previous completed attendance records */}
-              {todayWorkRecords.map((record, index) => (
-                <div key={index} className="space-y-4">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900">{record.siteName}</h3>
-                    <p className="text-sm text-slate-500 mt-1">
-                      {formatKstTime(record.checkInTime)} - {record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}
-                    </p>
-                  </div>
-                  <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                    <div className="px-4 py-2.5">
-                      <span className="text-sm font-bold text-slate-900">용역</span>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between px-4 py-2.5">
-                        <span className="text-sm text-slate-600">공수</span>
-                        <span className="text-sm font-medium text-slate-900">
-                          {record.workEffort != null ? `${record.workEffort}공수` : "-"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between px-4 py-2.5">
-                        <span className="text-sm text-slate-600">적용 단가</span>
-                        <span className="text-sm font-medium text-slate-900">
-                          {record.dailyWageSnapshot != null ? formatCurrency(record.dailyWageSnapshot) : "0원"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
-                        <span className="text-sm text-slate-600">예상 임금(세전)</span>
-                        <span className="text-sm font-medium text-slate-900">
-                          {record.expectedWage != null ? formatCurrency(record.expectedWage) : "0원"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Total Summary - only when multiple attendance records */}
-              {todayWorkRecords.length > 0 && (
-                <div className="bg-slate-50 rounded-lg px-4 py-3 flex items-center justify-between">
-                  <span className="text-sm font-bold text-slate-700">총 노임</span>
-                  <span className="text-sm font-bold text-[#007DCA]">
-                    {formatCurrency(
-                      (attendance.dailyWageSnapshot != null ? attendance.dailyWageSnapshot * 0.5 : 0) +
-                      todayWorkRecords.reduce((sum, r) => sum + (r.expectedWage || 0), 0)
-                    )}
-                  </span>
-                </div>
-              )}
 
               {/* Info Message */}
               <div className="bg-slate-50 rounded-lg p-4 flex gap-3">

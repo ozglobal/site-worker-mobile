@@ -288,6 +288,7 @@ export function useHomeAgent(): HomeAgentReturn {
       siteName: attendance.siteName,
       siteAddress: attendance.siteAddress,
       dailyWageSnapshot: attendance.dailyWageSnapshot,
+      workEffort: attendance.workEffort,
     },
 
     // Work site

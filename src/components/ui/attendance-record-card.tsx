@@ -64,7 +64,7 @@ export function AttendanceRecordCard({
           <div className="flex items-center justify-between px-4 py-2.5">
             <span className="text-sm text-slate-600">공수</span>
             <span className="text-sm font-medium text-slate-900">
-              {workEffort != null ? `${workEffort}공수` : "-"}
+              {workEffort != null ? `${workEffort}공수` : "no data"}
             </span>
           </div>
           <div className="flex items-center justify-between px-4 py-2.5">

@@ -13,6 +13,6 @@ export function formatTimestamp(timestamp: number | undefined): string {
 
 /** Format number as Korean currency (e.g., 150,000원) */
 export function formatCurrency(amount: number | undefined): string {
-  if (amount === undefined || amount === null) return "0원"
+  if (amount === undefined || amount === null) return "no data"
   return amount.toLocaleString("ko-KR") + "원"
 }

@@ -48,6 +48,7 @@ export interface AttendanceAgentState {
   breakStart?: string
   breakEnd?: string
   dailyWageSnapshot: number | null
+  workEffort: number | null
   checkInTime: string | null
   checkOutTime: string | null
   completedCount: number
@@ -100,6 +101,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
   const [siteName, setSiteName] = useState("")
   const [siteAddress, setSiteAddress] = useState("")
   const [dailyWageSnapshot, setDailyWageSnapshot] = useState<number | null>(null)
+  const [workEffort, setWorkEffort] = useState<number | null>(null)
   const [workStart, setWorkStart] = useState<string | undefined>()
   const [workEnd, setWorkEnd] = useState<string | undefined>()
   const [lunchStart, setLunchStart] = useState<string | undefined>()
@@ -121,6 +123,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
       setSiteName(serverCheckIn.siteName)
       setSiteAddress(cached?.siteAddress || "")
       setDailyWageSnapshot(serverCheckIn.dailyWageSnapshot ?? cached?.dailyWageSnapshot ?? null)
+      setWorkEffort(serverCheckIn.workEffort ?? null)
       setCheckInTime(timestampToIso(serverCheckIn.checkInTime))
       const sc = serverCheckIn as unknown as Record<string, unknown>
       if (sc.workStart) setWorkStart(String(sc.workStart))
@@ -213,6 +216,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
           {
             siteId: checkedInSiteId,
             checkInTime: checkInTime || undefined,
+            workEffort,
             location,
           },
           { buildCheckOutRequest, checkOut }
@@ -256,6 +260,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     breakStart,
     breakEnd,
     dailyWageSnapshot,
+    workEffort,
     checkInTime,
     checkOutTime,
     completedCount,

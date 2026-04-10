@@ -76,6 +76,7 @@ export interface CheckOutRequest {
   proxyReason?: string
   isOffline?: boolean
   remarks?: string
+  workEffort?: number
 }
 
 /**
@@ -191,6 +192,7 @@ export const checkOut = async (request: CheckOutRequest): Promise<CheckOutRespon
 export const buildCheckOutRequest = (params: {
   siteId: string
   checkInTime?: string | number | Date
+  workEffort?: number | null
   location?: {
     latitude: number
     longitude: number
@@ -237,6 +239,7 @@ export const buildCheckOutRequest = (params: {
     gpsAccuracy: params.location?.accuracy,
     deviceType: 'mobile',
     appVersion: '1.0.0',
+    workEffort: params.workEffort ?? undefined,
   }
 }
 

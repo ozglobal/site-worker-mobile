@@ -28,7 +28,7 @@ export async function fetchNotices(page = 1, size = 20): Promise<ApiResult<Notic
     if (!workerId) return { success: false, error: '근로자 정보가 없습니다' }
 
     const params = new URLSearchParams({
-      recipientType: 'WORKER',
+      recipientType: 'worker',
       recipientId: workerId,
       page: String(page),
       size: String(size),
@@ -72,7 +72,7 @@ export async function markAllNoticesRead(): Promise<ApiResult<void>> {
     if (!workerId) return { success: false, error: '근로자 정보가 없습니다' }
 
     const params = new URLSearchParams({
-      recipientType: 'WORKER',
+      recipientType: 'worker',
       recipientId: workerId,
     })
 
