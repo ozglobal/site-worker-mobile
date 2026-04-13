@@ -1,5 +1,41 @@
 # Page / Route / Button / API Reference
 
+## Background / Auto-fired API calls
+
+These fire without a user clicking a button. Mostly React Query hooks that run on page mount, plus app bootstrap and polling.
+
+### On mount (useQuery)
+
+| Hook | Endpoint | Pages |
+|------|----------|-------|
+| `useWorkerProfile` | `GET /system/worker/me` | Profile, MyInfo |
+| `useMonthlyAttendance(year, month)` | `GET /system/attendance/my/{year}/{month}` | Home, Calendar, List |
+| `useContracts(year)` | `GET /efs/api/documents?bizType=worker_contract&year={year}` | Contract |
+| `useActivePartners` | `GET /system/partner/active` | Profile subpages |
+| `useWorkerDocuments` | `GET /system/worker/me/document` | Onboarding / Documents |
+| `useNotices` | `GET /notices/inbox?recipientType=worker...` | Notification panel (any page) |
+
+### Polling
+
+| Hook | Interval | Endpoint |
+|------|----------|----------|
+| `useNotices` | 5 min + refetch on window focus | `GET /notices/inbox` |
+
+### App bootstrap / auth
+
+| Trigger | Endpoint |
+|---------|----------|
+| App reload (AuthContext restore) | `POST /auth/refresh` then `GET /auth/user/info` |
+| Proactive token refresh (before expiry) | `POST /auth/refresh` |
+| 401 retry inside `authFetch` | `POST /auth/refresh` |
+
+### Selector / dependency changes
+
+Changing these controls triggers an automatic refetch of the underlying query (not a button click):
+
+- Year/month selector on Attendance List → `useMonthlyAttendance` refetches
+- Year dropdown on Contract page → `useContracts` refetches
+
 ## Routes
 
 | Route | Page | Layout | Auth |
@@ -317,8 +353,11 @@
 | `/system/attendance/{id}/correction-request` | POST | Submit work effort/wage correction |
 | `/system/attendance/{id}` | DELETE | Purge attendance record (test) |
 | `/system/attendance/my/{year}/{month}` | GET | useMonthlyAttendance hook |
-| `/system/worker/documents` | GET | useWorkerDocuments hook |
+| `/system/worker/me/document` | GET | useWorkerDocuments hook |
 | `/system/worker/documents/upload` | POST | Upload ID/passport document |
+| `/system/partner/active` | GET | useActivePartners hook |
+| `/notices/inbox?recipientType=worker` | GET | useNotices hook (polls every 5 min) |
+| `/auth/user/info` | GET | AuthContext bootstrap (after refresh) |
 | `/efs/api/documents?bizType=worker_contract&year={year}` | GET | useContracts hook |
 | `/efs/api/documents/{id}/pdf` | GET | Fetch contract PDF |
 | `/efs/api/signing-link?documentId={id}` | GET | Fetch contract signing link |
