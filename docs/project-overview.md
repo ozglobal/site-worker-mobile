@@ -1,89 +1,87 @@
-# Site Worker Mobile App — Project Overview
+# Site Worker Mobile App — Overview
 
-## What This App Is
+## What this app is
 
-**C-Worker** is a mobile-first Progressive Web Application (PWA) for construction site workers. It is part of a multi-tenant workforce management service subscribed to by construction companies.
+**C-Worker** is a mobile-first Progressive Web App (PWA) for construction site workers. It is one frontend of a multi-tenant workforce management service subscribed to by construction companies.
 
-Each subscriber company manages its own workers within the service, including worker profiles, attendance records, and data required for payroll calculation. The service enforces company-level separation, ensuring that data and user access are scoped to the subscribing construction company.
+Each subscriber company manages its own workers within the service — worker profiles, attendance records, and data required for payroll calculation. Tenant separation (data and user access scoped to the subscribing company) is enforced by the backend.
 
-This repository contains the frontend for the **Site Worker Mobile App** only. All other role-specific apps (site manager, service admin, corporate manager) are separate projects.
+This repository contains the **Site Worker Mobile App frontend only**. Role-specific apps for site manager, service admin, and corporate manager live in separate projects.
 
 ---
 
-## Target Users
+## Target users
 
 - Construction site workers
-- Users primarily using mobile devices on-site
-- Korean-speaking users with multi-language support via i18n
+- Users primarily on mobile devices, on-site
+- Korean-speaking users (with multi-language support via i18n)
 
 ---
 
-## Feature Scope
+## Feature scope
 
 | Feature | Description |
-|---------|-------------|
+|---|---|
 | Authentication | Login, signup, SMS verification (NICE API), password setup/reset/change |
-| Attendance | Check-in/out via QR scan + GPS location evidence |
-| Calendar | Weekly and monthly attendance history views |
-| Profile | Personal info, affiliation, engineer/equipment, payroll account |
+| Attendance | Check-in / out via QR scan + GPS location evidence |
+| Calendar | Weekly and monthly attendance history |
+| Profile | Personal info, affiliation, engineer / equipment, payroll account |
 | Contracts | Employment contract viewing (S3-hosted documents) |
 | Onboarding | First-time user setup flow |
 
 ---
 
-## Project Scope (Frontend-Only)
+## Project scope — frontend-only
 
-This project is **frontend-only**. The backend is an external dependency.
-
-- **Frontend (this project):** UI rendering, client-side routing, state management, API integration
+- **Frontend (this project):** UI rendering, client routing, state management, API integration
 - **Backend (external):** Tenant isolation, authentication, authorization, business logic, database
 
-API requests are proxied via `/api` to the backend server (configured in `vite.config.ts`). The tenant context is sent via `X_TENANT_ID` header (configured in `lib/config.ts`).
+API requests are proxied via `/api` to the backend server (configured in `vite.config.ts`). The tenant context is sent via the `X-Tenant-Id` header (configured in `lib/config.ts`).
 
 ---
 
-## Multi-Tenant Context
+## Multi-tenant context
 
-- Each construction company is treated as a separate tenant (subscriber)
+- Each construction company is a separate tenant (subscriber)
 - Workers belong to exactly one subscriber company
-- Users can access and manage data **only within their authorized scope**
+- Users access and manage data **only within their authorized scope**
 - Tenant isolation, authentication, and authorization are enforced by the backend
 - The frontend assumes valid tenant and role context is provided via backend APIs
 - No cross-tenant data access is possible beyond backend-enforced permissions
 
 ---
 
-## PWA Capabilities & Constraints
+## PWA capabilities & constraints
 
-- The app is a mobile-first PWA, not a native application
+- Mobile-first PWA — not a native application
 - Installable on mobile devices without app stores
 - Offline and poor-network tolerance via service workers (Workbox)
 - Portrait orientation, standalone display mode
-- Device features (geolocation, camera for QR) depend on browser/OS support
-- The frontend must handle unsupported PWA features gracefully
-- No native mobile SDKs or platform-specific code are included
+- Device features (geolocation, camera for QR) depend on browser / OS support
+- Must handle unsupported PWA features gracefully
+- No native mobile SDKs or platform-specific code
 
 ---
 
 ## Internationalization (i18n)
 
-- Multi-language support via `react-i18next`
-- Supported languages: Korean (ko), English (en)
-- All user-facing text must use the i18n system
-- Translation files are JSON-based, located in `src/i18n/`
+- `react-i18next` for translation
+- Supported languages: Korean (`ko`), English (`en`)
+- All user-facing text must flow through i18n — no hardcoded copy
+- Translation files: JSON in `src/i18n/`
 - Browser language auto-detection via `i18next-browser-languagedetector`
 
 ---
 
-## Routing Constraints
+## Routing constraints
 
 - Routes are limited to worker-specific features (profile, attendance, contracts)
-- No management or administrative routes are allowed
-- Authentication and tenant context are resolved before accessing protected routes
+- No management or administrative routes
+- Authentication and tenant context resolve before protected routes
 
 ---
 
-## Non-Goals / Out of Scope
+## Non-goals / out of scope
 
 - Backend API implementation
 - Database design or data persistence
@@ -96,9 +94,8 @@ This project focuses exclusively on frontend implementation and behavior.
 
 ---
 
-## AI & Development Assumptions
+## AI & development assumptions
 
-- The project is frontend-only; backend behavior must be treated as an external dependency
-- API contracts are assumed to be stable and provided externally
-- When generating or modifying code, prefer consistency with existing patterns and conventions
-
+- Treat backend behavior as an external dependency
+- API contracts are assumed stable and provided externally
+- When generating or modifying code, prefer consistency with existing patterns — see [CLAUDE.md](../CLAUDE.md)

@@ -283,7 +283,7 @@ export function Home() {
                       }}
                       className="mt-1 text-xs text-slate-400 underline"
                     >
-                      [TEST] 삭제
+                      [TEST] 출퇴근 기록 삭제
                     </button>
                   </div>
                 ))}

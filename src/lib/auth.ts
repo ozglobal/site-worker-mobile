@@ -1,4 +1,4 @@
-import { devLogApiRaw, devLogRequestRaw } from '../utils/devLog'
+import { devLogApiPair } from '../utils/devLog'
 import { API_BASE_URL, X_TENANT_ID } from './config'
 import { authStorage, workerStorage, clearAllStorage } from './storage'
 import { safeJson, type ApiResult } from './api-result'
@@ -61,15 +61,13 @@ const mockLogin = async (params: LoginParams): Promise<LoginResult> => {
 export const getSmsCode = async (phone: string): Promise<ApiResult<unknown>> => {
   try {
     const requestBody = { phone }
-    devLogRequestRaw('POST /auth/register/send-code', requestBody)
-    const response = await fetch(`${API_BASE_URL}/auth/register/send-code`, {
+    const response = await loggedFetch(`${API_BASE_URL}/auth/register/send-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('POST /auth/register/send-code', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -91,15 +89,13 @@ export const getSmsCode = async (phone: string): Promise<ApiResult<unknown>> => 
 export const sendPasswordCode = async (phone: string): Promise<ApiResult<unknown>> => {
   try {
     const requestBody = { phone }
-    devLogRequestRaw('POST /auth/password/send-code', requestBody)
-    const response = await fetch(`${API_BASE_URL}/auth/password/send-code`, {
+    const response = await loggedFetch(`${API_BASE_URL}/auth/password/send-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'accept': '*/*' },
       body: JSON.stringify(requestBody),
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('POST /auth/password/send-code', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -124,15 +120,17 @@ export const resetPasswordBySms = async (params: {
   newPassword: string
 }): Promise<ApiResult<unknown>> => {
   try {
-    devLogRequestRaw('PATCH /auth/password/reset-by-sms', { phone: params.phone, code: '***' })
-    const response = await fetch(`${API_BASE_URL}/auth/password/reset-by-sms`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'accept': '*/*' },
-      body: JSON.stringify(params),
-    })
+    const response = await loggedFetch(
+      `${API_BASE_URL}/auth/password/reset-by-sms`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'accept': '*/*' },
+        body: JSON.stringify(params),
+      },
+      { phone: params.phone, code: '***' },
+    )
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('PATCH /auth/password/reset-by-sms', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -154,15 +152,13 @@ export const resetPasswordBySms = async (params: {
 export const verifySmsCode = async (phone: string, verificationCode: string): Promise<ApiResult<unknown>> => {
   try {
     const requestBody = { phone, verificationCode }
-    devLogRequestRaw('POST /auth/register/verify-code', requestBody)
-    const response = await fetch(`${API_BASE_URL}/auth/register/verify-code`, {
+    const response = await loggedFetch(`${API_BASE_URL}/auth/register/verify-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('POST /auth/register/verify-code', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -196,15 +192,17 @@ export interface RegisterWorkerParams {
 
 export const registerWorker = async (params: RegisterWorkerParams): Promise<ApiResult<unknown>> => {
   try {
-    devLogRequestRaw('POST /auth/register/worker', { ...params, password: '***' })
-    const response = await fetch(`${API_BASE_URL}/auth/register/worker`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-    })
+    const response = await loggedFetch(
+      `${API_BASE_URL}/auth/register/worker`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      },
+      { ...params, password: '***' },
+    )
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('POST /auth/register/worker', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -235,8 +233,7 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
       password: params.password,
       clientId: params.clientId || 'mobile',
     }
-    devLogRequestRaw('POST /auth/login', requestBody)
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await loggedFetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -245,7 +242,6 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
     })
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('POST /auth/login', { status: response.status, data: responseData })
 
     if (!responseData) {
       return { success: false, error: 'Invalid server response' }
@@ -397,27 +393,27 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     }
 
     try {
-      devLogRequestRaw('POST /auth/refresh', { refreshToken: '***' })
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'accept': '*/*',
-          'X-Refresh-Token': refreshToken,
+      const response = await loggedFetch(
+        `${API_BASE_URL}/auth/refresh`,
+        {
+          method: 'POST',
+          headers: {
+            'accept': '*/*',
+            'X-Refresh-Token': refreshToken,
+          },
         },
-      })
+        { refreshToken: '***' },
+      )
 
       if (!response.ok) {
-        devLogApiRaw('POST /auth/refresh', { status: response.status, error: 'Refresh failed' })
         reportError('AUTH_REFRESH_FAIL', 'Token refresh failed', { endpoint: '/auth/refresh', httpStatus: response.status })
         clearTokens()
         return null
       }
 
       const responseData = await safeJson(response) as Record<string, unknown> | null
-      devLogApiRaw('POST /auth/refresh', { status: response.status, data: responseData })
 
       if (!responseData) {
-        devLogApiRaw('POST /auth/refresh', { error: 'Invalid response body' })
         reportError('AUTH_REFRESH_INVALID', 'Invalid refresh response')
         clearTokens()
         return null
@@ -438,7 +434,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
 
       return null
     } catch (err) {
-      devLogApiRaw('POST /auth/refresh', { error: 'Network error', detail: String(err) })
+      void err
       reportError('AUTH_REFRESH_NETWORK', 'Refresh network error', { endpoint: '/auth/refresh' })
       clearTokens()
       return null
@@ -474,8 +470,7 @@ const _fetchUserInfoImpl = async (): Promise<Record<string, unknown> | null> => 
   }
 
   try {
-    devLogRequestRaw('GET /auth/user/info')
-    const response = await fetch(`${API_BASE_URL}/auth/user/info`, {
+    const response = await loggedFetch(`${API_BASE_URL}/auth/user/info`, {
       method: 'GET',
       headers: {
         'accept': '*/*',
@@ -489,7 +484,6 @@ const _fetchUserInfoImpl = async (): Promise<Record<string, unknown> | null> => 
     }
 
     const responseData = await safeJson(response) as Record<string, unknown> | null
-    devLogApiRaw('GET /auth/user/info', { status: response.status, data: responseData })
 
     if (!responseData) {
       return null
@@ -556,7 +550,7 @@ export const authFetch = async (
   if (options.body) {
     try { requestBody = JSON.parse(options.body as string) } catch { requestBody = options.body }
   }
-  devLogRequestRaw(`${method} ${endpoint}`, requestBody)
+  const log = devLogApiPair(`${method} ${endpoint}`, requestBody)
 
   let response = await fetch(url, { ...options, headers })
 
@@ -577,8 +571,50 @@ export const authFetch = async (
   try {
     const clone = response.clone()
     const json = await safeJson(clone)
-    devLogApiRaw(`${method} ${endpoint}`, { status: response.status, data: json })
-  } catch { /* ignore logging errors */ }
+    log.end({ status: response.status, data: json })
+  } catch {
+    log.end({ status: response.status })
+  }
 
   return response
+}
+
+/**
+ * Public/unauthenticated fetch with automatic paired request/response logging.
+ * Use for endpoints that don't need a Bearer token (login, refresh, password reset, etc.).
+ * For authed endpoints, use {@link authFetch}.
+ *
+ * @param url         full URL
+ * @param options     standard RequestInit
+ * @param logRequest  optional override for the logged request payload
+ *                    (use for sensitive bodies — e.g. `{ password: '***' }`);
+ *                    when omitted, the request body is auto-extracted and logged.
+ */
+export const loggedFetch = async (
+  url: string,
+  options: RequestInit = {},
+  logRequest?: unknown,
+): Promise<Response> => {
+  const endpoint = url.replace(API_BASE_URL, '') || url
+  const method = options.method || 'GET'
+  let requestBody: unknown = logRequest
+  if (requestBody === undefined && options.body) {
+    try { requestBody = JSON.parse(options.body as string) } catch { requestBody = options.body }
+  }
+  const log = devLogApiPair(`${method} ${endpoint}`, requestBody)
+
+  try {
+    const response = await fetch(url, options)
+    try {
+      const clone = response.clone()
+      const json = await safeJson(clone)
+      log.end({ status: response.status, data: json })
+    } catch {
+      log.end({ status: response.status })
+    }
+    return response
+  } catch (err) {
+    log.end(err instanceof Error ? err : new Error(String(err)))
+    throw err
+  }
 }

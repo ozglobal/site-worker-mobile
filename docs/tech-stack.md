@@ -178,6 +178,31 @@ The app uses **PWA technology** to deliver a web-based mobile experience.
 
 ---
 
+## Networking & Logging
+
+### Centralized fetch wrappers (`lib/auth.ts`)
+
+All HTTP calls go through one of two wrappers — never raw `fetch()`:
+
+| Wrapper | Use for | Handles |
+|---|---|---|
+| `authFetch(url, options)` | Authed endpoints | Bearer token, `X-Tenant-Id`, proactive refresh (30s buffer), 401 retry, auto-logging |
+| `loggedFetch(url, options, logRequest?)` | Public endpoints (login, refresh, SMS, password reset, register) | Auto-logging; optional redacted request override for sensitive bodies |
+
+### Auto-logging (`utils/devLog.ts`)
+
+Both wrappers call `devLogApiPair(endpoint, requestBody)`, which emits a **single collapsed console group** per API call:
+
+```
+[api] POST /auth/login  200  143ms
+  [request] { username: '...', password: '...' }
+  [RESPONSE] { status: 200, data: { accessToken: '...', ... } }
+```
+
+Grouped output prevents interleaving across concurrent requests. DEV-only helpers (`logDebug`, `logError`, `logApiSummary`) are also available for ad-hoc diagnostics.
+
+---
+
 ## Error Handling & Reporting
 
 ### Unified Error Type — `ApiResult<T>`
@@ -201,7 +226,8 @@ The app uses **PWA technology** to deliver a web-based mobile experience.
 
 - `lib/errorReporter.ts` — in-memory queue, dedup (60s window), batch flush (10s interval)
 - `lib/globalErrorHandlers.ts` — catches `window.error` and `unhandledrejection`
-- 22 error sites report via `reportError(code, message, extra?)`
+- Failure sites across the codebase report via `reportError(code, message, extra?)`
+- Error code pattern: `DOMAIN_ACTION_RESULT` (e.g. `AUTH_LOGIN_FAIL`, `CHECKIN_API_FAIL`)
 - Endpoint placeholder in `main.tsx` — active once backend provides URL
 - No PII in payloads — only `workerId` for correlation
 

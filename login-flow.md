@@ -1,10 +1,26 @@
-App Startup (Hydration)
+# Auth & Login Flow
+
+Sequence diagrams for every auth-related path. Source of truth lives in [`src/lib/auth.ts`](src/lib/auth.ts) and [`src/contexts/AuthContext.tsx`](src/contexts/AuthContext.tsx).
+
+## Key invariants
+
+- **Access token** is held in-memory only (`inMemoryAccessToken` in `lib/auth.ts`). It is lost on every reload and reconstructed via `/auth/refresh`.
+- **Refresh token** (+ `expiresIn`, `issuedAt`) lives in `localStorage` via `authStorage`.
+- `refreshAccessToken()` deduplicates concurrent calls via a singleton `refreshInFlight` promise — handles StrictMode double-mount and race conditions.
+- All authed API calls go through `authFetch()`; public calls go through `loggedFetch()`. Never call `fetch()` directly.
+
+---
+
+## 1. App startup (hydration)
+
+```mermaid
 sequenceDiagram
     participant User
     participant App
     participant AuthProvider
     participant Memory as In-Memory (auth.ts)
     participant localStorage
+    participant API
 
     User->>App: Open app
     App->>AuthProvider: mount()
@@ -13,17 +29,22 @@ sequenceDiagram
     alt refreshToken exists
         AuthProvider->>API: POST /auth/refresh (X-Refresh-Token header)
         API-->>AuthProvider: new accessToken, refreshToken, expiresIn
-        AuthProvider->>Memory: store accessToken (in-memory only)
+        AuthProvider->>Memory: store accessToken
         AuthProvider->>localStorage: update refreshToken, expiresIn, issuedAt
         AuthProvider->>API: GET /auth/user/info
         API-->>AuthProvider: workerInfo
-        AuthProvider->>Memory: store workerInfo (in-memory only)
+        AuthProvider->>Memory: store workerInfo
     else refreshToken missing
-        AuthProvider->>AuthProvider: unauthenticated → redirect to login
+        AuthProvider->>AuthProvider: unauthenticated → redirect to /login
     end
     AuthProvider-->>App: app ready
+```
 
-Login Flow
+---
+
+## 2. Login
+
+```mermaid
 sequenceDiagram
     participant User
     participant LoginPage
@@ -34,12 +55,16 @@ sequenceDiagram
     User->>LoginPage: Enter credentials
     LoginPage->>API: POST /auth/login
     API-->>LoginPage: accessToken, refreshToken, expiresIn, workerInfo
-    LoginPage->>Memory: store accessToken (in-memory only)
-    LoginPage->>Memory: store workerInfo (in-memory only)
+    LoginPage->>Memory: store accessToken, workerInfo
     LoginPage->>localStorage: store refreshToken, expiresIn, issuedAt
     LoginPage-->>User: redirect to home
+```
 
-Authenticated API Request
+---
+
+## 3. Authenticated API request
+
+```mermaid
 sequenceDiagram
     participant Component
     participant authFetch
@@ -49,19 +74,24 @@ sequenceDiagram
     Component->>authFetch: request(url, options)
     authFetch->>Memory: getAccessToken()
     Memory-->>authFetch: accessToken
-    authFetch->>authFetch: check isTokenExpired()
+    authFetch->>authFetch: isTokenExpired() (30s buffer)
     alt token valid
         authFetch->>Backend: API request (Authorization: Bearer token)
         Backend-->>authFetch: response
         authFetch-->>Component: response
     else token expired
-        authFetch->>authFetch: refreshAccessToken() (see below)
+        authFetch->>authFetch: refreshAccessToken()
         authFetch->>Backend: retry with new token
         Backend-->>authFetch: response
         authFetch-->>Component: response
     end
+```
 
-Token Refresh (deduplicated)
+---
+
+## 4. Token refresh (deduplicated)
+
+```mermaid
 sequenceDiagram
     participant authFetch
     participant refreshAccessToken
@@ -70,7 +100,7 @@ sequenceDiagram
     participant Backend
 
     authFetch->>refreshAccessToken: call
-    refreshAccessToken->>refreshAccessToken: check refreshInFlight (dedup)
+    refreshAccessToken->>refreshAccessToken: check refreshInFlight
     alt already in-flight
         refreshAccessToken-->>authFetch: return existing promise
     else new request
@@ -82,8 +112,13 @@ sequenceDiagram
         refreshAccessToken->>localStorage: update refreshToken, expiresIn, issuedAt
         refreshAccessToken-->>authFetch: new accessToken
     end
+```
 
-Refresh Failure → Logout
+---
+
+## 5. Refresh failure → logout
+
+```mermaid
 sequenceDiagram
     participant Component
     participant authFetch
@@ -98,8 +133,13 @@ sequenceDiagram
     authFetch->>Memory: clear accessToken, workerInfo
     authFetch->>localStorage: clear auth data
     authFetch-->>Component: redirect to /login
+```
 
-Logout Flow
+---
+
+## 6. Logout
+
+```mermaid
 sequenceDiagram
     participant User
     participant Component
@@ -110,7 +150,8 @@ sequenceDiagram
 
     User->>Component: Click logout
     Component->>handleLogout: call
-    handleLogout->>localStorage: clear auth data
+    handleLogout->>localStorage: clear auth data (clearAllStorage)
     handleLogout->>IndexedDB: clear file storage
     handleLogout->>Memory: (cleared on page reload)
     handleLogout-->>Component: redirect to /login
+```

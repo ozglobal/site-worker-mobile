@@ -1,12 +1,17 @@
 /**
- * Logging utility — logs in all environments
+ * Development logging utility
+ * ⚠️ Logs are DEV-ONLY and MUST NOT ship to production
  */
 
+const isDev = import.meta.env.DEV
+
 /* ---------------------------------- */
-/* Low-level logger                    */
+/* Low-level DEV logger                */
 /* ---------------------------------- */
 
 const devLog = (level: "log" | "warn" | "error", message: string, data?: unknown) => {
+  if (!isDev) return
+
   if (data !== undefined) {
     console[level](message, data)
   } else {
@@ -37,6 +42,7 @@ export const logApiSummary = (
  * Safe debug message
  */
 export const logDebug = (message: string, data?: unknown) => {
+  if (!isDev) return
   if (data !== undefined) {
     console.log(`${message}:`, data)
   } else {
@@ -79,5 +85,39 @@ export const devLogRequestRaw = (
     console.log(`[request] ${endpoint}`, params)
   } else {
     console.log(`[request] ${endpoint}`)
+  }
+}
+
+/* ---------------------------------- */
+/* Paired request/response logger      */
+/* ---------------------------------- */
+
+export interface ApiLogHandle {
+  end(result: { status: number; data?: unknown } | Error): void
+}
+
+/**
+ * Pairs a request log with its response so concurrent calls don't interleave.
+ * Output is emitted as a single collapsed console group when `end` is called.
+ */
+export const devLogApiPair = (
+  endpoint: string,
+  params?: unknown
+): ApiLogHandle => {
+  const startedAt = performance.now()
+  return {
+    end(result) {
+      const duration = Math.round(performance.now() - startedAt)
+      const isError = result instanceof Error
+      const status = isError ? 'ERR' : result.status
+      console.groupCollapsed(`[api] ${endpoint}  ${status}  ${duration}ms`)
+      if (params !== undefined) console.log('[request]', params)
+      if (isError) {
+        console.error('[error]', result)
+      } else {
+        console.log('[RESPONSE]', { status: result.status, data: result.data })
+      }
+      console.groupEnd()
+    },
   }
 }

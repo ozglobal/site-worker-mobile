@@ -1,156 +1,141 @@
-# Site Worker Mobile App — Project Structure
+# Project Structure
 
 ```
 site-worker-mobile/
-├── public/                         # Static assets, PWA manifest, icons
+├── public/                         Static assets, PWA manifest, icons
 ├── src/
-│   ├── App.tsx                     # Root component, routing, providers
-│   ├── main.tsx                    # Entry point
-│   ├── index.css                   # Global styles (Tailwind directives)
+│   ├── App.tsx                     Root: routing, providers, ErrorBoundary
+│   ├── main.tsx                    Entry — installs global error handlers
+│   ├── index.css                   Tailwind directives + global styles
 │   │
-│   ├── pages/                      # Page-level components (orchestration layer)
-│   │   ├── home/                   # Home page (Agent-Skill architecture)
-│   │   │   ├── Home.tsx            # UI rendering only
-│   │   │   ├── useHomeAgent.ts     # Master orchestrator hook
-│   │   │   ├── home.types.ts       # Page-level types
-│   │   │   ├── components/         # Home-specific UI components
-│   │   │   └── agents/             # Domain agents
-│   │   │       ├── attendance/     # Check-in/out workflows
+│   ├── pages/
+│   │   ├── home/                   Home page — Agent-Skill architecture
+│   │   │   ├── Home.tsx            UI only
+│   │   │   ├── useHomeAgent.ts     Top-level orchestrator
+│   │   │   ├── home.types.ts
+│   │   │   ├── components/         Home-specific UI
+│   │   │   └── agents/
+│   │   │       ├── attendance/     Check-in/out workflows
 │   │   │       │   ├── useAttendanceAgent.ts
 │   │   │       │   ├── attendance.types.ts
-│   │   │       │   └── skills/     # Pure business logic
-│   │   │       │       ├── attendance-api.skill.ts
-│   │   │       │       └── attendance-state.skill.ts
-│   │   │       ├── calendar/       # Calendar data + computation
-│   │   │       │   ├── useCalendarAgent.ts
 │   │   │       │   └── skills/
-│   │   │       │       ├── calendar-api.skill.ts
-│   │   │       │       └── calendar-compute.skill.ts
-│   │   │       ├── location/       # Geolocation + permissions
-│   │   │       │   ├── useLocationAgent.ts
-│   │   │       │   └── skills/
-│   │   │       │       ├── geolocation.skill.ts
-│   │   │       │       └── permission.skill.ts
-│   │   │       └── notification/   # UI notifications
-│   │   │           ├── useNotificationAgent.ts
-│   │   │           └── skills/
-│   │   │               └── notification.skill.ts
+│   │   │       ├── calendar/       Calendar data + compute
+│   │   │       ├── location/       Geolocation + permissions
+│   │   │       └── notification/   UI notifications
 │   │   │
-│   │   ├── login/                  # Login, password reset
-│   │   ├── signup/                 # SMS verification, agreement, info forms
-│   │   ├── profile/               # Worker profile management
-│   │   │   ├── Profile.tsx         # Profile menu
-│   │   │   ├── MyInfo.tsx          # Personal info edit
-│   │   │   ├── MyAccount.tsx       # Account info
-│   │   │   ├── ChangePassword.tsx  # Password change
-│   │   │   ├── Affiliation.tsx     # Company affiliation
-│   │   │   ├── PayrollAccount.tsx  # Bank account info
-│   │   │   └── ...                 # Engineer, Equipment, Sosok, etc.
-│   │   ├── attendance/             # Attendance history (calendar + list views)
-│   │   ├── contract/               # Employment contract viewing
-│   │   ├── onboarding/             # First-time user setup
-│   │   └── qr-generator/          # QR code generation (dev tool)
+│   │   ├── login/                  Login, password reset
+│   │   ├── signup/                 SMS verify, agreement, info forms
+│   │   ├── profile/                Profile menu + subpages (MyInfo, MyAccount,
+│   │   │                           ChangePassword, Affiliation, PayrollAccount,
+│   │   │                           Engineer, Equipment, Sosok, FamilyAccount…)
+│   │   ├── attendance/             History — calendar + list views
+│   │   ├── contract/               Employment contract viewer
+│   │   ├── onboarding/             First-time setup flow
+│   │   └── qr-generator/           Dev tool for generating site QR codes
 │   │
-│   ├── components/                 # Shared UI components (no business logic)
-│   │   ├── ErrorBoundary.tsx       # React error boundary (wraps App)
-│   │   ├── ui/                     # shadcn/ui primitives + custom components
-│   │   │   ├── button.tsx, input.tsx, checkbox.tsx
-│   │   │   ├── calendar.tsx, popover.tsx, command.tsx
-│   │   │   ├── toast.tsx           # Toast notification component
-│   │   │   ├── query-error-state.tsx # React Query error + retry component
-│   │   │   ├── QrScanner.tsx       # QR scanner UI
+│   ├── components/
+│   │   ├── ErrorBoundary.tsx       Class component wrapping App
+│   │   ├── ui/                     shadcn/ui primitives + project customs
+│   │   │   ├── button, input, checkbox, select, spinner…
+│   │   │   ├── calendar, popover, command
+│   │   │   ├── toast.tsx
+│   │   │   ├── query-error-state.tsx   Retry UI for React Query failures
+│   │   │   ├── QrScanner.tsx           Camera integration (exception to UI-only)
 │   │   │   ├── LocationPermissionPopup.tsx
 │   │   │   ├── MonthSelector.tsx, SiteCombobox.tsx
 │   │   │   └── ...
-│   │   ├── layout/                 # App shell components
-│   │   │   ├── AppHeader.tsx
-│   │   │   ├── AppTopBar.tsx
-│   │   │   └── AppBottomNav.tsx
-│   │   ├── calendar/               # Calendar UI components
-│   │   └── home/                   # Home-specific layout components
+│   │   ├── layout/                 AppHeader, AppTopBar, AppBottomNav
+│   │   ├── calendar/               Calendar UI blocks
+│   │   └── home/                   Home-specific layout pieces
 │   │
-│   ├── lib/                        # Business logic & API layer
-│   │   ├── auth.ts                 # Authentication (login, token refresh)
-│   │   ├── attendance.ts           # Attendance API calls
-│   │   ├── profile.ts             # Profile API calls
-│   │   ├── contract.ts            # Contract domain logic + API
-│   │   ├── qr.ts                  # QR code parsing logic
-│   │   ├── s3.ts                  # S3 presigned URL handling
-│   │   ├── upload.ts              # File upload logic
-│   │   ├── api-result.ts         # ApiResult<T> type + safeJson() helper
-│   │   ├── errorReporter.ts      # Client error collection, dedup, batch flush
-│   │   ├── globalErrorHandlers.ts # Unhandled error/rejection handlers
-│   │   ├── config.ts             # API base URL, tenant ID
-│   │   ├── storage.ts            # localStorage/sessionStorage/IndexedDB wrappers
-│   │   ├── utils.ts              # shadcn/ui cn() utility
-│   │   └── queries/              # React Query hooks
+│   ├── lib/                        Business + API layer
+│   │   ├── auth.ts                 Login, token refresh, authFetch, loggedFetch
+│   │   ├── attendance.ts           Attendance API
+│   │   ├── profile.ts              Profile API
+│   │   ├── contract.ts             Contract API + domain logic
+│   │   ├── notice.ts               Notification inbox API
+│   │   ├── upload.ts               File upload (uses authFetch)
+│   │   ├── juso.ts                 Korean address lookup (public API)
+│   │   ├── qr.ts                   QR parsing
+│   │   ├── s3.ts                   S3 presigned URL handling
+│   │   ├── storage.ts              localStorage / sessionStorage / IndexedDB wrappers
+│   │   ├── api-result.ts           ApiResult<T> type + safeJson()
+│   │   ├── errorReporter.ts        Client error queue + dedup + batch flush
+│   │   ├── globalErrorHandlers.ts  window.error + unhandledrejection hooks
+│   │   ├── config.ts               API_BASE_URL, X_TENANT_ID
+│   │   ├── utils.ts                shadcn cn() helper
+│   │   └── queries/                React Query hooks
 │   │       ├── useWorkerProfile.ts
+│   │       ├── useWorkerDocuments.ts
 │   │       ├── useDailyAttendance.ts
 │   │       ├── useMonthlyAttendance.ts
 │   │       ├── useContracts.ts
-│   │       └── useChangePassword.ts
+│   │       ├── useChangePassword.ts
+│   │       ├── useActivePartners.ts
+│   │       └── useNotices.ts
 │   │
-│   ├── contexts/                  # React Context providers
-│   │   ├── AuthContext.tsx        # Auth state (login/logout/token lifecycle)
-│   │   └── ToastContext.tsx       # Global toast notifications
+│   ├── contexts/
+│   │   ├── AuthContext.tsx         Auth state (login/logout/token lifecycle)
+│   │   └── ToastContext.tsx        Global toast notifications
 │   │
-│   ├── utils/                     # Pure utility functions (no side effects)
-│   │   ├── time.ts               # KST time formatting
-│   │   ├── format.ts             # Number/currency formatting
-│   │   ├── attendance.ts         # Attendance display helpers
-│   │   ├── geolocation.ts        # Geolocation helpers
-│   │   └── devLog.ts             # Development logging
+│   ├── utils/                      Pure functions (no side effects)
+│   │   ├── time.ts                 KST time formatting
+│   │   ├── format.ts               Number / currency formatting
+│   │   ├── attendance.ts           Attendance display helpers
+│   │   ├── geolocation.ts          Browser geolocation wrapper
+│   │   └── devLog.ts               DEV-only console helpers + devLogApiPair
 │   │
-│   ├── types/                     # Shared TypeScript type definitions
-│   ├── hooks/                     # Shared custom hooks
-│   │   └── useHoneypot.ts        # Bot protection for forms
+│   ├── types/                      Shared TS types
+│   ├── hooks/                      Shared custom hooks
+│   │   └── useHoneypot.ts          Bot protection for forms
 │   │
-│   ├── i18n/                      # Internationalization
-│   │   ├── i18n.ts               # i18next configuration
-│   │   ├── en/                   # English translations (JSON)
-│   │   └── ko/                   # Korean translations (JSON)
+│   ├── i18n/                       Internationalization (ko, en)
+│   │   ├── i18n.ts
+│   │   ├── en/
+│   │   └── ko/
 │   │
-│   ├── assets/                    # Static assets (images)
-│   └── icons/                     # Icon files
+│   ├── assets/                     Static images
+│   └── icons/                      Icon files
 │
-├── docs/                          # Project documentation
-├── CLAUDE.md                      # Architecture rules & development conventions
-├── package.json                   # Dependencies (npm)
-├── package-lock.json
-├── vite.config.ts                 # Vite + PWA + API proxy configuration
-├── tsconfig.json                  # TypeScript configuration
-├── tailwind.config.cjs            # Tailwind CSS theme configuration
-├── postcss.config.cjs             # PostCSS configuration
-├── components.json                # shadcn/ui configuration
-└── index.html                     # HTML entry point
+├── docs/                           Project documentation (this directory)
+├── CLAUDE.md                       Architecture rules & conventions
+├── login-flow.md                   Auth sequence diagrams
+├── tailwind.config.md              Color / component usage guide
+├── package.json                    npm dependencies
+├── vite.config.ts                  Vite + PWA + /api proxy
+├── tsconfig.json
+├── tailwind.config.cjs             Theme tokens
+├── postcss.config.cjs
+├── components.json                 shadcn/ui config
+└── index.html
 ```
 
 ---
 
-## Architecture Patterns
+## Architecture patterns
 
-### Home Page: Agent-Skill Pattern
-
-The home page follows a strict layered architecture:
+### Home page — Agent-Skill layering
 
 ```
-Home.tsx (UI)  →  useHomeAgent (orchestrator)  →  use*Agent (domain agents)  →  *.skill.ts (pure logic)
+Home.tsx  →  useHomeAgent  →  use*Agent (domain)  →  *.skill.ts (pure)
+ (UI)        (orchestrator)   (decisions)            (logic)
 ```
 
-- **Skills** are pure, stateless functions — no React, no hooks, no UI
-- **Agents** are hooks that compose skills and manage domain state
-- **UI** only reads from agents — never calls skills directly
+- **Skills** — pure, stateless. No React, no hooks, no UI.
+- **Agents** — hooks composing skills and managing domain state.
+- **UI** — reads from agents only. Never calls skills directly.
 
-### Other Pages: Standard Pattern
+Dependency direction: `UI → Agent → Skill`. No reverse deps.
 
-Pages outside `home/` use a simpler pattern:
+### All other pages — standard pattern
 
 ```
-Page.tsx  →  lib/queries/use*.ts (React Query hooks)  →  lib/*.ts (API functions)
+Page.tsx  →  lib/queries/use*.ts  →  lib/*.ts  →  authFetch / loggedFetch
+ (UI)        (React Query hooks)     (API fn)     (auto-logged fetch)
 ```
 
-### Key Distinction: lib/queries/ vs lib/*.ts
+### `lib/queries/` vs `lib/*.ts` — a distinction worth keeping
 
-- `lib/*.ts` — Raw API call functions (e.g., `fetchMonthlyAttendance`, `changePassword`)
-- `lib/queries/*.ts` — React Query hooks that wrap those functions with caching, loading states, and error handling
-- Pages should use `lib/queries/` hooks, not raw `lib/*.ts` functions directly
+- `lib/*.ts` — raw API call functions returning `ApiResult<T>` (e.g. `fetchMonthlyAttendance`, `changePassword`).
+- `lib/queries/*.ts` — React Query hooks wrapping those functions with caching, loading states, retry, and error exposure.
+- **Pages consume `lib/queries/` hooks — never raw `lib/*.ts` functions.**
