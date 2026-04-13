@@ -180,7 +180,7 @@ type ApiResult<T> = { success: true; data: T } | { success: false; error: string
 - Touch-friendly spacing (min 44px tap targets)
 - No inline styles inside pages
 - Consistent typography / color usage
-- Brand colors: primary `#007DCA`, secondary `#33D4C1`, accent `#F6B26B` (see `tailwind.config.md` for full palette)
+- Brand colors: primary `#007DCA`, secondary `#33D4C1`, accent `#F6B26B` (see `docs/design-tokens.md` for full palette)
 
 ---
 

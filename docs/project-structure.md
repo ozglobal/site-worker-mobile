@@ -98,9 +98,9 @@ site-worker-mobile/
 │   └── icons/                      Icon files
 │
 ├── docs/                           Project documentation (this directory)
+│   ├── login-flow.md               Auth sequence diagrams
+│   └── design-tokens.md            Color / typography / component usage guide
 ├── CLAUDE.md                       Architecture rules & conventions
-├── login-flow.md                   Auth sequence diagrams
-├── tailwind.config.md              Color / component usage guide
 ├── package.json                    npm dependencies
 ├── vite.config.ts                  Vite + PWA + /api proxy
 ├── tsconfig.json

@@ -1,8 +1,12 @@
-# Tailwind Color & Component Usage
+# Design Tokens
 
-Quick reference for brand-color usage patterns. See `tailwind.config.cjs` for the full token definition.
+Quick reference for color, typography, and component usage patterns. Full token definitions live in [`tailwind.config.cjs`](../tailwind.config.cjs).
 
-## Brand tokens
+Base font: **Pretendard** (Korean-optimized).
+
+## Colors
+
+### Brand tokens
 
 | Token | Hex | Role |
 |---|---|---|
@@ -13,11 +17,38 @@ Quick reference for brand-color usage patterns. See `tailwind.config.cjs` for th
 
 > **Note:** `success` semantics share the `primary-active` token — no separate green.
 
----
+## Typography
 
-## Buttons
+### Font size
 
-### Primary
+| Class | rem | px |
+|---|---|---|
+| `text-xs` | 0.75rem | 12px |
+| `text-sm` | 0.875rem | 14px |
+| `text-base` | 1rem | 16px |
+| `text-lg` | 1.125rem | 18px |
+| `text-xl` | 1.25rem | 20px |
+| `text-2xl` | 1.5rem | 24px |
+| `text-3xl` | 1.875rem | 30px |
+| `text-4xl` | 2.25rem | 36px |
+
+### Font weight
+
+| Class | Weight | Description |
+|---|---|---|
+| `font-thin` | 100 | Thin |
+| `font-extralight` | 200 | Extra Light |
+| `font-light` | 300 | Light |
+| `font-normal` | 400 | Normal (default) |
+| `font-medium` | 500 | Medium |
+| `font-semibold` | 600 | Semi Bold |
+| `font-bold` | 700 | Bold |
+| `font-extrabold` | 800 | Extra Bold |
+| `font-black` | 900 | Black |
+
+## Component patterns
+
+### Buttons — Primary
 
 | State | Classes |
 |---|---|
@@ -30,7 +61,7 @@ Quick reference for brand-color usage patterns. See `tailwind.config.cjs` for th
 <Button className="bg-primary hover:bg-primary-active">Submit</Button>
 ```
 
-### Secondary
+### Buttons — Secondary
 
 | State | Classes |
 |---|---|
@@ -38,7 +69,7 @@ Quick reference for brand-color usage patterns. See `tailwind.config.cjs` for th
 | Hover / Active | `bg-secondary-active` |
 | Disabled | `bg-secondary/40 text-white/60` |
 
-### Ghost / Outline
+### Buttons — Ghost / Outline
 
 ```
 text-primary-active
@@ -46,9 +77,7 @@ border-primary-active
 hover:bg-primary-active/10
 ```
 
----
-
-## Toast — Success (= Primary)
+### Toast — Success (= Primary)
 
 | Element | Classes |
 |---|---|
@@ -63,9 +92,7 @@ hover:bg-primary-active/10
 </div>
 ```
 
----
-
-## Inline Alert — Success
+### Inline Alert — Success
 
 ```
 bg-primary-active/8
@@ -75,9 +102,7 @@ border-l-4 border-primary-active
 
 > **Tip:** Never use a solid background for success alerts — it gets confused with action UI.
 
----
-
-## Badge / Chip
+### Badge / Chip
 
 | Type | Classes |
 |---|---|
@@ -88,9 +113,7 @@ border-l-4 border-primary-active
 <Badge className="bg-primary-active/15 text-primary-active">Completed</Badge>
 ```
 
----
-
-## BottomNav / Tab (mobile)
+### BottomNav / Tab (mobile)
 
 | State | Classes |
 |---|---|
@@ -102,9 +125,7 @@ border-l-4 border-primary-active
 
 > Why share with success? Success = result, Nav = location — different meanings, but reusing the primary family keeps the visual language coherent.
 
----
-
-## Form field — success hint
+### Form field — success hint
 
 ```
 text-primary-active
