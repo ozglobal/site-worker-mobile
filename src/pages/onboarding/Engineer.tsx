@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input"
 import { OptionCard } from "@/components/ui/option-card"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { engineerStorage } from "@/lib/storage"
+import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
 
 type EngineerType = "representative" | "employee"
 
 export function OnboardingEngineerPage() {
   const navigate = useNavigate()
+  const { patch: patchDraft } = useOnboardingDraft()
   const saved = engineerStorage.get()
   const [engineerType, setEngineerType] = useState<EngineerType>(saved?.engineerType || "representative")
   const [representativeName, setRepresentativeName] = useState(saved?.representativeName || "")
@@ -23,7 +25,11 @@ export function OnboardingEngineerPage() {
 
   const handleSubmit = () => {
     engineerStorage.update({ engineerType, representativeName })
-    navigate("/onboarding/equipments")
+    patchDraft({
+      equipmentCompanyOwner: engineerType === "representative" ? representativeName : null,
+      equipmentCompanyName: engineerType === "employee" ? representativeName : null,
+    })
+    navigate("/onboarding/daily-wage")
   }
 
   const isFormValid = representativeName.trim().length > 0
@@ -49,7 +55,7 @@ export function OnboardingEngineerPage() {
       </div>
 
       {/* Progress bar */}
-      <ProgressBar value={40} />
+      <ProgressBar value={50} />
 
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">

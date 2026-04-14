@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { onboardingStorage } from "@/lib/storage"
@@ -7,14 +8,13 @@ export function OnboardingPage() {
   const navigate = useNavigate()
   const { worker } = useAuth()
 
+  useEffect(() => {
+    sessionStorage.removeItem('postLoginFirstLogin')
+  }, [])
+
   const handleRegisterNow = () => {
     onboardingStorage.markCompleted()
     navigate("/onboarding/worker-type")
-  }
-
-  const handleRegisterLater = () => {
-    onboardingStorage.markCompleted()
-    navigate("/home")
   }
 
   return (
@@ -28,17 +28,14 @@ export function OnboardingPage() {
         </h1>
 
         <p className="text-slate-500 text-center whitespace-pre-line">
-          {"원활한 급여 지급을 위해\n몇 가지 정보를 더 여쭤볼게요."}
+          {"원활한 급여 지급을 위해\n필수 정보를 등록해주세요."}
         </p>
       </div>
 
       {/* Bottom buttons */}
       <div className="px-6 pb-8 space-y-3 shrink-0">
-        <Button variant="neutral" size="full" onClick={handleRegisterLater}>
-          나중에 등록하기
-        </Button>
         <Button variant="primary" size="full" onClick={handleRegisterNow}>
-          지금 등록하기
+          시작하기
         </Button>
       </div>
     </div>

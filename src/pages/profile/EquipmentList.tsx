@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { AppTopBar } from "@/components/layout/AppTopBar"
 import { IconTrash } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
-import { ProgressBar } from "@/components/ui/progress-bar"
 
-export function OnboardingEquipmentListPage() {
+export function EquipmentListPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const incoming = location.state as { name?: string; expiryDate?: string } | null
@@ -18,7 +17,7 @@ export function OnboardingEquipmentListPage() {
   })
 
   const handleAdd = () => {
-    navigate("/onboarding/equipments")
+    navigate("/profile/equipments")
   }
 
   const handleDelete = (index: number) => {
@@ -26,7 +25,7 @@ export function OnboardingEquipmentListPage() {
   }
 
   const handleSubmit = () => {
-    navigate("/onboarding/documents")
+    navigate("/profile")
   }
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
@@ -42,19 +41,10 @@ export function OnboardingEquipmentListPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
-      {/* Header with back button */}
-      <div className="flex items-center px-4 h-14 shrink-0">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2">
-          <ArrowBackIcon className="h-6 w-6 text-slate-900" />
-        </button>
-      </div>
-
-      {/* Progress bar */}
-      <ProgressBar value={40} />
+      <AppTopBar title="장비 정보" onBack={() => navigate(-1)} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
-          {/* Title */}
           <div className="px-4 pt-4 pb-2">
             <h1 className="text-lg font-bold text-slate-900">장비 정보를 입력해주세요</h1>
             <p className="mt-1 text-sm text-gray-500">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
@@ -84,14 +74,9 @@ export function OnboardingEquipmentListPage() {
             </button>
           </div>
 
-          {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
-            <Button
-              variant="primary"
-              size="full"
-              onClick={handleSubmit}
-            >
-              다음
+            <Button variant="primary" size="full" onClick={handleSubmit}>
+              저장
             </Button>
           </div>
         </div>

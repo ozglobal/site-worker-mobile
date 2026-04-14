@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
-import { fileStorage, engineerStorage } from "@/lib/storage"
 
 const equipmentTypes = [
   { id: "bulldozer", name: "1. 불도저" },
@@ -37,74 +35,15 @@ const equipmentTypes = [
   { id: "tower-crane", name: "27. 타워크레인" },
 ]
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
-const CERT_FILE_KEY = "equipment-cert"
-
 export function EquipmentPage() {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const engineer = engineerStorage.get()
-  const [selectedEquipment, setSelectedEquipment] = useState(engineer?.machine || "")
+  const expiryInputRef = useRef<HTMLInputElement>(null)
+  const [selectedEquipment, setSelectedEquipment] = useState("")
   const [certFile, setCertFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [cachedFileName, setCachedFileName] = useState<string | null>(null)
-  const [fileError, setFileError] = useState<string | null>(null)
+  const [expiryDate, setExpiryDate] = useState("")
 
-  // Load cached file from IndexedDB on mount
-  useEffect(() => {
-    if (engineer?.representativeName) {
-      fileStorage.get(CERT_FILE_KEY).then((file) => {
-        if (file) {
-          setCertFile(file)
-          setCachedFileName(file.name)
-          if (file.type.startsWith("image/")) {
-            setPreviewUrl(URL.createObjectURL(file))
-          }
-        }
-      })
-    }
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
-    }
-  }, [])
-
-  const handleSubmit = async () => {
-    engineerStorage.update({ machine: selectedEquipment })
-
-    if (certFile) {
-      try {
-        await fileStorage.save(CERT_FILE_KEY, certFile)
-      } catch {
-        setFileError("파일 저장에 실패했습니다.")
-        return
-      }
-    }
-
-    navigate("/profile")
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null
-    setFileError(null)
-
-    if (file) {
-      if (file.size > MAX_FILE_SIZE) {
-        setFileError("파일 크기가 10MB를 초과합니다.")
-        setCertFile(null)
-        return
-      }
-    }
-
-    setCertFile(file)
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
-    if (file && file.type.startsWith("image/")) {
-      setPreviewUrl(URL.createObjectURL(file))
-    } else {
-      setPreviewUrl(null)
-    }
-  }
-
-  const isFormValid = selectedEquipment !== "" && (certFile !== null || cachedFileName !== null)
+  const isFormValid = selectedEquipment && certFile && expiryDate
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -117,97 +56,84 @@ export function EquipmentPage() {
     return () => viewport.removeEventListener("resize", handleResize)
   }, [])
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") {
-      navigate("/home")
-    } else if (item === "attendance") {
-      navigate("/attendance")
-    } else if (item === "contract") {
-      navigate("/contract")
-    } else if (item === "profile") {
-      navigate("/profile")
-    }
-  }
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
       <AppTopBar title="장비 정보" onBack={() => navigate(-1)} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
-        <div className="px-4 py-6 space-y-5">
-          {/* Equipment Type Select */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              장비 종류
-            </label>
-            <Select
-              options={equipmentTypes.map((t) => ({ value: t.id, label: t.name }))}
-              value={selectedEquipment}
-              onChange={(v) => { setSelectedEquipment(v); setTimeout(() => fileInputRef.current?.click(), 300) }}
-              placeholder="장비 선택"
-            />
+          <div className="px-4 pt-4 pb-2">
+            <h1 className="text-lg font-bold text-slate-900">장비 정보를 등록해주세요</h1>
+            <p className="mt-1 text-sm text-gray-500">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
           </div>
 
-          {/* Info Box */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex gap-3">
-              <ErrorOutlineIcon className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-slate-700">내 장비를 찾을 수 없나요?</p>
-                <p className="text-sm text-slate-500 mt-1">목록에 장비가 보이지 않을 경우 현장 관리자에게 등록을 요청해주세요.</p>
+          <div className="px-4 py-6 space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">장비 종류</label>
+              <Select
+                options={equipmentTypes.map((t) => ({ value: t.id, label: t.name }))}
+                value={selectedEquipment}
+                onChange={(v) => { setSelectedEquipment(v); setTimeout(() => fileInputRef.current?.click(), 300) }}
+                placeholder="장비 선택"
+              />
+            </div>
+
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex gap-3">
+                <ErrorOutlineIcon className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">내 장비를 찾을 수 없나요?</p>
+                  <p className="text-sm text-slate-500 mt-1">목록에 장비가 보이지 않을 경우 현장 관리자에게 등록을 요청해주세요.</p>
+                </div>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">장비 자격증</label>
+              <label className="flex items-center w-full h-12 px-4 rounded-lg border border-gray-200 bg-white cursor-pointer">
+                <span className="font-medium text-slate-900 mr-2">파일 선택</span>
+                <span className="text-sm text-slate-400 truncate">{certFile ? certFile.name : "선택된 파일 없음"}</span>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null
+                    setCertFile(file)
+                    if (file) setTimeout(() => { expiryInputRef.current?.focus() }, 300)
+                  }}
+                  className="hidden"
+                />
+              </label>
+              <label className="block text-sm font-medium text-slate-700 mt-4 mb-2">자격증 만료일</label>
+              <input
+                ref={expiryInputRef}
+                type="text"
+                value={expiryDate}
+                onChange={(e) => { setExpiryDate(e.target.value); if (e.target.value) setTimeout(() => e.target.blur(), 100) }}
+                onFocus={(e) => { const el = e.target; el.type = "date"; requestAnimationFrame(() => el.showPicker?.()) }}
+                onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
+                placeholder="만료일 입력"
+                className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+              />
             </div>
           </div>
 
-          {/* Certificate File Upload */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              장비 자격증
-            </label>
-            <label className="flex items-center w-full h-12 px-4 rounded-lg border border-gray-200 bg-white cursor-pointer">
-              <span className="font-medium text-slate-900 mr-2">파일 선택</span>
-              <span className="text-sm text-slate-400 truncate">
-                {certFile ? certFile.name : cachedFileName ? cachedFileName : "선택된 파일 없음"}
-              </span>
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </label>
-            {fileError && (
-              <p className="text-sm text-red-500 mt-2">{fileError}</p>
-            )}
-            {previewUrl && (
-              <div className="mt-3 rounded-lg overflow-hidden border border-gray-200">
-                <img src={previewUrl} alt="자격증 미리보기" className="w-full object-contain max-h-60" />
-              </div>
-            )}
-          </div>
-        </div>
-
-          {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
               variant={isFormValid ? "primary" : "primaryDisabled"}
               size="full"
               disabled={!isFormValid}
-              onClick={handleSubmit}
+              onClick={() => {
+                const equipmentName = equipmentTypes.find((t) => t.id === selectedEquipment)?.name || selectedEquipment
+                navigate("/profile/equipments-list", { state: { name: equipmentName, expiryDate } })
+              }}
             >
-              저장
+              등록하기
             </Button>
           </div>
         </div>
       </main>
-
-      <AppBottomNav
-        active="profile"
-        onNavigate={handleNavigation}
-        className="shrink-0"
-      />
     </div>
   )
 }

@@ -18,6 +18,7 @@ export function LoginPage() {
   const { login } = useAuth()
   const { honeypotProps, isBotDetected } = useHoneypot()
   const [autoLogin, setAutoLogin] = useState(() => autoLoginStorage.isEnabled())
+  const [isFirstLogin, setIsFirstLogin] = useState(false)
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
@@ -45,6 +46,12 @@ export function LoginPage() {
     setError("")
     setIsSubmitting(true)
 
+    if (isFirstLogin) {
+      sessionStorage.setItem('postLoginFirstLogin', '1')
+    } else {
+      sessionStorage.removeItem('postLoginFirstLogin')
+    }
+
     const result = await login({
       username: phone,
       password: password,
@@ -59,8 +66,9 @@ export function LoginPage() {
         autoLoginStorage.disable()
         autoLoginStorage.clearCredentials()
       }
-      navigate('/home')
+      navigate(isFirstLogin ? '/onboarding' : '/home')
     } else {
+      sessionStorage.removeItem('postLoginFirstLogin')
       setError(result.error || "로그인에 실패했습니다")
     }
   }
@@ -127,6 +135,15 @@ export function LoginPage() {
             }}
           />
           <span className="text-sm text-slate-500">자동 로그인</span>
+        </label>
+
+        {/* First Login Checkbox */}
+        <label className="flex items-center gap-2 mt-1 cursor-pointer">
+          <Checkbox
+            checked={isFirstLogin}
+            onCheckedChange={(checked) => setIsFirstLogin(checked === true)}
+          />
+          <span className="text-sm text-slate-500">첫 로그인</span>
         </label>
 
         {/* Honeypot */}

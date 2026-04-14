@@ -6,6 +6,7 @@ import { ProgressBar } from "@/components/ui/progress-bar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
+import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
 
 interface Bank {
   id: string
@@ -29,6 +30,7 @@ interface FamilyAccountPageProps {
 
 export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) {
   const navigate = useNavigate()
+  const { patch: patchDraft } = useOnboardingDraft()
   const [familyName, setFamilyName] = useState("")
   const [relationship, setRelationship] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
@@ -36,8 +38,20 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
   const [certificateFile, setCertificateFile] = useState<File | null>(null)
 
   const handleSubmit = () => {
-    // TODO: Save family account info
-    navigate(mode === "onboarding" ? "/onboarding/documents" : "/profile")
+    if (mode === "onboarding") {
+      const bankLabel = banks.find(b => b.id === selectedBank)?.name || selectedBank
+      patchDraft({
+        bankName: bankLabel,
+        bankAccount: accountNumber,
+        accountHolder: familyName,
+        accountHolderRelation: relationship,
+        wagePaymentTarget: 'FAMILY',
+      })
+      navigate("/onboarding/daily-wage")
+      return
+    }
+    // TODO: Save family account info (profile mode)
+    navigate("/profile")
   }
 
   const isFormValid = familyName && relationship && selectedBank && accountNumber.length >= 10
@@ -130,7 +144,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
           onLeftActionClick={() => navigate(-1)}
           className="shrink-0"
         />
-        <ProgressBar value={40} />
+        <ProgressBar value={70} />
         <main className="flex-1 overflow-y-auto">
           <div className="flex flex-col min-h-full">
             {content}

@@ -3,15 +3,12 @@ import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Input } from "@/components/ui/input"
-import { WorkerTypeCard } from "@/components/ui/worker-type-card"
-import { ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
 import { updateWorkerAddress } from "@/lib/profile"
-import { workerTypeStorage } from "@/lib/storage"
 // TODO: uncomment when 주소검색 API is ready
 // import { AddressSearchDialog } from "@/components/ui/address-search-dialog"
 // import SearchIcon from "@mui/icons-material/Search"
@@ -22,16 +19,6 @@ export function MyInfoPage() {
   const { showSuccess, showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showVerifyDialog, setShowVerifyDialog] = useState(false)
-  const [workerType, setWorkerType] = useState(workerTypeStorage.get())
-  const [workerTypeOpen, setWorkerTypeOpen] = useState(false)
-
-  const workerTypeOptions = [
-    { id: "general", icon: "👷", title: "일반", subtitle: "건설사 소속 직영 근로자" },
-    { id: "service", icon: "🏢", title: "용역", subtitle: "용역업체 소속 근로자" },
-    { id: "specialty", icon: "🔧", title: "주요공종", subtitle: "전문 공종 근로자" },
-    { id: "equipment", icon: "🚜", title: "장비기사", subtitle: "건설 기계 운전 기사" },
-  ]
-  const selectedWorkerType = workerTypeOptions.find(o => o.id === workerType)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -56,9 +43,8 @@ export function MyInfoPage() {
     }
   }, [profile])
 
-  const [originalWorkerType] = useState(() => workerTypeStorage.get())
-  const hasChanges = formData.address !== originalData.address || workerType !== originalWorkerType
-  const isFormValid = !!(formData.name && formData.ssnFirst && formData.ssnSecond && formData.phone && formData.address && workerType)
+  const hasChanges = formData.address !== originalData.address
+  const isFormValid = !!(formData.name && formData.ssnFirst && formData.ssnSecond && formData.phone && formData.address)
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -88,7 +74,6 @@ export function MyInfoPage() {
     try {
       const result = await updateWorkerAddress(formData.address)
       if (result.success) {
-        workerTypeStorage.set(workerType)
         await refetch()
         showSuccess("저장되었습니다.")
         navigate("/profile")
@@ -176,44 +161,6 @@ export function MyInfoPage() {
               placeholder="주소 입력"
               className="bg-white"
             />
-          </div>
-
-          {/* 회원 유형 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">회원 유형 <span className="font-normal text-slate-400">( 회원 유형에 따라 제출할 서류가 달라져요. )</span></label>
-            <button
-              type="button"
-              onClick={() => setWorkerTypeOpen(!workerTypeOpen)}
-              className="flex h-12 w-full items-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 shadow-sm"
-            >
-              {selectedWorkerType ? (
-                <>
-                  <span className="text-xl">{selectedWorkerType.icon}</span>
-                  <span className="font-bold text-slate-900">{selectedWorkerType.title}</span>
-                  <span className="text-sm text-slate-500">{selectedWorkerType.subtitle}</span>
-                </>
-              ) : (
-                <span className="text-base text-slate-400">회원 유형을 선택해주세요</span>
-              )}
-              <ChevronDown className={`ml-auto w-5 h-5 text-slate-400 shrink-0 transition-transform ${workerTypeOpen ? "rotate-180" : ""}`} />
-            </button>
-            {workerTypeOpen && (
-              <div className="rounded-xl border border-gray-200 shadow-sm divide-y divide-gray-100 overflow-hidden">
-                {workerTypeOptions.map((type) => (
-                  <div
-                    key={type.id}
-                    onClick={() => { setWorkerType(type.id); setWorkerTypeOpen(false) }}
-                    className={`flex items-center gap-2 px-4 py-3 cursor-pointer active:bg-gray-50 ${
-                      workerType === type.id ? "bg-primary/5" : "bg-white"
-                    }`}
-                  >
-                    <span className="text-xl">{type.icon}</span>
-                    <span className="font-bold text-slate-900">{type.title}</span>
-                    <span className="text-sm text-slate-500">{type.subtitle}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
         </div>

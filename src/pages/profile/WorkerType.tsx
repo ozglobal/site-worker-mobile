@@ -31,7 +31,7 @@ const workerTypes: WorkerTypeOption[] = [
     subtitle: "전문 공종 근로자",
   },
   {
-    id: "equipment",
+    id: "engineer",
     icon: "🚜",
     title: "장비기사",
     subtitle: "건설 기계 운전 기사",
@@ -43,13 +43,13 @@ const routeMap = {
     general: "/onboarding/payroll-account",
     specialty: "/onboarding/payroll-account",
     service: "/onboarding/outsourcing",
-    equipment: "/onboarding/engineer",
+    engineer: "/onboarding/engineer",
   },
   profile: {
     general: "/profile/my-account",
     specialty: "/profile/my-account",
     service: "/profile/outsourcing",
-    equipment: "/profile/engineer",
+    engineer: "/profile/engineer",
   },
 } as const
 

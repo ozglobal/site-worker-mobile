@@ -83,9 +83,13 @@ export function OnboardingDocumentsPage() {
   const [backImageUrl, setBackImageUrl] = useState<string | null>(null)
   const [frontFile, setFrontFile] = useState<File | null>(null)
   const [backFile, setBackFile] = useState<File | null>(null)
+  // Capture once at mount so replace-navigations inside the page don't clear it
+  const [hideProgress] = useState<boolean>(
+    () => (location.state as { hideProgress?: boolean } | null)?.hideProgress === true
+  )
 
   // Filter documents by caller-provided IDs, or show all
-  const locationState = location.state as { startCapture?: string; completed?: string; docIds?: string[] } | null
+  const locationState = location.state as { startCapture?: string; completed?: string; docIds?: string[]; hideProgress?: boolean } | null
   const visibleDocs = locationState?.docIds
     ? documents.filter((d) => locationState.docIds!.includes(d.id))
     : documents
@@ -190,21 +194,9 @@ export function OnboardingDocumentsPage() {
     setBackImageUrl(null)
   }
 
-  const idDocIds = ["id-card", "foreign-card"]
-
   const handleUpload = async (doc: DocumentItem) => {
-    if (idDocIds.includes(doc.id)) {
-      navigate("/onboarding/documents/capture-guide-idcard", {
-        state: { docId: doc.id, title: doc.title },
-      })
-    } else if (doc.id === "passport") {
-      navigate("/onboarding/documents/capture-guide-passport", {
-        state: { docId: doc.id, title: doc.title },
-      })
-    } else {
-      setCaptureDoc(doc)
-      setShowDocCapture(true)
-    }
+    setCaptureDoc(doc)
+    setShowDocCapture(true)
   }
 
   const handleDocCaptureConfirm = async (imageBase64: string) => {
@@ -245,8 +237,8 @@ export function OnboardingDocumentsPage() {
         </button>
       </div>
 
-      {/* Progress bar */}
-      <ProgressBar value={60} />
+      {/* Progress bar (hidden when accessed from profile) */}
+      {!hideProgress && <ProgressBar value={60} />}
 
       {/* Title */}
       <div className="px-4 pt-4 pb-2 shrink-0">

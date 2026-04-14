@@ -261,6 +261,65 @@ export const updateWorkerAddress = async (
   }
 }
 
+export interface WorkerOnboardingPayload {
+  bankName: string | null
+  bankAccount: string | null
+  accountHolder: string | null
+  accountHolderRelation: string | null
+  equipmentCompanyName: string | null
+  equipmentCompanyOwner: string | null
+  wagePaymentTarget: 'SELF' | 'FAMILY' | 'COMPANY' | null
+  dailyWage: number | null
+}
+
+export const completeWorkerOnboarding = async (): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me/complete'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: { 'accept': '*/*' },
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_ONBOARDING_COMPLETE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export const submitWorkerOnboarding = async (
+  payload: WorkerOnboardingPayload,
+): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_ONBOARDING_SUBMIT_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
 export const updateBankAccount = async (data: {
   bankName: string
   bankAccount: string
@@ -288,6 +347,33 @@ export const updateBankAccount = async (data: {
   } catch (error) {
     console.error('[PROFILE] updateBankAccount error:', error)
     reportError('PROFILE_BANK_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export const updatePaymentTarget = async (
+  wagePaymentTarget: 'SELF' | 'FAMILY' | 'COMPANY',
+): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me/payment'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ wagePaymentTarget }),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_PAYMENT_UPDATE_FAIL', 'Network error', { endpoint })
     return { success: false, error: 'Network error' }
   }
 }

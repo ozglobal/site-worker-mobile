@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
+import { OnboardingDraftProvider } from './contexts/OnboardingDraftContext';
 import { ToastContainer } from './components/ui/toast';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -31,18 +32,12 @@ import { OnboardingOutsourcingPage } from './pages/onboarding/Outsourcing';
 import { OnboardingEngineerPage } from './pages/onboarding/Engineer';
 import { OnboardingDocumentsPage } from './pages/onboarding/Documents';
 import { OnboardingCompanyAccountPage } from './pages/onboarding/CompanyAccount';
-import { OnboardingOutsourcingDocumentsPage } from './pages/onboarding/OutsourcingDocuments';
-import { OnboardingEquipmentPage } from './pages/onboarding/Equipment';
-import { OnboardingEquipmentListPage } from './pages/onboarding/EquipmentList';
-import { OnboardingDocumentCaptureGuideIdcardPage } from './pages/onboarding/DocumentCaptureGuideIdcard';
-import { OnboardingDocumentCaptureGuidePassportPage } from './pages/onboarding/DocumentCaptureGuidePassport';
-import { OnboardingIdCardPreviewFrPage } from './pages/onboarding/IdCardPreviewFr';
-import { OnboardingIdCardPreviewKrPage } from './pages/onboarding/IdCardPreviewKr';
-import { OnboardingPassportPreviewPage } from './pages/onboarding/PassportPreview';
+import { OnboardingDailyWagePage } from './pages/onboarding/DailyWage';
 import { MyAccountPage } from './pages/profile/MyAccount';
 import { OutsourcingPage } from './pages/profile/Outsourcing';
 import { EngineerPage } from './pages/profile/Engineer';
 import { EquipmentPage } from './pages/profile/Equipment';
+import { EquipmentListPage } from './pages/profile/EquipmentList';
 import { FamilyAccountPage } from './pages/profile/FamilyAccount';
 import { ChangePasswordPage } from './pages/profile/ChangePassword';
 import { PayrollAccountPage } from './pages/profile/PayrollAccount';
@@ -62,7 +57,13 @@ const PublicRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? <Navigate to="/home" replace /> : children;
+  if (isAuthenticated) {
+    // Do NOT clear the flag here — StrictMode double-renders would lose it
+    // between the first and second render. OnboardingPage clears it on mount.
+    const firstLogin = sessionStorage.getItem('postLoginFirstLogin') === '1';
+    return <Navigate to={firstLogin ? '/onboarding' : '/home'} replace />;
+  }
+  return children;
 };
 
 // Catch-all redirect component
@@ -82,20 +83,14 @@ const AppRoutes: React.FC = () => {
       <Route path="/onboarding/family-account" element={<FamilyAccountPage mode="onboarding" />} />
       <Route path="/onboarding/documents" element={<OnboardingDocumentsPage />} />
       <Route path="/onboarding/company-account" element={<OnboardingCompanyAccountPage />} />
-      <Route path="/onboarding/outsourcing-documents" element={<OnboardingOutsourcingDocumentsPage />} />
-      <Route path="/onboarding/equipments" element={<OnboardingEquipmentPage />} />
-      <Route path="/onboarding/equipments-list" element={<OnboardingEquipmentListPage />} />
       <Route path="/onboarding/payroll-account" element={<PayrollAccountPage mode="onboarding" />} />
-      <Route path="/onboarding/documents/capture-guide-idcard" element={<OnboardingDocumentCaptureGuideIdcardPage />} />
-      <Route path="/onboarding/documents/capture-guide-passport" element={<OnboardingDocumentCaptureGuidePassportPage />} />
-      <Route path="/onboarding/documents/id-card-preview" element={<OnboardingIdCardPreviewFrPage />} />
-      <Route path="/onboarding/documents/id-card-preview-kr" element={<OnboardingIdCardPreviewKrPage />} />
-      <Route path="/onboarding/documents/passport-preview" element={<OnboardingPassportPreviewPage />} />
+      <Route path="/onboarding/daily-wage" element={<OnboardingDailyWagePage />} />
       <Route path="/profile/my-account" element={<MyAccountPage />} />
       <Route path="/profile/family-account" element={<FamilyAccountPage />} />
       <Route path="/profile/outsourcing" element={<OutsourcingPage />} />
       <Route path="/profile/engineer" element={<EngineerPage />} />
       <Route path="/profile/equipments" element={<EquipmentPage />} />
+      <Route path="/profile/equipments-list" element={<EquipmentListPage />} />
       <Route path="/profile/payroll-account" element={<PayrollAccountPage />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/login/sms-verification" element={<PublicRoute><SmsVerificationPage /></PublicRoute>} />
@@ -134,9 +129,11 @@ const App: React.FC = () => {
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
           <AuthProvider>
-            <Router>
-              <AppRoutes />
-            </Router>
+            <OnboardingDraftProvider>
+              <Router>
+                <AppRoutes />
+              </Router>
+            </OnboardingDraftProvider>
           </AuthProvider>
           <ToastContainer />
         </ToastProvider>

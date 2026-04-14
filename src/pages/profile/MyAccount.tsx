@@ -12,6 +12,7 @@ import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { uploadDocument, updateBankAccount } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
+import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
 import { getWorkerName } from "@/lib/auth"
 
 interface Bank {
@@ -38,6 +39,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
   const navigate = useNavigate()
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
   const { showSuccess, showError } = useToast()
+  const { patch: patchDraft } = useOnboardingDraft()
   const accountNumberRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [accountHolder, setAccountHolder] = useState(getWorkerName() || "")
@@ -56,7 +58,15 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
 
   const handleSubmit = async () => {
     if (mode === "onboarding") {
-      navigate("/onboarding/documents")
+      const bankLabel = banks.find(b => b.id === selectedBank)?.name || selectedBank
+      patchDraft({
+        bankName: bankLabel,
+        bankAccount: accountNumber,
+        accountHolder,
+        accountHolderRelation: null,
+        wagePaymentTarget: 'SELF',
+      })
+      navigate("/onboarding/daily-wage")
       return
     }
     if (isSubmitting) return
@@ -175,7 +185,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
           onLeftActionClick={() => navigate(-1)}
           className="shrink-0"
         />
-        <ProgressBar value={40} />
+        <ProgressBar value={70} />
         <main className="flex-1 overflow-y-auto">
           {content}
         </main>

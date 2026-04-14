@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import { ProgressBar } from "@/components/ui/progress-bar"
+import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
 
 interface PaymentMethod {
   id: string
@@ -29,6 +30,7 @@ const paymentMethods: PaymentMethod[] = [
 
 export function OnboardingCompanyAccountPage() {
   const navigate = useNavigate()
+  const { patch: patchDraft } = useOnboardingDraft()
   const [selected, setSelected] = useState<string | null>(null)
 
   const handleBack = () => {
@@ -38,7 +40,14 @@ export function OnboardingCompanyAccountPage() {
   const handleSelect = (id: string) => {
     setSelected(id)
     if (id === "company") {
-      navigate("/onboarding/documents")
+      patchDraft({
+        bankName: null,
+        bankAccount: null,
+        accountHolder: null,
+        accountHolderRelation: null,
+        wagePaymentTarget: 'COMPANY',
+      })
+      navigate("/onboarding/daily-wage")
     } else if (id === "personal") {
       navigate("/onboarding/my-account")
     } else if (id === "family") {
@@ -56,7 +65,7 @@ export function OnboardingCompanyAccountPage() {
       </div>
 
       {/* Progress bar */}
-      <ProgressBar value={20} />
+      <ProgressBar value={55} />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">

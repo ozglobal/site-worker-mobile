@@ -42,7 +42,7 @@ export function OnboardingOutsourcingPage() {
       </div>
 
       {/* Progress bar */}
-      <ProgressBar value={40} />
+      <ProgressBar value={35} />
 
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">

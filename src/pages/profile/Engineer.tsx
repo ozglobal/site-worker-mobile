@@ -5,6 +5,7 @@ import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { OptionCard } from "@/components/ui/option-card"
+import { StatusListItem } from "@/components/ui/status-list-item"
 import { engineerStorage } from "@/lib/storage"
 
 type EngineerType = "representative" | "employee"
@@ -12,9 +13,14 @@ type EngineerType = "representative" | "employee"
 export function EngineerPage() {
   const navigate = useNavigate()
   const saved = engineerStorage.get()
-  const [engineerType, setEngineerType] = useState<EngineerType>(saved?.engineerType || "representative")
-  const [representativeName, setRepresentativeName] = useState(saved?.representativeName || "")
+  const initialEngineerType: EngineerType = saved?.engineerType || "representative"
+  const initialName = saved?.representativeName || ""
+  const [engineerType, setEngineerType] = useState<EngineerType>(initialEngineerType)
+  const [representativeName, setRepresentativeName] = useState(initialName)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const hasChanges =
+    engineerType !== initialEngineerType || representativeName !== initialName
 
   // Focus the input whenever engineer type changes
   useEffect(() => {
@@ -23,21 +29,10 @@ export function EngineerPage() {
 
   const handleSubmit = () => {
     engineerStorage.update({ engineerType, representativeName })
-    navigate("/profile/equipments")
+    navigate(-1)
   }
 
   const isFormValid = representativeName.trim().length > 0
-
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
-  }, [])
 
   const handleNavigation = (item: NavItem) => {
     if (item === "home") {
@@ -94,19 +89,29 @@ export function EngineerPage() {
               placeholder={engineerType === "representative" ? "대표자명 입력" : "소속 법인명 입력"}
             />
           </div>
-        </div>
 
           {/* Save Button */}
-          <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
+          <div className="pt-2">
             <Button
-              variant={isFormValid ? "primary" : "primaryDisabled"}
+              variant={isFormValid && hasChanges ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!isFormValid}
+              disabled={!isFormValid || !hasChanges}
               onClick={handleSubmit}
             >
-              다음
+              저장
             </Button>
           </div>
+
+          {/* 장비등록 link */}
+          <div className="bg-white rounded-xl border border-gray-300 shadow-sm">
+            <StatusListItem
+              title="장비등록"
+              subtitle="건설 기계 장비"
+              onClick={() => navigate("/profile/equipments")}
+              className="border-b-0"
+            />
+          </div>
+        </div>
         </div>
       </main>
 
