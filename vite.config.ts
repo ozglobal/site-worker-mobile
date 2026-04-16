@@ -76,4 +76,20 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
   },
+
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "react-i18next",
+      "i18next",
+      "@tabler/icons-react",
+      "lucide-react",
+      "@mui/material",
+      "@mui/icons-material",
+      "date-fns",
+    ],
+  },
 })

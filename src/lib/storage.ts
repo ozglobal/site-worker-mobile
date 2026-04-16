@@ -213,6 +213,34 @@ export const engineerStorage = {
 }
 
 // ============================================
+// Worker Meta Storage (post-signup/onboarding facts that drive
+// document requirements on /onboarding/documents)
+//
+// Client-side cache only. When the backend adds these fields to
+// GET /system/worker/me, prefer the backend value and treat this
+// as a fallback/cache.
+// ============================================
+
+export interface WorkerMeta {
+  nationalityType?: '내국인' | '외국인'
+  idType?: 'resident' | 'alien' | 'passport'
+  wagePaymentTarget?: 'SELF' | 'PROXY' | 'COMPANY'
+}
+
+export const workerMetaStorage = {
+  get: (): WorkerMeta | null => getStorageItem<WorkerMeta>('worker_meta'),
+
+  set: (data: WorkerMeta): void => setStorageItem('worker_meta', data),
+
+  patch: (partial: Partial<WorkerMeta>): void => {
+    const existing = workerMetaStorage.get() || {}
+    workerMetaStorage.set({ ...existing, ...partial })
+  },
+
+  clear: (): void => removeStorageItem('worker_meta'),
+}
+
+// ============================================
 // Worker Type Storage (selected worker type)
 // ============================================
 
@@ -317,6 +345,7 @@ export const clearAllStorage = async (): Promise<void> => {
   authStorage.clear()
   workerStorage.clear()
   workerTypeStorage.clear()
+  workerMetaStorage.clear()
   checkinSiteStorage.clear()
   await fileStorage.clear()
 }

@@ -39,10 +39,17 @@ export function WorkerTypeCard({
       </div>
 
       {onActionClick && (
-        <span className="flex items-center gap-1 text-sm text-primary font-medium shrink-0">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onActionClick()
+          }}
+          className="flex items-center gap-1 text-sm text-primary font-medium shrink-0"
+        >
           {actionLabel}
           <span>{">"}</span>
-        </span>
+        </button>
       )}
     </div>
   )

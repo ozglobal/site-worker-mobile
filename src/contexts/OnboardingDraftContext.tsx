@@ -1,6 +1,6 @@
 import { createContext, useContext, useRef, useCallback, type ReactNode } from 'react'
 
-export type WagePaymentTarget = 'SELF' | 'FAMILY' | 'COMPANY'
+export type WagePaymentTarget = 'SELF' | 'PROXY' | 'COMPANY'
 
 export interface OnboardingDraft {
   bankName: string | null

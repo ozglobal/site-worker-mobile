@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { signupStorage } from "@/lib/storage"
+import { signupStorage, workerMetaStorage } from "@/lib/storage"
 
 export function ForeignInfoPage() {
   const navigate = useNavigate()
@@ -48,6 +48,14 @@ export function ForeignInfoPage() {
   }
 
   const handleSave = () => {
+    signupStorage.setData({
+      nameKo: formData.name,
+      nationalityType: 'foreigner_registered',
+      idType: 'alien_registration',
+      idNumber: `${formData.ssnFirst}-${formData.ssnSecond}`,
+      address: formData.address,
+    })
+    workerMetaStorage.patch({ nationalityType: '외국인', idType: 'alien' })
     navigate("/signup/set-password")
   }
 

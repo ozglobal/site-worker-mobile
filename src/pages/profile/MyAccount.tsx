@@ -10,10 +10,12 @@ import { Select } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
-import { uploadDocument, updateBankAccount } from "@/lib/profile"
+import { uploadDocument, updatePayment } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
-import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
+import { workerMetaStorage } from "@/lib/storage"
 import { getWorkerName } from "@/lib/auth"
+import { useQueryClient } from "@tanstack/react-query"
+import { useDictItems } from "@/lib/queries/useDictItems"
 
 interface Bank {
   id: string
@@ -37,9 +39,10 @@ interface MyAccountPageProps {
 
 export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
+  const { data: bankOptions } = useDictItems("bank")
   const { showSuccess, showError } = useToast()
-  const { patch: patchDraft } = useOnboardingDraft()
   const accountNumberRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [accountHolder, setAccountHolder] = useState(getWorkerName() || "")
@@ -50,41 +53,38 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
 
   useEffect(() => {
     if (mode === "profile" && profile) {
-      setAccountHolder(profile.accountHolder || getWorkerName() || "")
+      // 예금주 is always the worker's Korean name (nameKo → workerName).
+      setAccountHolder(profile.workerName || getWorkerName() || "")
       setSelectedBank(profile.bankName || "")
-      setAccountNumber(profile.bankAccountMasked || "")
+      setAccountNumber(profile.bankAccount || "")
     }
   }, [profile, mode])
 
   const handleSubmit = async () => {
-    if (mode === "onboarding") {
-      const bankLabel = banks.find(b => b.id === selectedBank)?.name || selectedBank
-      patchDraft({
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      const bankLabel =
+        (bankOptions && bankOptions.find((b) => b.code === selectedBank)?.name) ||
+        banks.find((b) => b.id === selectedBank)?.name ||
+        selectedBank
+      const result = await updatePayment({
+        wagePaymentTarget: "SELF",
         bankName: bankLabel,
         bankAccount: accountNumber,
         accountHolder,
         accountHolderRelation: null,
-        wagePaymentTarget: 'SELF',
-      })
-      navigate("/onboarding/daily-wage")
-      return
-    }
-    if (isSubmitting) return
-    setIsSubmitting(true)
-    try {
-      const bankLabel = banks.find(b => b.id === selectedBank)?.name || selectedBank
-      const result = await updateBankAccount({
-        bankName: bankLabel,
-        bankAccount: accountNumber,
-        accountHolder,
-        wagePaymentTarget: "SELF",
       })
       if (!result.success) {
         showError(result.error)
         return
       }
+      workerMetaStorage.patch({ wagePaymentTarget: 'SELF' })
+      // Invalidate cached /system/worker/me so the card + form fields
+      // refetch the new payment info on the next render.
+      queryClient.invalidateQueries({ queryKey: ['workerProfile'] })
       showSuccess("저장되었습니다.")
-      navigate("/profile")
+      navigate("/profile/payroll-account")
     } finally {
       setIsSubmitting(false)
     }
@@ -148,7 +148,11 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">은행명</label>
           <Select
-            options={banks.map((b) => ({ value: b.id, label: b.name }))}
+            options={
+              bankOptions && bankOptions.length > 0
+                ? bankOptions.map((b) => ({ value: b.code, label: b.name }))
+                : banks.map((b) => ({ value: b.id, label: b.name }))
+            }
             value={selectedBank}
             onChange={(v) => { setSelectedBank(v); setTimeout(() => accountNumberRef.current?.focus(), 300) }}
             placeholder="은행 선택"

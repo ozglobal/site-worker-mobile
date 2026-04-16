@@ -4,46 +4,24 @@ import { AppTopBar } from "@/components/layout/AppTopBar"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
-
-const equipmentTypes = [
-  { id: "bulldozer", name: "1. 불도저" },
-  { id: "excavator", name: "2. 굴착기" },
-  { id: "loader", name: "3. 로더" },
-  { id: "forklift", name: "4. 지게차" },
-  { id: "scraper", name: "5. 스크레이퍼" },
-  { id: "dump-truck", name: "6. 덤프트럭" },
-  { id: "crane", name: "7. 기중기" },
-  { id: "motor-grader", name: "8. 모터그레이더" },
-  { id: "roller", name: "9. 롤러" },
-  { id: "subgrade-stabilizer", name: "10. 노상안정기" },
-  { id: "concrete-batching-plant", name: "11. 콘크리트 뱃칭플랜트" },
-  { id: "concrete-finisher", name: "12. 콘크리트 피니셔" },
-  { id: "concrete-spreader", name: "13. 콘크리트 살포기" },
-  { id: "concrete-mixer-truck", name: "14. 콘크리트 믹서트럭" },
-  { id: "concrete-pump", name: "15. 콘크리트 펌프" },
-  { id: "asphalt-mixing-plant", name: "16. 아스팔트 믹싱플랜트" },
-  { id: "asphalt-finisher", name: "17. 아스팔트 피니셔" },
-  { id: "asphalt-spreader", name: "18. 아스팔트 살포기" },
-  { id: "aggregate-spreader", name: "19. 골재 살포기" },
-  { id: "crusher", name: "20. 쇄석기" },
-  { id: "air-compressor", name: "21. 공기압축기" },
-  { id: "boring-machine", name: "22. 천공기" },
-  { id: "pile-driver", name: "23. 항타 및 항발기" },
-  { id: "gravel-collector", name: "24. 자갈채취기" },
-  { id: "survey-line", name: "25. 준설선" },
-  { id: "special-construction", name: "26. 특수건설기계" },
-  { id: "tower-crane", name: "27. 타워크레인" },
-]
+import { useDictItems } from "@/lib/queries/useDictItems"
+import { uploadEquipment } from "@/lib/profile"
+import { useToast } from "@/contexts/ToastContext"
 
 export function EquipmentPage() {
   const navigate = useNavigate()
+  const { showSuccess, showError } = useToast()
+  const { data: equipmentTypes = [] } = useDictItems("EQUIPMENT_TYPE")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const validFromInputRef = useRef<HTMLInputElement>(null)
   const expiryInputRef = useRef<HTMLInputElement>(null)
   const [selectedEquipment, setSelectedEquipment] = useState("")
   const [certFile, setCertFile] = useState<File | null>(null)
+  const [validFrom, setValidFrom] = useState("")
   const [expiryDate, setExpiryDate] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const isFormValid = selectedEquipment && certFile && expiryDate
+  const isFormValid = selectedEquipment && certFile && validFrom && expiryDate
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -71,7 +49,7 @@ export function EquipmentPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">장비 종류</label>
               <Select
-                options={equipmentTypes.map((t) => ({ value: t.id, label: t.name }))}
+                options={equipmentTypes.map((t) => ({ value: t.code, label: t.name }))}
                 value={selectedEquipment}
                 onChange={(v) => { setSelectedEquipment(v); setTimeout(() => fileInputRef.current?.click(), 300) }}
                 placeholder="장비 선택"
@@ -100,18 +78,39 @@ export function EquipmentPage() {
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null
                     setCertFile(file)
-                    if (file) setTimeout(() => { expiryInputRef.current?.focus() }, 300)
+                    if (file) setTimeout(() => { validFromInputRef.current?.focus() }, 300)
                   }}
                   className="hidden"
                 />
               </label>
+              <label className="block text-sm font-medium text-slate-700 mt-4 mb-2">자격증 발급일</label>
+              <input
+                ref={validFromInputRef}
+                type="text"
+                value={validFrom}
+                onChange={(e) => { setValidFrom(e.target.value); if (e.target.value) setTimeout(() => expiryInputRef.current?.focus(), 100) }}
+                onFocus={(e) => { e.target.type = "date" }}
+                onClick={(e) => {
+                  const el = e.currentTarget
+                  el.type = "date"
+                  try { el.showPicker?.() } catch { /* ignore */ }
+                }}
+                onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
+                placeholder="발급일 입력"
+                className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
+              />
               <label className="block text-sm font-medium text-slate-700 mt-4 mb-2">자격증 만료일</label>
               <input
                 ref={expiryInputRef}
                 type="text"
                 value={expiryDate}
                 onChange={(e) => { setExpiryDate(e.target.value); if (e.target.value) setTimeout(() => e.target.blur(), 100) }}
-                onFocus={(e) => { const el = e.target; el.type = "date"; requestAnimationFrame(() => el.showPicker?.()) }}
+                onFocus={(e) => { e.target.type = "date" }}
+                onClick={(e) => {
+                  const el = e.currentTarget
+                  el.type = "date"
+                  try { el.showPicker?.() } catch { /* ignore */ }
+                }}
                 onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
                 placeholder="만료일 입력"
                 className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
@@ -121,15 +120,29 @@ export function EquipmentPage() {
 
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={isFormValid ? "primary" : "primaryDisabled"}
+              variant={isFormValid && !isSubmitting ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!isFormValid}
-              onClick={() => {
-                const equipmentName = equipmentTypes.find((t) => t.id === selectedEquipment)?.name || selectedEquipment
+              disabled={!isFormValid || isSubmitting}
+              onClick={async () => {
+                if (!certFile) return
+                setIsSubmitting(true)
+                const result = await uploadEquipment({
+                  equipmentType: selectedEquipment,
+                  licenseFile: certFile,
+                  validFrom,
+                  validUntil: expiryDate,
+                })
+                setIsSubmitting(false)
+                if (!result.success) {
+                  showError(result.error)
+                  return
+                }
+                const equipmentName = equipmentTypes.find((t) => t.code === selectedEquipment)?.name || selectedEquipment
+                showSuccess(`[${equipmentName}] 장비가 등록되었습니다.`)
                 navigate("/profile/equipments-list", { state: { name: equipmentName, expiryDate } })
               }}
             >
-              등록하기
+              {isSubmitting ? "등록 중..." : "등록하기"}
             </Button>
           </div>
         </div>

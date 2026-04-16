@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { ProgressBar } from "@/components/ui/progress-bar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { submitWorkerOnboarding, completeWorkerOnboarding } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
+import { workerMetaStorage } from "@/lib/storage"
 
 export function OnboardingDailyWagePage() {
   const navigate = useNavigate()
@@ -15,6 +15,7 @@ export function OnboardingDailyWagePage() {
   const { get: getDraft, reset: resetDraft } = useOnboardingDraft()
   const [wage, setWage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showDone, setShowDone] = useState(false)
 
   const [viewportHeight, setViewportHeight] = useState<number | null>(null)
   useEffect(() => {
@@ -63,8 +64,11 @@ export function OnboardingDailyWagePage() {
       showError(completeResult.error)
       return
     }
+    if (draft.wagePaymentTarget) {
+      workerMetaStorage.patch({ wagePaymentTarget: draft.wagePaymentTarget })
+    }
     resetDraft()
-    navigate("/home")
+    setShowDone(true)
   }
 
   return (
@@ -79,7 +83,6 @@ export function OnboardingDailyWagePage() {
         onLeftActionClick={() => navigate(-1)}
         className="shrink-0"
       />
-      <ProgressBar value={90} />
       <main className="flex-1 overflow-y-auto">
         <div className="px-4 pt-4 pb-2">
           <h1 className="text-lg font-bold text-slate-900">일급(노임)를 입력해주세요</h1>
@@ -114,9 +117,31 @@ export function OnboardingDailyWagePage() {
           disabled={!isFormValid || isSubmitting}
           onClick={handleSubmit}
         >
-          {isSubmitting ? "저장 중..." : "다음"}
+          {isSubmitting ? "저장 중..." : "저장"}
         </Button>
       </div>
+
+      {/* 온보딩 완료 + 추가 등록 안내 다이얼로그 */}
+      {showDone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative z-10 w-[calc(100%-2rem)] max-w-sm bg-white rounded-2xl shadow-xl p-6">
+            <p className="text-sm text-slate-700 leading-relaxed mb-3 whitespace-pre-line">
+              {"회원 유형과 일급(노임)이 등록되었습니다.\n이제부터 현장에서 출퇴근 체크가 가능합니다.\n급여 지급을 위한 계좌정보 등록과 서류제출은 하단 [내 정보] 메뉴에서 할 수 있습니다."}
+            </p>
+            <Button
+              variant="primary"
+              size="full"
+              onClick={() => {
+                setShowDone(false)
+                navigate("/home")
+              }}
+            >
+              확인
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

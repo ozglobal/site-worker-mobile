@@ -17,6 +17,7 @@ interface InMemoryWorkerInfo {
   username?: string
   onboardingCompleted?: boolean
   requiredDocsCompleted?: boolean
+  workerCategory?: string | null
 }
 let inMemoryWorkerInfo: InMemoryWorkerInfo | null = null
 
@@ -328,6 +329,9 @@ export const setWorkerInfo = (workerInfo: Record<string, unknown>) => {
   if (typeof workerInfo.requiredDocsCompleted === 'boolean') {
     info.requiredDocsCompleted = workerInfo.requiredDocsCompleted
   }
+  if ('workerCategory' in workerInfo) {
+    info.workerCategory = (workerInfo.workerCategory as string | null) ?? null
+  }
   inMemoryWorkerInfo = info
 
   // Cache to localStorage for restore on reload (skip if name is empty to avoid overwriting good cache)
@@ -349,6 +353,7 @@ export const getWorkerInfo = () => {
     relatedSiteId: mem?.relatedSiteId || cached?.relatedSiteId || null,
     onboardingCompleted: mem?.onboardingCompleted ?? null,
     requiredDocsCompleted: mem?.requiredDocsCompleted ?? null,
+    workerCategory: mem?.workerCategory ?? null,
   }
 }
 

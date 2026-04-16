@@ -337,7 +337,7 @@ export const fetchMonthlyAttendance = async (
   const request = (async (): Promise<MonthlyAttendanceResponse> => {
     try {
       const mm = String(month).padStart(2, '0')
-      const endpoint = `/system/attendance/my/${year}/${mm}`
+      const endpoint = `/system/worker/me/attendance/monthly?date=${year}-${mm}-01`
 
       const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
         method: 'GET',

@@ -96,6 +96,14 @@ export interface ApiLogHandle {
   end(result: { status: number; data?: unknown } | Error): void
 }
 
+// Endpoints to silence in the API log (high-volume / low-signal polls).
+const SILENCED_ENDPOINT_PATTERNS: RegExp[] = [
+  /\/notices\/inbox(\b|\?|$)/,
+]
+
+const shouldSilence = (endpoint: string): boolean =>
+  SILENCED_ENDPOINT_PATTERNS.some((re) => re.test(endpoint))
+
 /**
  * Pairs a request log with its response so concurrent calls don't interleave.
  * Output is emitted as a single collapsed console group when `end` is called.
@@ -104,6 +112,9 @@ export const devLogApiPair = (
   endpoint: string,
   params?: unknown
 ): ApiLogHandle => {
+  if (shouldSilence(endpoint)) {
+    return { end() { /* silenced */ } }
+  }
   const startedAt = performance.now()
   return {
     end(result) {

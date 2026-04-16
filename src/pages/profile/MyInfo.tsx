@@ -9,6 +9,7 @@ import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
 import { updateWorkerAddress } from "@/lib/profile"
+import { getWorkerName } from "@/lib/auth"
 // TODO: uncomment when 주소검색 API is ready
 // import { AddressSearchDialog } from "@/components/ui/address-search-dialog"
 // import SearchIcon from "@mui/icons-material/Search"
@@ -18,7 +19,6 @@ export function MyInfoPage() {
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
   const { showSuccess, showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showVerifyDialog, setShowVerifyDialog] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -32,7 +32,7 @@ export function MyInfoPage() {
   useEffect(() => {
     if (profile) {
       const loaded = {
-        name: profile.workerName,
+        name: profile.workerName || getWorkerName() || "",
         ssnFirst: profile.ssnFirst || "590905",
         ssnSecond: profile.ssnSecond || "1009824",
         phone: profile.phone,
@@ -112,42 +112,42 @@ export function MyInfoPage() {
         <div className="flex flex-col min-h-full">
         <div className="px-4 py-6 space-y-6">
           {/* 이름 */}
-          <div className="space-y-2" onClick={() => setShowVerifyDialog(true)}>
+          <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">이름</label>
             <Input
               value={formData.name}
               readOnly
-              className="bg-white pointer-events-none"
+              className="bg-gray-100 text-slate-500 pointer-events-none"
             />
           </div>
 
           {/* 주민등록번호 */}
-          <div className="space-y-2" onClick={() => setShowVerifyDialog(true)}>
+          <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">주민등록번호</label>
             <div className="flex items-center gap-2">
               <Input
                 value={formData.ssnFirst}
                 readOnly
-                className="flex-1 bg-white pointer-events-none"
+                className="flex-1 bg-gray-100 text-slate-500 pointer-events-none"
               />
               <span className="text-slate-400">-</span>
               <Input
                 value={formData.ssnSecond}
                 readOnly
-                className="flex-1 bg-white pointer-events-none"
+                className="flex-1 bg-gray-100 text-slate-500 pointer-events-none"
               />
             </div>
           </div>
 
           {/* 연락처 */}
-          <div className="space-y-2" onClick={() => setShowVerifyDialog(true)}>
+          <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">연락처</label>
             <Input
               id="phone"
               type="tel"
               value={formData.phone}
               readOnly
-              className="bg-white pointer-events-none"
+              className="bg-gray-100 text-slate-500 pointer-events-none"
             />
           </div>
 
@@ -195,39 +195,6 @@ export function MyInfoPage() {
       )}
       */}
 
-      {/* 본인인증 Dialog */}
-      {showVerifyDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowVerifyDialog(false)} />
-          <div className="relative z-10 w-[calc(100%-2rem)] max-w-sm bg-white rounded-2xl shadow-xl p-6">
-            <h2 className="text-lg font-bold text-slate-900 text-center mb-3">정보 변경이 필요하신가요?</h2>
-            <p className="text-sm text-slate-500 text-center leading-relaxed mb-6">
-              인증 완료된 정보는 본인 인증을 다시 진행한 이후 변경할 수 있습니다.
-            </p>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                size="full"
-                onClick={() => setShowVerifyDialog(false)}
-                className="flex-1 bg-gray-100 border-0 text-slate-900 hover:bg-gray-200"
-              >
-                닫기
-              </Button>
-              <Button
-                variant="primary"
-                size="full"
-                onClick={() => {
-                  setShowVerifyDialog(false)
-                  navigate("/signup/nice-api")
-                }}
-                className="flex-1"
-              >
-                본인인증
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -7,32 +7,55 @@ import { Input } from "@/components/ui/input"
 import { OptionCard } from "@/components/ui/option-card"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { engineerStorage } from "@/lib/storage"
+import { updateEngineerCategory } from "@/lib/profile"
+import { useToast } from "@/contexts/ToastContext"
+import { useQueryClient } from "@tanstack/react-query"
 
 type EngineerType = "representative" | "employee"
 
 export function EngineerPage() {
   const navigate = useNavigate()
+  const { showSuccess, showError } = useToast()
+  const queryClient = useQueryClient()
   const saved = engineerStorage.get()
   const initialEngineerType: EngineerType = saved?.engineerType || "representative"
   const initialName = saved?.representativeName || ""
   const [engineerType, setEngineerType] = useState<EngineerType>(initialEngineerType)
   const [representativeName, setRepresentativeName] = useState(initialName)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const hasChanges =
     engineerType !== initialEngineerType || representativeName !== initialName
+  const isFormValid = representativeName.trim().length > 0
 
   // Focus the input whenever engineer type changes
   useEffect(() => {
     inputRef.current?.focus()
   }, [engineerType])
 
-  const handleSubmit = () => {
-    engineerStorage.update({ engineerType, representativeName })
-    navigate(-1)
+  const handleSubmit = async () => {
+    if (isSubmitting) return
+    const isRepresentative = engineerType === "representative"
+    setIsSubmitting(true)
+    try {
+      const result = await updateEngineerCategory({
+        equipmentCompanyName: isRepresentative ? "" : representativeName,
+        equipmentCompanyOwner: isRepresentative ? representativeName : "",
+        isRepresentative,
+      })
+      if (!result.success) {
+        showError(result.error)
+        return
+      }
+      engineerStorage.update({ engineerType, representativeName })
+      queryClient.invalidateQueries({ queryKey: ['workerProfile'] })
+      showSuccess("[장비기사] 내용이 변경되었습니다.")
+      navigate(-1)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-
-  const isFormValid = representativeName.trim().length > 0
 
   const handleNavigation = (item: NavItem) => {
     if (item === "home") {
@@ -90,18 +113,6 @@ export function EngineerPage() {
             />
           </div>
 
-          {/* Save Button */}
-          <div className="pt-2">
-            <Button
-              variant={isFormValid && hasChanges ? "primary" : "primaryDisabled"}
-              size="full"
-              disabled={!isFormValid || !hasChanges}
-              onClick={handleSubmit}
-            >
-              저장
-            </Button>
-          </div>
-
           {/* 장비등록 link */}
           <div className="bg-white rounded-xl border border-gray-300 shadow-sm">
             <StatusListItem
@@ -112,6 +123,18 @@ export function EngineerPage() {
             />
           </div>
         </div>
+
+          {/* Save Button */}
+          <div className="px-4 py-6 mt-auto">
+            <Button
+              variant={isFormValid && hasChanges && !isSubmitting ? "primary" : "primaryDisabled"}
+              size="full"
+              disabled={!isFormValid || !hasChanges || isSubmitting}
+              onClick={handleSubmit}
+            >
+              {isSubmitting ? "저장 중..." : "저장"}
+            </Button>
+          </div>
         </div>
       </main>
 

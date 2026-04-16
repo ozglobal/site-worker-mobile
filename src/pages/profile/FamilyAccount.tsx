@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
+import { workerMetaStorage } from "@/lib/storage"
+import { updatePayment } from "@/lib/profile"
+import { useToast } from "@/contexts/ToastContext"
+import { useQueryClient } from "@tanstack/react-query"
+import { useDictItems } from "@/lib/queries/useDictItems"
 
 interface Bank {
   id: string
@@ -31,27 +36,64 @@ interface FamilyAccountPageProps {
 export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) {
   const navigate = useNavigate()
   const { patch: patchDraft } = useOnboardingDraft()
+  const { showSuccess, showError } = useToast()
+  const queryClient = useQueryClient()
+  const { data: relationOptions = [] } = useDictItems("account_holder_relation")
+  const { data: bankOptions } = useDictItems("bank")
   const [familyName, setFamilyName] = useState("")
   const [relationship, setRelationship] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
   const [certificateFile, setCertificateFile] = useState<File | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = () => {
+  const resolveBankLabel = (code: string) => {
+    if (bankOptions && bankOptions.length > 0) {
+      return bankOptions.find((b) => b.code === code)?.name || code
+    }
+    return banks.find((b) => b.id === code)?.name || code
+  }
+
+  const handleSubmit = async () => {
+    const bankLabel = resolveBankLabel(selectedBank)
+    // Dict already supplies backend codes — no local translation needed.
+    const relationCode = relationship
+
     if (mode === "onboarding") {
-      const bankLabel = banks.find(b => b.id === selectedBank)?.name || selectedBank
       patchDraft({
         bankName: bankLabel,
         bankAccount: accountNumber,
         accountHolder: familyName,
-        accountHolderRelation: relationship,
-        wagePaymentTarget: 'FAMILY',
+        accountHolderRelation: relationCode,
+        wagePaymentTarget: 'PROXY',
       })
       navigate("/onboarding/daily-wage")
       return
     }
-    // TODO: Save family account info (profile mode)
-    navigate("/profile")
+
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      const result = await updatePayment({
+        wagePaymentTarget: 'PROXY',
+        bankName: bankLabel,
+        bankAccount: accountNumber,
+        accountHolder: familyName,
+        accountHolderRelation: relationCode,
+      })
+      if (!result.success) {
+        showError(result.error)
+        return
+      }
+      workerMetaStorage.patch({ wagePaymentTarget: 'PROXY' })
+      // Invalidate cached /system/worker/me so the card + form fields
+      // refetch the new payment info on the next render.
+      queryClient.invalidateQueries({ queryKey: ['workerProfile'] })
+      showSuccess("저장되었습니다.")
+      navigate("/profile/payroll-account")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const isFormValid = familyName && relationship && selectedBank && accountNumber.length >= 10
@@ -96,11 +138,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">예금주와의 관계</label>
           <Select
-            options={[
-              { value: "parent", label: "부모" },
-              { value: "spouse", label: "배우자" },
-              { value: "child", label: "자녀" },
-            ]}
+            options={relationOptions.map((o) => ({ value: o.code, label: o.name }))}
             value={relationship}
             onChange={setRelationship}
             placeholder="관계 선택"
@@ -111,7 +149,11 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">은행명</label>
           <Select
-            options={banks.map((b) => ({ value: b.id, label: b.name }))}
+            options={
+              bankOptions && bankOptions.length > 0
+                ? bankOptions.map((b) => ({ value: b.code, label: b.name }))
+                : banks.map((b) => ({ value: b.id, label: b.name }))
+            }
             value={selectedBank}
             onChange={setSelectedBank}
             placeholder="은행 선택"
@@ -178,9 +220,9 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
           {content}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={isFormValid ? "primary" : "primaryDisabled"}
+              variant={isFormValid && !isSubmitting ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
               onClick={handleSubmit}
             >
               저장

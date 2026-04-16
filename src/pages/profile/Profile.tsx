@@ -5,10 +5,37 @@ import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
 import { handleLogout, authFetch } from "@/lib/auth"
 import { useToast } from "@/contexts/ToastContext"
+import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { useDictItems } from "@/lib/queries/useDictItems"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
+  const { data: profile } = useWorkerProfile()
+  const { data: workerCategories = [] } = useDictItems("worker_category")
+  const accountIncomplete = !profile?.accountHolder
+
+  const workerCategoryLabel = profile?.workerCategory
+    ? workerCategories.find((c) => c.code === profile.workerCategory)?.name
+      ?? profile.workerCategory
+    : ""
+
+  const paymentLabels: Record<string, string> = {
+    SELF: "본인 계좌",
+    PROXY: "가족 계좌",
+    COMPANY: "소속 회사",
+  }
+  const paymentLabel = profile?.wagePaymentTarget
+    ? paymentLabels[profile.wagePaymentTarget] ?? profile.wagePaymentTarget
+    : ""
+  const accountSubtitle = [
+    paymentLabel,
+    profile?.accountHolder && profile?.bankAccount
+      ? `${profile.accountHolder} · ${profile.bankAccount}`
+      : "",
+  ].filter(Boolean).join(" · ") || "예금주 · 계좌"
+
+  const docsIncomplete = (profile?.missingRequiredDocs?.length ?? 0) > 0
 
   const handleNavigation = (item: NavItem) => {
     if (item === "home") navigate("/home")
@@ -25,23 +52,27 @@ export function MyInfoPage() {
           <div className="bg-white rounded-xl mx-4 border border-gray-300 shadow-sm">
             <StatusListItem
               title="개인정보"
-              subtitle="이름 · 연락처 · 주소"
+              subtitle={profile?.workerName || "이름"}
               onClick={() => navigate("/profile/myinfo")}
             />
             <StatusListItem
               title="회원유형"
-              subtitle="근로자 유형 관리"
+              subtitle={workerCategoryLabel || "근로자 유형"}
               onClick={() => navigate("/profile/worker-type")}
             />
             <StatusListItem
               title="계좌정보"
-              subtitle="급여 지급 방식 · 계좌"
+              subtitle={accountSubtitle}
+              status={accountIncomplete ? "incomplete" : undefined}
+              statusLabel={accountIncomplete ? "미완료" : undefined}
               onClick={() => navigate("/profile/payroll-account")}
             />
             <StatusListItem
               title="제출서류"
               subtitle="필수 서류 제출 · 확인"
-              onClick={() => navigate("/onboarding/documents", { state: { hideProgress: true } })}
+              status={docsIncomplete ? "incomplete" : undefined}
+              statusLabel={docsIncomplete ? "미제출" : undefined}
+              onClick={() => navigate("/profile/documents")}
               className="border-b-0"
             />
           </div>

@@ -8,15 +8,30 @@ import { Select } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useActivePartners } from "@/lib/queries/useActivePartners"
+import { updateWorkerCategory } from "@/lib/profile"
+import { useToast } from "@/contexts/ToastContext"
 
 export function OutsourcingPage() {
   const navigate = useNavigate()
+  const { showSuccess, showError } = useToast()
   const { data: partners, isLoading, isError, refetch } = useActivePartners()
   const [selectedCompany, setSelectedCompany] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = () => {
-    // TODO: Save outsourcing info
-    navigate("/profile/payroll-account")
+  const handleSubmit = async () => {
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    // TODO: Save outsourcing company selection (selectedCompany)
+    const result = await updateWorkerCategory("SERVICE")
+    setIsSubmitting(false)
+    if (!result.success) {
+      showError(result.error)
+      return
+    }
+    const companyName =
+      partners?.find((p) => p.id === selectedCompany)?.partnerName || selectedCompany
+    showSuccess(`[${companyName}]으로 변경되었습니다.`)
+    navigate("/profile/worker-type")
   }
 
   const isFormValid = selectedCompany !== ""
@@ -85,12 +100,12 @@ export function OutsourcingPage() {
           {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
-              variant={isFormValid ? "primary" : "primaryDisabled"}
+              variant={isFormValid && !isSubmitting ? "primary" : "primaryDisabled"}
               size="full"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
               onClick={handleSubmit}
             >
-              다음
+              {isSubmitting ? "저장 중..." : "저장"}
             </Button>
           </div>
         </div>

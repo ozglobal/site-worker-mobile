@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { signupStorage } from "@/lib/storage"
+import { signupStorage, workerMetaStorage } from "@/lib/storage"
 
 export function PassportInfoPage() {
   const navigate = useNavigate()
@@ -44,6 +44,14 @@ export function PassportInfoPage() {
   }
 
   const handleSave = () => {
+    signupStorage.setData({
+      nameKo: formData.name,
+      nationalityType: 'foreigner_unregistered',
+      idType: 'passport',
+      idNumber: formData.passport,
+      address: formData.address,
+    })
+    workerMetaStorage.patch({ nationalityType: '외국인', idType: 'passport' })
     navigate("/signup/set-password")
   }
 

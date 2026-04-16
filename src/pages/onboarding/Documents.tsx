@@ -12,60 +12,9 @@ import { IdCardCamera } from "@/components/ui/id-card-capture/id-card-camera"
 import { IdCardPreview } from "@/components/ui/id-card-capture/id-card-preview"
 import { DocumentCapture } from "@/components/ui/document-capture/document-capture"
 import { useToast } from "@/contexts/ToastContext"
-
-interface DocumentItem {
-  id: string
-  apiType: DocumentType
-  title: string
-  description: string
-}
-
-const documents: DocumentItem[] = [
-  {
-    id: "id-card",
-    apiType: "id_card_front",
-    title: "주민등록증(운전면허증)",
-    description: "",
-  },
-  {
-    id: "foreign-card",
-    apiType: "id_card_front",
-    title: "외국인등록증",
-    description: "",
-  },
-  {
-    id: "passport",
-    apiType: "id_card_front",
-    title: "여권",
-    description: "",
-  },
-  {
-    id: "safety-cert",
-    apiType: "safety_cert",
-    title: "기초안전보건교육 이수증",
-    description: "",
-  },
-  {
-    id: "bankbook",
-    apiType: "bankbook",
-    title: "통장",
-    description: "",
-  },
-  {
-    id: "family-cert",
-    apiType: "family_cert",
-    title: "가족관계증명서",
-    description: "",
-  },
-  {
-    id: "business-cert",
-    apiType: "business_cert",
-    title: "사업자등록증",
-    description: "",
-  },
-]
-
-export { documents, type DocumentItem }
+import { workerMetaStorage, type WorkerMeta } from "@/lib/storage"
+import { getRequiredDocuments, allDocuments, backendIdTypeToInternal, type DocumentItem } from "@/lib/documents"
+import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 
 export function OnboardingDocumentsPage() {
   const navigate = useNavigate()
@@ -88,11 +37,22 @@ export function OnboardingDocumentsPage() {
     () => (location.state as { hideProgress?: boolean } | null)?.hideProgress === true
   )
 
-  // Filter documents by caller-provided IDs, or show all
+  // Resolve which documents to show:
+  //   1. If caller explicitly passes docIds, use those (deep-link case).
+  //   2. Otherwise derive from effective meta: prefer backend (GET /system/worker/me),
+  //      fall back to the localStorage cache.
   const locationState = location.state as { startCapture?: string; completed?: string; docIds?: string[]; hideProgress?: boolean } | null
-  const visibleDocs = locationState?.docIds
-    ? documents.filter((d) => locationState.docIds!.includes(d.id))
-    : documents
+  const { data: profile } = useWorkerProfile()
+  const effectiveMeta: WorkerMeta = {
+    ...(workerMetaStorage.get() ?? {}),
+    ...(profile?.idType ? { idType: backendIdTypeToInternal(profile.idType) } : {}),
+    ...(profile?.wagePaymentTarget === 'SELF' || profile?.wagePaymentTarget === 'PROXY' || profile?.wagePaymentTarget === 'COMPANY'
+      ? { wagePaymentTarget: profile.wagePaymentTarget }
+      : {}),
+  }
+  const visibleDocs: DocumentItem[] = locationState?.docIds
+    ? allDocuments.filter((d) => locationState.docIds!.includes(d.id))
+    : getRequiredDocuments(effectiveMeta)
 
   // Handle return from capture guide page or auto-start capture
   useEffect(() => {
@@ -103,7 +63,7 @@ export function OnboardingDocumentsPage() {
       setShowCamera(true)
       navigate(location.pathname, { replace: true, state: null })
     } else if (state?.startCapture) {
-      const doc = documents.find(d => d.id === state.startCapture)
+      const doc = allDocuments.find((d) => d.id === state.startCapture)
       if (doc) {
         setCaptureDoc(doc)
         setShowDocCapture(true)

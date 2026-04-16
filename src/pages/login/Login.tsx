@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/contexts/AuthContext"
 import { useHoneypot } from "@/hooks/useHoneypot"
 import { autoLoginStorage } from "@/lib/storage"
+import { getWorkerInfo } from "@/lib/auth"
 
 export function LoginPage() {
   const [phone, setPhone] = useState(() => autoLoginStorage.getCredentials()?.phone ?? "")
@@ -46,12 +47,6 @@ export function LoginPage() {
     setError("")
     setIsSubmitting(true)
 
-    if (isFirstLogin) {
-      sessionStorage.setItem('postLoginFirstLogin', '1')
-    } else {
-      sessionStorage.removeItem('postLoginFirstLogin')
-    }
-
     const result = await login({
       username: phone,
       password: password,
@@ -66,7 +61,21 @@ export function LoginPage() {
         autoLoginStorage.disable()
         autoLoginStorage.clearCredentials()
       }
-      navigate(isFirstLogin ? '/onboarding' : '/home')
+      // Route to onboarding if the user explicitly marked this as first login,
+      // OR if the backend reports onboarding is not yet complete AND no worker
+      // category is set (a set category means the user has already started/finished
+      // onboarding, so skip the flow even if onboardingCompleted is still false).
+      const info = getWorkerInfo()
+      const needsOnboarding =
+        isFirstLogin ||
+        (info.onboardingCompleted === false && !info.workerCategory)
+      if (needsOnboarding) {
+        sessionStorage.setItem('postLoginFirstLogin', '1')
+        navigate('/onboarding')
+      } else {
+        sessionStorage.removeItem('postLoginFirstLogin')
+        navigate('/home')
+      }
     } else {
       sessionStorage.removeItem('postLoginFirstLogin')
       setError(result.error || "로그인에 실패했습니다")

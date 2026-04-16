@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
+import { workerMetaStorage } from "@/lib/storage"
 
 interface PaymentMethod {
   id: string
@@ -51,6 +52,7 @@ export function OnboardingCompanyAccountPage() {
     } else if (id === "personal") {
       navigate("/onboarding/my-account")
     } else if (id === "family") {
+      workerMetaStorage.patch({ wagePaymentTarget: 'PROXY' })
       navigate("/onboarding/family-account")
     }
   }

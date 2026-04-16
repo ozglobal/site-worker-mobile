@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { signupStorage } from "@/lib/storage"
+import { signupStorage, workerMetaStorage } from "@/lib/storage"
 
 export function DomesticInfoPage() {
   const navigate = useNavigate()
@@ -29,7 +29,7 @@ export function DomesticInfoPage() {
   const addressRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    addressRef.current?.focus()
+    nameRef.current?.focus()
   }, [])
 
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,11 +45,12 @@ export function DomesticInfoPage() {
   const handleSave = () => {
     signupStorage.setData({
       nameKo: formData.name,
-      nationalityType: '내국인',
-      idType: '주민등록번호',
+      nationalityType: 'domestic',
+      idType: 'resident_id',
       idNumber: `${formData.ssnFirst}-${formData.ssnSecond}`,
       address: formData.address,
     })
+    workerMetaStorage.patch({ nationalityType: '내국인', idType: 'resident' })
     navigate("/signup/set-password")
   }
 
@@ -74,9 +75,10 @@ export function DomesticInfoPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">이름</label>
               <Input
+                ref={nameRef}
                 value={formData.name}
-                disabled
-                className="bg-gray-100"
+                onChange={handleChange("name")}
+                placeholder="이름 입력"
               />
             </div>
 
@@ -86,14 +88,21 @@ export function DomesticInfoPage() {
               <div className="flex items-center gap-2">
                 <Input
                   value={formData.ssnFirst}
-                  disabled
-                  className="flex-1 bg-gray-100"
+                  onChange={handleChange("ssnFirst")}
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="앞 6자리"
+                  className="flex-1"
                 />
                 <span className="text-slate-400">-</span>
                 <Input
+                  ref={ssnSecondRef}
                   value={formData.ssnSecond}
-                  disabled
-                  className="flex-1 bg-gray-100"
+                  onChange={handleChange("ssnSecond")}
+                  inputMode="numeric"
+                  maxLength={7}
+                  placeholder="뒤 7자리"
+                  className="flex-1"
                 />
               </div>
             </div>

@@ -17,7 +17,13 @@ export interface WorkerMeData {
   address: string
   accountHolder: string
   bankName: string
-  bankAccountMasked: string
+  bankAccount: string
+  idType?: '주민등록번호' | '외국인등록번호' | '여권번호' | string
+  wagePaymentTarget?: 'SELF' | 'PROXY' | 'COMPANY' | string
+  workerCategory?: 'GENERAL' | 'SPECIALTY' | 'SERVICE' | 'ENGINEER' | string
+  equipmentCompanyName?: string | null
+  equipmentCompanyOwner?: string | null
+  missingRequiredDocs?: string[]
 }
 
 /**
@@ -46,14 +52,30 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
     const payload = (json.data || json.result || json) as Record<string, unknown>
 
     const data: WorkerMeData = {
-      workerName: (payload.nameKo as string) || '',
+      workerName:
+        (payload.nameKo as string) ||
+        (payload.workerName as string) ||
+        (payload.name as string) ||
+        '',
       ssnFirst: (payload.ssnFirst as string) || (payload.residentFirst as string) || '',
       ssnSecond: (payload.ssnSecond as string) || (payload.residentSecond as string) || '',
-      phone: (payload.mobilePhone as string) || '',
+      phone:
+        (payload.mobilePhone as string) ||
+        (payload.phone as string) ||
+        (payload.phoneNumber as string) ||
+        '',
       address: (payload.address as string) || '',
       accountHolder: (payload.accountHolder as string) || '',
       bankName: (payload.bankName as string) || '',
-      bankAccountMasked: (payload.bankAccountMasked as string) || '',
+      bankAccount: (payload.bankAccount as string) || (payload.bankAccountMasked as string) || '',
+      idType: (payload.idType as string) || undefined,
+      wagePaymentTarget: (payload.wagePaymentTarget as string) || undefined,
+      workerCategory: (payload.workerCategory as string) || undefined,
+      equipmentCompanyName: (payload.equipmentCompanyName as string) || null,
+      equipmentCompanyOwner: (payload.equipmentCompanyOwner as string) || null,
+      missingRequiredDocs: Array.isArray(payload.missingRequiredDocs)
+        ? (payload.missingRequiredDocs as string[])
+        : [],
     }
 
     return { success: true, data }
@@ -268,7 +290,7 @@ export interface WorkerOnboardingPayload {
   accountHolderRelation: string | null
   equipmentCompanyName: string | null
   equipmentCompanyOwner: string | null
-  wagePaymentTarget: 'SELF' | 'FAMILY' | 'COMPANY' | null
+  wagePaymentTarget: 'SELF' | 'PROXY' | 'COMPANY' | null
   dailyWage: number | null
 }
 
@@ -351,8 +373,186 @@ export const updateBankAccount = async (data: {
   }
 }
 
+export interface UploadEquipmentPayload {
+  equipmentType: string
+  licenseFile: File
+  validFrom: string // YYYY-MM-DD
+  validUntil: string // YYYY-MM-DD
+}
+
+/**
+ * POST /system/worker/me/equipment as multipart/form-data.
+ * Do NOT set Content-Type — the browser will add the correct boundary.
+ */
+export const uploadEquipment = async (
+  payload: UploadEquipmentPayload,
+): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me/equipment'
+  try {
+    const form = new FormData()
+    form.append('equipmentType', payload.equipmentType)
+    form.append('licenseFile', payload.licenseFile)
+    form.append('validFrom', payload.validFrom)
+    form.append('validUntil', payload.validUntil)
+
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: { 'accept': '*/*' },
+      body: form,
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch {
+    reportError('EQUIPMENT_UPLOAD_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export const updateEngineerCategory = async (data: {
+  equipmentCompanyName: string
+  equipmentCompanyOwner: string
+  isRepresentative: boolean
+}): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me/category'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        workerCategory: 'equipment_driver',
+        ...data,
+      }),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_ENGINEER_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export const updateWorkerCategory = async (
+  workerCategory: string,
+): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me/category'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ workerCategory }),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_CATEGORY_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export interface PaymentInfo {
+  bankName?: string
+  bankAccount?: string
+  accountHolder?: string
+  wagePaymentTarget?: 'SELF' | 'PROXY' | 'COMPANY' | string
+}
+
+/**
+ * PUT /system/worker/me/payment with no body — returns current payment info.
+ * Used on /profile/payroll-account open to hydrate the view.
+ */
+export const fetchPaymentInfo = async (): Promise<ApiResult<PaymentInfo>> => {
+  const endpoint = '/system/worker/me/payment'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    const payload = ((json?.data as Record<string, unknown>) || json || {}) as Record<string, unknown>
+    const data: PaymentInfo = {
+      bankName: (payload.bankName as string) || undefined,
+      bankAccount: (payload.bankAccount as string) || undefined,
+      accountHolder: (payload.accountHolder as string) || undefined,
+      wagePaymentTarget: (payload.wagePaymentTarget as string) || undefined,
+    }
+    return { success: true, data }
+  } catch {
+    reportError('PROFILE_PAYMENT_FETCH_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export interface UpdatePaymentPayload {
+  wagePaymentTarget: 'SELF' | 'PROXY' | 'COMPANY'
+  bankName?: string | null
+  bankAccount?: string | null
+  accountHolder?: string | null
+  accountHolderRelation?: string | null
+}
+
+export const updatePayment = async (
+  payload: UpdatePaymentPayload,
+): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me/payment'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_PAYMENT_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
 export const updatePaymentTarget = async (
-  wagePaymentTarget: 'SELF' | 'FAMILY' | 'COMPANY',
+  wagePaymentTarget: 'SELF' | 'PROXY' | 'COMPANY',
 ): Promise<ApiResult<void>> => {
   const endpoint = '/system/worker/me/payment'
   try {

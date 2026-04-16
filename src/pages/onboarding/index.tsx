@@ -28,7 +28,7 @@ export function OnboardingPage() {
         </h1>
 
         <p className="text-slate-500 text-center whitespace-pre-line">
-          {"원활한 급여 지급을 위해\n필수 정보를 등록해주세요."}
+          {"회원 가입을 환영합니다.\n이 앱으로 출퇴근을 하기 위하여\n회원 유형 및 일급(노임)을 등록해주세요."}
         </p>
       </div>
 
