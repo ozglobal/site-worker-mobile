@@ -527,8 +527,13 @@ export const authFetch = async (
 ): Promise<Response> => {
   let accessToken = getAccessToken()
 
-  // Proactively refresh token if expired or about to expire
-  if (isTokenExpired()) {
+  // Proactively refresh when:
+  //   - the stored metadata says the token is expired, OR
+  //   - the in-memory access token is gone (post-reload) but a refresh token
+  //     still exists — otherwise we'd fire a doomed no-Authorization request
+  //     and pay for an extra 401 → refresh → retry round trip.
+  const needsRefresh = isTokenExpired() || (!accessToken && !!getRefreshToken())
+  if (needsRefresh) {
     const newToken = await refreshAccessToken()
     if (newToken) {
       accessToken = newToken

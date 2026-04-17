@@ -43,7 +43,9 @@ export function useCalendarAgent(): CalendarAgentState & CalendarAgentActions {
   const year = now.getFullYear()
   const month = now.getMonth() + 1
 
-  const { data, isLoading, refetch } = useMonthlyAttendance(year, month)
+  // Monthly attendance is only fetched on the /attendance pages.
+  // Home keeps the agent shape but skips the network call (`enabled: false`).
+  const { data, isLoading, refetch } = useMonthlyAttendance(year, month, { enabled: false })
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
   const records: AttendanceRecord[] = useMemo(() => {

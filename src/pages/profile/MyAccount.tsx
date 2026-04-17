@@ -15,7 +15,6 @@ import { useToast } from "@/contexts/ToastContext"
 import { workerMetaStorage } from "@/lib/storage"
 import { getWorkerName } from "@/lib/auth"
 import { useQueryClient } from "@tanstack/react-query"
-import { useDictItems } from "@/lib/queries/useDictItems"
 
 interface Bank {
   id: string
@@ -41,7 +40,6 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
-  const { data: bankOptions } = useDictItems("bank")
   const { showSuccess, showError } = useToast()
   const accountNumberRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -51,12 +49,30 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
   const [certificateFile, setCertificateFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Always fetch fresh /system/worker/me when the page opens so
+  // accountHolder / accountHolderRelation / bankName / bankAccount reflect
+  // the latest server state (useWorkerProfile has staleTime: Infinity).
   useEffect(() => {
-    if (mode === "profile" && profile) {
-      // 예금주 is always the worker's Korean name (nameKo → workerName).
-      setAccountHolder(profile.workerName || getWorkerName() || "")
-      setSelectedBank(profile.bankName || "")
+    if (mode === "profile") refetch()
+  }, [mode, refetch])
+
+  useEffect(() => {
+    if (mode !== "profile" || !profile) return
+    // 예금주 defaults to the worker's own name even when no SELF record exists,
+    // because that's what will be saved when the user submits.
+    setAccountHolder(profile.workerName || getWorkerName() || "")
+
+    // Only hydrate bank fields when the active payment target is SELF.
+    // Otherwise show an empty form (the backend's single payment record
+    // belongs to PROXY/COMPANY and shouldn't leak into the SELF form).
+    if (profile.wagePaymentTarget === "SELF") {
+      const raw = profile.bankName || ""
+      const bankId = banks.find((b) => b.name === raw)?.id || raw
+      setSelectedBank(bankId)
       setAccountNumber(profile.bankAccount || "")
+    } else {
+      setSelectedBank("")
+      setAccountNumber("")
     }
   }, [profile, mode])
 
@@ -64,10 +80,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
     if (isSubmitting) return
     setIsSubmitting(true)
     try {
-      const bankLabel =
-        (bankOptions && bankOptions.find((b) => b.code === selectedBank)?.name) ||
-        banks.find((b) => b.id === selectedBank)?.name ||
-        selectedBank
+      const bankLabel = banks.find((b) => b.id === selectedBank)?.name || selectedBank
       const result = await updatePayment({
         wagePaymentTarget: "SELF",
         bankName: bankLabel,
@@ -148,11 +161,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">은행명</label>
           <Select
-            options={
-              bankOptions && bankOptions.length > 0
-                ? bankOptions.map((b) => ({ value: b.code, label: b.name }))
-                : banks.map((b) => ({ value: b.id, label: b.name }))
-            }
+            options={banks.map((b) => ({ value: b.id, label: b.name }))}
             value={selectedBank}
             onChange={(v) => { setSelectedBank(v); setTimeout(() => accountNumberRef.current?.focus(), 300) }}
             placeholder="은행 선택"

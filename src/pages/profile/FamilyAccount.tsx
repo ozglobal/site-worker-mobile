@@ -12,6 +12,7 @@ import { updatePayment } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 import { useQueryClient } from "@tanstack/react-query"
 import { useDictItems } from "@/lib/queries/useDictItems"
+import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 
 interface Bank {
   id: string
@@ -39,7 +40,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
   const { showSuccess, showError } = useToast()
   const queryClient = useQueryClient()
   const { data: relationOptions = [] } = useDictItems("account_holder_relation")
-  const { data: bankOptions } = useDictItems("bank")
+  const { data: profile, refetch } = useWorkerProfile()
   const [familyName, setFamilyName] = useState("")
   const [relationship, setRelationship] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
@@ -47,12 +48,58 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
   const [certificateFile, setCertificateFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const resolveBankLabel = (code: string) => {
-    if (bankOptions && bankOptions.length > 0) {
-      return bankOptions.find((b) => b.code === code)?.name || code
+  // Always fetch fresh /system/worker/me on open.
+  useEffect(() => {
+    if (mode === "profile") refetch()
+  }, [mode, refetch])
+
+  // Pre-fill form from backend profile when in profile mode.
+  // Only hydrate when the active payment target is PROXY — otherwise the
+  // backend's single record belongs to SELF/COMPANY and shouldn't leak
+  // into the family form. Show an empty form instead.
+  useEffect(() => {
+    if (mode !== "profile" || !profile) return
+
+    if (profile.wagePaymentTarget === "PROXY") {
+      setFamilyName(profile.accountHolder || "")
+
+      // Resolve accountHolderRelation to a dict code so the Select highlights it.
+      // The backend can return the code in any casing (PARENT / parent / Parent)
+      // or even the label itself ("부모" / "배우자"). Try every match before giving up.
+      const rawRel = (profile.accountHolderRelation || "").trim()
+      const rawLower = rawRel.toLowerCase()
+      const relCode =
+        relationOptions.find((o) => o.code === rawRel)?.code ??
+        relationOptions.find((o) => o.code.toLowerCase() === rawLower)?.code ??
+        relationOptions.find((o) => o.name === rawRel)?.code ??
+        relationOptions.find((o) => o.name?.toLowerCase() === rawLower)?.code ??
+        // Last-resort alias table for common backend uppercase variants.
+        ({
+          PARENT: relationOptions.find((o) => /parent|부모/i.test(o.name || ""))?.code,
+          SPOUSE: relationOptions.find((o) => /spouse|배우|부부/i.test(o.name || ""))?.code,
+          CHILD: relationOptions.find((o) => /child|자녀|자식/i.test(o.name || ""))?.code,
+        }[rawRel.toUpperCase()] as string | undefined) ??
+        rawRel
+      // Debug — remove once the relationship dropdown is confirmed populating.
+      // eslint-disable-next-line no-console
+      console.log('[FamilyAccount] accountHolderRelation', rawRel, '→ resolved to', relCode, 'dict:', relationOptions)
+      setRelationship(relCode)
+
+      // Backend returns bank label (e.g. "국민은행"); Select expects id (e.g. "kb").
+      const rawBank = profile.bankName || ""
+      const bankId = banks.find((b) => b.name === rawBank)?.id || rawBank
+      setSelectedBank(bankId)
+      setAccountNumber(profile.bankAccount || "")
+    } else {
+      setFamilyName("")
+      setRelationship("")
+      setSelectedBank("")
+      setAccountNumber("")
     }
-    return banks.find((b) => b.id === code)?.name || code
-  }
+  }, [profile, mode, relationOptions])
+
+  const resolveBankLabel = (code: string) =>
+    banks.find((b) => b.id === code)?.name || code
 
   const handleSubmit = async () => {
     const bankLabel = resolveBankLabel(selectedBank)
@@ -149,11 +196,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">은행명</label>
           <Select
-            options={
-              bankOptions && bankOptions.length > 0
-                ? bankOptions.map((b) => ({ value: b.code, label: b.name }))
-                : banks.map((b) => ({ value: b.id, label: b.name }))
-            }
+            options={banks.map((b) => ({ value: b.id, label: b.name }))}
             value={selectedBank}
             onChange={setSelectedBank}
             placeholder="은행 선택"

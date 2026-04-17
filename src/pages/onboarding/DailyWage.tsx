@@ -127,7 +127,7 @@ export function OnboardingDailyWagePage() {
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-10 w-[calc(100%-2rem)] max-w-sm bg-white rounded-2xl shadow-xl p-6">
             <p className="text-sm text-slate-700 leading-relaxed mb-3 whitespace-pre-line">
-              {"회원 유형과 일급(노임)이 등록되었습니다.\n이제부터 현장에서 출퇴근 체크가 가능합니다.\n급여 지급을 위한 계좌정보 등록과 서류제출은 하단 [내 정보] 메뉴에서 할 수 있습니다."}
+              {"회원 유형과 일급(노임)이 등록되었습니다.\n지금부터 현장에서 출퇴근 체크가 가능합니다.\n급여 지급을 위한 계좌정보 등록과 서류제출은 하단 [내 정보] 메뉴에서 할 수 있습니다."}
             </p>
             <Button
               variant="primary"

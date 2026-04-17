@@ -36,28 +36,22 @@ export function DailyDetailPage() {
     setShowCorrectionDialog(true)
   }
 
-  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string }) => {
+  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string; isOvertime: boolean }) => {
     if (!correctionAttendanceId) return
-    const effortResult = await submitCorrectionRequest({
+    const result = await submitCorrectionRequest({
       attendanceId: correctionAttendanceId,
-      requestType: "work_effort",
-      requestedValue: data.workEffort,
+      workEntryId: correctionAttendanceId,
+      requestType: "work_effort_and_wage",
+      requestedValue: `${data.workEffort}|${data.dailyWage}`,
+      originalEffort: correctionWorkEffort,
+      requestedEffort: data.workEffort,
+      originalWage: correctionDailyWage.replace(/,/g, ""),
+      requestedWage: data.dailyWage,
       reason: data.reason,
     })
-    if (!effortResult.success) {
-      reportError("CORRECTION_SUBMIT_FAIL", effortResult.error)
-      showError(effortResult.error)
-      return
-    }
-    const wageResult = await submitCorrectionRequest({
-      attendanceId: correctionAttendanceId,
-      requestType: "daily_wage",
-      requestedValue: data.dailyWage,
-      reason: data.reason,
-    })
-    if (!wageResult.success) {
-      reportError("CORRECTION_SUBMIT_FAIL", wageResult.error)
-      showError(wageResult.error)
+    if (!result.success) {
+      reportError("CORRECTION_SUBMIT_FAIL", result.error)
+      showError(result.error)
       return
     }
     showSuccess("정정 요청이 제출되었습니다.")

@@ -30,6 +30,7 @@ interface HomeAgentReturn {
   attendance: {
     status: string
     isCheckedIn: boolean
+    attendanceId: string | null
     isProcessing: boolean
     checkInTime: string | null
     checkOutTime: string | null
@@ -38,6 +39,7 @@ interface HomeAgentReturn {
     siteName: string
     siteAddress: string
     dailyWageSnapshot: number | null
+    workEffort: number | null
   }
 
   // Work site
@@ -279,6 +281,7 @@ export function useHomeAgent(): HomeAgentReturn {
     attendance: {
       status: attendance.checkInStatus,
       isCheckedIn: !!attendance.checkedInSiteId,
+      attendanceId: attendance.checkedInAttendanceId,
       // Include pendingAction to show loading during GPS fetch phase
       isProcessing: attendance.isProcessing || pendingAction !== null,
       checkInTime: attendance.checkInTime,

@@ -7,7 +7,7 @@ interface CorrectionDialogProps {
   timeRange: string
   initialWorkEffort: string
   initialDailyWage: string
-  onSubmit: (data: { workEffort: string; dailyWage: string; reason: string }) => Promise<void>
+  onSubmit: (data: { workEffort: string; dailyWage: string; reason: string; isOvertime: boolean }) => Promise<void>
   onBack?: () => void
   onClose: () => void
 }
@@ -24,6 +24,7 @@ export function CorrectionDialog({
   const [workEffort, setWorkEffort] = useState(initialWorkEffort)
   const [dailyWage, setDailyWage] = useState(initialDailyWage)
   const [reason, setReason] = useState("")
+  const [isOvertime, setIsOvertime] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const expectedWage = useMemo(() => {
@@ -32,11 +33,22 @@ export function CorrectionDialog({
     return effort * wage
   }, [workEffort, dailyWage])
 
+  const canSubmit =
+    workEffort.trim().length > 0 &&
+    dailyWage.trim().length > 0 &&
+    reason.trim().length > 0 &&
+    !isSubmitting
+
   const handleSubmit = async () => {
-    if (reason.trim().length <= 4 || isSubmitting) return
+    if (!canSubmit) return
     setIsSubmitting(true)
     try {
-      await onSubmit({ workEffort, dailyWage: dailyWage.replace(/,/g, ""), reason: reason.trim() })
+      await onSubmit({
+        workEffort: workEffort.trim(),
+        dailyWage: dailyWage.replace(/,/g, ""),
+        reason: reason.trim(),
+        isOvertime,
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -74,22 +86,38 @@ export function CorrectionDialog({
             <p className="text-sm text-slate-500 mt-1">{timeRange}</p>
           </div>
 
+          {/* 야근 신청 */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isOvertime}
+              onChange={(e) => setIsOvertime(e.target.checked)}
+              className="w-5 h-5 rounded-full border-slate-300 text-[#007DCA] focus:ring-[#007DCA]"
+            />
+            <span className="text-sm text-slate-900">야근 신청</span>
+          </label>
+
           {/* 공수 */}
           <div>
             <p className="text-sm font-bold text-slate-900 mb-3">공수</p>
             <div className="flex items-center gap-3">
-              <div className="bg-slate-100 rounded-lg px-4 py-2.5 flex items-center gap-2 min-w-[120px]">
+              <div className="bg-slate-100 rounded-lg px-2 py-2.5 flex flex-col items-center flex-1 min-w-0">
                 <span className="text-xs text-slate-500">현재</span>
                 <span className="text-base font-bold text-slate-900">{initialWorkEffort}</span>
               </div>
               <span className="text-slate-400">→</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <input
                   type="text"
                   inputMode="decimal"
                   value={workEffort}
-                  onChange={(e) => setWorkEffort(e.target.value)}
-                  className="w-24 h-10 text-center text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
+                  placeholder={initialWorkEffort}
+                  onFocus={() => setWorkEffort("")}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9.]/g, "")
+                    setWorkEffort(raw)
+                  }}
+                  className="flex-1 min-w-0 h-10 px-3 text-right text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
                 />
                 <span className="text-sm text-slate-600">공수</span>
               </div>
@@ -100,21 +128,23 @@ export function CorrectionDialog({
           <div>
             <p className="text-sm font-bold text-slate-900 mb-3">적용단가</p>
             <div className="flex items-center gap-3">
-              <div className="bg-slate-100 rounded-lg px-4 py-2.5 flex items-center gap-2 min-w-[120px]">
+              <div className="bg-slate-100 rounded-lg px-2 py-2.5 flex flex-col items-center flex-1 min-w-0">
                 <span className="text-xs text-slate-500">현재</span>
                 <span className="text-base font-bold text-slate-900">{initialDailyWage}원</span>
               </div>
               <span className="text-slate-400">→</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <input
                   type="text"
                   inputMode="numeric"
                   value={dailyWage}
+                  placeholder={initialDailyWage}
+                  onFocus={() => setDailyWage("")}
                   onChange={(e) => {
                     const raw = e.target.value.replace(/[^0-9]/g, "")
                     setDailyWage(raw ? Number(raw).toLocaleString("ko-KR") : "")
                   }}
-                  className="w-24 h-10 text-center text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
+                  className="flex-1 min-w-0 h-10 px-3 text-right text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
                 />
                 <span className="text-sm text-slate-600">원</span>
               </div>
@@ -135,7 +165,7 @@ export function CorrectionDialog({
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="요청사유를 입력해주세요 (5자 이상)"
+              placeholder="요청사유를 입력해주세요..."
               rows={4}
               className="w-full p-4 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#007DCA]"
             />
@@ -145,10 +175,10 @@ export function CorrectionDialog({
         {/* Submit Button */}
         <div className="px-5 pb-5 pt-2">
           <Button
-            variant={isSubmitting || reason.trim().length <= 4 ? "primaryDisabled" : "primary"}
+            variant={canSubmit ? "primary" : "primaryDisabled"}
             size="full"
             onClick={handleSubmit}
-            disabled={isSubmitting || reason.trim().length <= 4}
+            disabled={!canSubmit}
           >
             {isSubmitting ? "제출 중..." : "요청 제출하기"}
           </Button>

@@ -4,25 +4,31 @@
 
 /** Parse a timestamp (string/number/Date) into a KST Date (UTC+9) */
 function toSeoulDate(timestamp: string | number | Date): Date | null {
-  let date: Date
-
   if (timestamp instanceof Date) {
-    date = timestamp
-  } else if (typeof timestamp === 'number') {
-    date = new Date(timestamp)
-  } else if (typeof timestamp === 'string') {
-    if (timestamp.includes('T')) {
-      date = new Date(timestamp.endsWith('Z') ? timestamp : timestamp + 'Z')
-    } else {
-      const ms = Number(timestamp)
-      if (!Number.isFinite(ms)) return null
-      date = new Date(ms)
+    return new Date(timestamp.getTime() + 9 * 60 * 60 * 1000)
+  }
+  if (typeof timestamp === 'number') {
+    return new Date(timestamp + 9 * 60 * 60 * 1000)
+  }
+  if (typeof timestamp !== 'string') return null
+
+  if (timestamp.includes('T')) {
+    // LocalDateTime (no Z/offset) → backend sends KST wall-clock already.
+    // Parse as UTC so getUTC* reads the original hours without a +9h double-shift.
+    const hasOffset = /Z$|[+-]\d{2}:?\d{2}$/.test(timestamp)
+    if (!hasOffset) {
+      // JS Date only accepts up to 3 fractional digits; truncate if longer.
+      const cleaned = timestamp.replace(/(\.\d{3})\d+$/, '$1')
+      const d = new Date(cleaned + 'Z')
+      return isNaN(d.getTime()) ? null : d
     }
-  } else {
-    return null
+    const d = new Date(timestamp)
+    return isNaN(d.getTime()) ? null : new Date(d.getTime() + 9 * 60 * 60 * 1000)
   }
 
-  return new Date(date.getTime() + 9 * 60 * 60 * 1000)
+  const ms = Number(timestamp)
+  if (!Number.isFinite(ms)) return null
+  return new Date(ms + 9 * 60 * 60 * 1000)
 }
 
 /**

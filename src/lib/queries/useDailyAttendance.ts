@@ -1,24 +1,39 @@
 import { useMemo } from 'react'
-import { useMonthlyAttendance } from './useMonthlyAttendance'
+import { useHomeData } from './useHomeData'
 import type { WeeklyAttendanceRecord } from '@/lib/attendance'
 
-function getTodayDateString(): string {
-  const today = new Date()
-  const y = today.getFullYear()
-  const m = String(today.getMonth() + 1).padStart(2, '0')
-  const d = String(today.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
+/**
+ * Today's attendance — derived from `GET /system/worker/me/home` (useHomeData)
+ * so the Home page doesn't also need to hit the monthly endpoint.
+ *
+ * Returns records in the WeeklyAttendanceRecord shape for callers that
+ * already consume that type (useAttendanceAgent). Fields missing from the
+ * home payload (workHours, status, recordType, complete) are filled with
+ * safe defaults — none of them are read on the Home page.
+ */
 export function useDailyAttendance() {
-  const now = new Date()
-  const { data, isLoading, refetch } = useMonthlyAttendance(now.getFullYear(), now.getMonth() + 1)
-  const todayStr = getTodayDateString()
+  const { data, isLoading, refetch } = useHomeData()
 
   const todayRecords = useMemo((): WeeklyAttendanceRecord[] => {
-    if (!data) return []
-    return data.records.filter(r => r.effectiveDate === todayStr)
-  }, [data, todayStr])
+    if (!data?.todayAttendance) return []
+    return data.todayAttendance.map((r) => ({
+      id: r.id || '',
+      effectiveDate: r.effectiveDate,
+      siteId: r.siteId,
+      siteName: r.siteName,
+      checkInTime: r.checkInTime ?? 0,
+      checkOutTime: r.checkOutTime ?? undefined,
+      workHours: undefined,
+      workEffort: r.workEffort,
+      dailyWageSnapshot: r.dailyWageSnapshot ?? undefined,
+      expectedWage: r.expectedWage,
+      status: '',
+      recordType: '',
+      hasCheckedIn: r.hasCheckedIn,
+      hasCheckedOut: r.hasCheckedOut,
+      complete: r.hasCheckedOut,
+    }))
+  }, [data])
 
   const currentCheckIn = useMemo((): WeeklyAttendanceRecord | null => {
     return todayRecords.find(r => r.hasCheckedIn && !r.hasCheckedOut) || null

@@ -39,6 +39,7 @@ const MAX_CHECKINS_PER_DAY = 2
 export interface AttendanceAgentState {
   // Core state
   checkedInSiteId: string | null
+  checkedInAttendanceId: string | null
   siteName: string
   siteAddress: string
   workStart?: string
@@ -98,6 +99,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
 
   // Core state — local for immediate UI feedback
   const [checkedInSiteId, setCheckedInSiteId] = useState<string | null>(null)
+  const [checkedInAttendanceId, setCheckedInAttendanceId] = useState<string | null>(null)
   const [siteName, setSiteName] = useState("")
   const [siteAddress, setSiteAddress] = useState("")
   const [dailyWageSnapshot, setDailyWageSnapshot] = useState<number | null>(null)
@@ -120,6 +122,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     if (serverCheckIn) {
       const cached = checkinSiteStorage.get()
       setCheckedInSiteId(serverCheckIn.siteId)
+      setCheckedInAttendanceId(serverCheckIn.id || null)
       setSiteName(serverCheckIn.siteName)
       setSiteAddress(cached?.siteAddress || "")
       setDailyWageSnapshot(serverCheckIn.dailyWageSnapshot ?? cached?.dailyWageSnapshot ?? null)
@@ -177,6 +180,7 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
         if (result.success) {
           // Update local state immediately (optimistic)
           setCheckedInSiteId(siteId)
+          setCheckedInAttendanceId(result.data.id || null)
           setSiteName(result.data.siteName)
           setSiteAddress(result.data.siteAddress)
           setCheckInTime(result.data.serverTimestamp)
@@ -188,7 +192,8 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
             dailyWageSnapshot: null,
           })
 
-          // Invalidate query so calendar and other consumers get fresh data
+          // Invalidate Home and /attendance caches so both pages refresh.
+          queryClient.invalidateQueries({ queryKey: ['homeData'] })
           queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
 
           return { success: true, data: result.data }
@@ -226,10 +231,12 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
           const now = new Date().toISOString()
           setCheckOutTime(now)
           setCheckedInSiteId(null)
+          setCheckedInAttendanceId(null)
           setCompletedCount((prev) => prev + 1)
           checkinSiteStorage.clear()
 
-          // Invalidate query so calendar and other consumers get fresh data
+          // Invalidate Home and /attendance caches so both pages refresh.
+          queryClient.invalidateQueries({ queryKey: ['homeData'] })
           queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
 
           return { success: true, attendanceId: result.attendanceId }
@@ -243,14 +250,16 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
     [checkedInSiteId, checkInTime, queryClient]
   )
 
-  // Refresh records — now triggers a React Query refetch
+  // Refresh records — invalidate both home and /attendance caches.
   const refreshRecords = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['homeData'] })
     queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
   }, [queryClient])
 
   return {
     // State
     checkedInSiteId,
+    checkedInAttendanceId,
     siteName,
     siteAddress,
     workStart,

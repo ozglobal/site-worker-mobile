@@ -7,22 +7,55 @@ import { SiteCombobox } from "@/components/ui/site-combobox"
 import { Calendar } from "@/components/ui/calendar"
 import { ko } from "react-day-picker/locale"
 import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
-import { recordsToCalendarEvents, recordsToSiteLegend } from "@/utils/attendance"
-
-const currentYear = new Date().getFullYear()
-const currentMonth = new Date().getMonth() + 1
+import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
+import { daysToCalendarEvents, daysToSiteLegend, getSiteColor } from "@/utils/attendance"
+import { formatCurrency } from "@/utils/format"
 
 export function CalendarPage() {
   const navigate = useNavigate()
-  const [year, setYear] = useState(currentYear)
-  const [month, setMonth] = useState(currentMonth)
+  // Evaluate lazily so the page always opens on the real current month,
+  // regardless of when this module was first loaded.
+  const [year, setYear] = useState(() => new Date().getFullYear())
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1)
   const viewMode: ViewMode = "calendar"
   const [selectedSite, setSelectedSite] = useState("")
   const { data } = useMonthlyAttendance(year, month)
-  const events = useMemo(() => data ? recordsToCalendarEvents(data.records) : [], [data])
-  const sites = useMemo(() => data ? recordsToSiteLegend(data.records) : [], [data])
-  const attendanceDays = data?.attendanceDays || 0
-  const totalWorkEffort = data?.totalWorkEffort || 0
+  // Calendar date dots and site legend both come from `days` so their colors
+  // stay in lock-step.
+  const events = useMemo(() => daysToCalendarEvents(data?.days || []), [data])
+  const sites = useMemo(() => daysToSiteLegend(data?.days || []), [data])
+
+  // Site dropdown is populated from today's attendance (daily API).
+  const { data: today } = useTodayAttendance()
+  const siteOptions = useMemo(() => {
+    const seen = new Map<string, { value: string; label: string; color: string }>()
+    ;(today?.attendances || []).forEach((a) => {
+      if (!a.siteId || seen.has(a.siteId)) return
+      seen.set(a.siteId, {
+        value: a.siteId,
+        label: a.siteName || "",
+        color: getSiteColor(a.siteId, sites),
+      })
+    })
+    return Array.from(seen.values())
+  }, [today, sites])
+  const attendanceDays = data?.totalWorkDays || 0
+  const totalWorkEffort = data?.totalEffort || 0
+
+  // Per-site breakdown for the summary card — sourced directly from the
+  // API's siteBreakdown payload (no longer recomputed from records).
+  const siteWorkEfforts = useMemo(
+    () =>
+      (data?.siteBreakdown || []).map((s) => ({
+        siteId: s.siteId,
+        name: s.siteName,
+        effort: s.effort,
+        color: getSiteColor(s.siteId, sites),
+      })),
+    [data, sites]
+  )
+
+  const totalExpectedWage = data?.totalExpectedWage || 0
 
   const handlePrevMonth = () => {
     if (month === 1) {
@@ -74,7 +107,7 @@ export function CalendarPage() {
 
       <div className="px-4 shrink-0">
         <SiteCombobox
-          options={sites.map((s) => ({ value: s.id, label: s.name, color: s.color }))}
+          options={siteOptions}
           value={selectedSite}
           onChange={setSelectedSite}
         />
@@ -118,10 +151,10 @@ export function CalendarPage() {
                 <span className="text-sm text-slate-600">총 공수</span>
                 <span className="text-sm font-semibold text-slate-900">{totalWorkEffort}공수</span>
               </div>
-              {sites.length > 0 && (
+              {siteWorkEfforts.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  {sites.map((site) => (
-                    <div key={site.id} className="flex justify-between items-start">
+                  {siteWorkEfforts.map((site) => (
+                    <div key={site.siteId} className="flex justify-between items-start">
                       <div className="flex items-start gap-2">
                         <span
                           className="w-2 h-2 rounded-full mt-1.5 shrink-0"
@@ -129,7 +162,7 @@ export function CalendarPage() {
                         />
                         <span className="text-sm text-slate-600">{site.name}</span>
                       </div>
-                      <span className="text-sm text-slate-600 shrink-0 ml-2">공수</span>
+                      <span className="text-sm text-slate-600 shrink-0 ml-2">{site.effort}공수</span>
                     </div>
                   ))}
                 </div>
@@ -139,7 +172,7 @@ export function CalendarPage() {
             {/* 예상 노임 */}
             <div className="flex justify-between items-center pt-4">
               <span className="text-sm text-slate-600">예상 노임</span>
-              <span className="text-sm font-semibold text-slate-900">원</span>
+              <span className="text-sm font-semibold text-slate-900">{formatCurrency(totalExpectedWage)}</span>
             </div>
           </div>
         </div>

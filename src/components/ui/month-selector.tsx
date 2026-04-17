@@ -25,6 +25,12 @@ export function MonthSelector({
   onViewModeChange,
   className,
 }: MonthSelectorProps) {
+  // Next-month navigation is capped at the current month — workers can't
+  // view attendance for months that haven't happened yet.
+  const now = new Date()
+  const isAtCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1
+  const nextDisabled = isAtCurrentMonth
+
   return (
     <div className={cn("flex items-center justify-between px-4 py-3", className)}>
       {/* Year/Month navigation */}
@@ -35,9 +41,14 @@ export function MonthSelector({
         <span className="text-lg font-bold text-slate-900 min-w-[100px] text-center">
           {year}년 {month}월
         </span>
-        <button onClick={onNextMonth} className="flex items-center justify-center w-8 h-8 rounded-md text-slate-500 active:bg-slate-100">
-          <ChevronRightIcon sx={{ fontSize: 20 }} />
-        </button>
+        {!nextDisabled && (
+          <button
+            onClick={onNextMonth}
+            className="flex items-center justify-center w-8 h-8 rounded-md text-slate-500 active:bg-slate-100"
+          >
+            <ChevronRightIcon sx={{ fontSize: 20 }} />
+          </button>
+        )}
       </div>
 
       {/* View mode toggle */}

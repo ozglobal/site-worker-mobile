@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import FmdGoodIcon from "@mui/icons-material/FmdGood"
 import MeetingRoomOutlinedIcon from "@mui/icons-material/MeetingRoomOutlined"
@@ -14,23 +14,30 @@ import { Spinner } from "@/components/ui/spinner"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { useToast } from "@/contexts/ToastContext"
 import { useAuth } from "@/contexts/AuthContext"
-import { submitCorrectionRequest, purgeAttendance } from "@/lib/attendance"
+import { submitCorrectionRequest } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { CorrectionDialog } from "@/components/ui/correction-dialog"
 import { useHomeAgent } from "./useHomeAgent"
+import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
+import { useHomeData } from "@/lib/queries/useHomeData"
 // import { WeeklyCalendar } from "./components"
 
 export function Home() {
   const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
   const { worker } = useAuth()
+  // Fire GET /system/worker/me/home first — aggregates today's attendance,
+  // monthly stats, unread notices, and onboarding/documents flags in one call.
+  useHomeData()
+  // /attendance/daily carries per-site `attendanceId` which /home omits — we
+  // need it to open the correction dialog against a specific record.
+  const { data: todayDaily } = useTodayAttendance()
   const {
     userName,
     currentDate,
     attendance,
     workSite,
     sites,
-    todayWorkRecords,
     // calendar,
     scanner,
     locationPopup,
@@ -38,16 +45,38 @@ export function Home() {
     actions,
   } = useHomeAgent()
 
+  // Today's completed records — rendered in the "오늘 근무 기록" card.
+  // Sourced from /daily (not /home) so every row carries an attendanceId.
+  const todayWorkRecords = useMemo(
+    () =>
+      (todayDaily?.attendances || [])
+        .filter((a) => !!a.checkOutTime)
+        .map((a) => ({
+          id: a.attendanceId,
+          workEntryId: a.entries?.[0]?.entryId || "",
+          siteName: a.siteName || "",
+          checkInTime: a.checkInTime || "",
+          checkOutTime: a.checkOutTime || undefined,
+          workEffort: a.totalEffort,
+          dailyWageSnapshot: a.entries?.[0]?.dailyWageSnapshot,
+          expectedWage: a.totalExpectedWage,
+        })),
+    [todayDaily]
+  )
+
   const [showMaxCheckInTooltip, setShowMaxCheckInTooltip] = useState(false)
 
   // Correction request dialog state
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
   const [correctionWorkEffort, setCorrectionWorkEffort] = useState("")
   const [correctionDailyWage, setCorrectionDailyWage] = useState("")
+  const [correctionSiteName, setCorrectionSiteName] = useState("")
+  const [correctionTimeRange, setCorrectionTimeRange] = useState("")
   const [showOvertimeDialog, setShowOvertimeDialog] = useState(false)
   const [overtimeApplied, setOvertimeApplied] = useState(false)
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false)
   const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
+  const [correctionWorkEntryId, setCorrectionWorkEntryId] = useState<string | null>(null)
 
   const closeAll = () => {
     setShowCorrectionDialog(false)
@@ -55,49 +84,34 @@ export function Home() {
     setCorrectionAttendanceId(null)
   }
 
-  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string }) => {
-    // 1. If no attendanceId yet, execute checkout first
-    let attendanceId = correctionAttendanceId
-    if (!attendanceId) {
-      const checkoutResult = await actions.clockOut()
-      if (!checkoutResult?.success) {
-        return
-      }
-      attendanceId = checkoutResult.attendanceId || null
-      if (!attendanceId) {
-        showError("출퇴근 기록을 찾을 수 없습니다.")
-        return
-      }
-      setCorrectionAttendanceId(attendanceId)
-    }
-
-    // 2. Submit correction requests (work_effort + daily_wage)
-    const effortResult = await submitCorrectionRequest({
-      attendanceId,
-      requestType: "work_effort",
-      requestedValue: data.workEffort,
-      reason: data.reason,
-    })
-    if (!effortResult.success) {
-      reportError("CORRECTION_SUBMIT_FAIL", effortResult.error)
-      showError(effortResult.error)
+  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string; isOvertime: boolean }) => {
+    if (!correctionAttendanceId) {
+      showError("출퇴근 기록을 찾을 수 없습니다.")
       return
     }
 
-    const wageResult = await submitCorrectionRequest({
-      attendanceId,
-      requestType: "daily_wage",
-      requestedValue: data.dailyWage,
+    // Combined work_effort + daily_wage correction. Overtime flag is UI-only
+    // for now — wire to its dedicated endpoint once the backend exposes one.
+    const result = await submitCorrectionRequest({
+      attendanceId: correctionAttendanceId,
+      workEntryId: correctionWorkEntryId || correctionAttendanceId,
+      requestType: "work_effort_and_wage",
+      requestedValue: `${data.workEffort}|${data.dailyWage}`,
+      originalEffort: correctionWorkEffort,
+      requestedEffort: data.workEffort,
+      originalWage: correctionDailyWage.replace(/,/g, ""),
+      requestedWage: data.dailyWage,
       reason: data.reason,
     })
-    if (!wageResult.success) {
-      reportError("CORRECTION_SUBMIT_FAIL", wageResult.error)
-      showError(wageResult.error)
+    if (!result.success) {
+      reportError("CORRECTION_SUBMIT_FAIL", result.error)
+      showError(result.error)
       return
     }
 
     showSuccess("정정 요청이 제출되었습니다.")
     setCorrectionAttendanceId(null)
+    setCorrectionWorkEntryId(null)
     setShowCorrectionDialog(false)
   }
 
@@ -255,8 +269,8 @@ export function Home() {
             </div>
             {todayWorkRecords.length > 0 ? (
               <div className="space-y-3">
-                {todayWorkRecords.map((record) => (
-                  <div key={record.id}>
+                {todayWorkRecords.map((record, idx) => (
+                  <div key={record.id || `${record.siteName}-${record.checkInTime}-${idx}`}>
                     <AttendanceRecordCard
                       siteName={record.siteName}
                       timeRange={`${formatKstTime(record.checkInTime)} - ${record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}`}
@@ -269,27 +283,19 @@ export function Home() {
                         setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "0.5")
                         setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
                         setCorrectionAttendanceId(record.id)
+                        setCorrectionWorkEntryId(record.workEntryId || null)
+                        setCorrectionSiteName(record.siteName || "")
+                        setCorrectionTimeRange(
+                          `직영 · ${record.checkInTime ? formatKstTime(record.checkInTime) : ""} - ${record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}`
+                        )
                         setShowCorrectionDialog(true)
                       }}
                     />
-                    <button
-                      onClick={async () => {
-                        const result = await purgeAttendance(record.id)
-                        if (result.success) {
-                          showSuccess("출근 기록이 삭제되었습니다.")
-                        } else {
-                          showError(result.error)
-                        }
-                      }}
-                      className="mt-1 text-xs text-slate-400 underline"
-                    >
-                      [TEST] 출퇴근 기록 삭제
-                    </button>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">당일 퇴근을 완료한 기록이 여기에 노출됩니다.</p>
+              <p className="text-sm text-slate-500">아직 오늘 퇴근한 기록이 없어요.</p>
             )}
           </div>
 
@@ -550,8 +556,8 @@ export function Home() {
       {/* Correction Request Dialog */}
       {showCorrectionDialog && (
         <CorrectionDialog
-          siteName={workSite.name}
-          timeRange={`직영 · ${attendance.checkInTime ? formatKstTime(attendance.checkInTime) : ""} - ${formatKstTime(new Date().toISOString())}`}
+          siteName={correctionSiteName || workSite.name}
+          timeRange={correctionTimeRange || `직영 · ${attendance.checkInTime ? formatKstTime(attendance.checkInTime) : ""} - ${formatKstTime(new Date().toISOString())}`}
           initialWorkEffort={correctionWorkEffort}
           initialDailyWage={correctionDailyWage}
           onBack={() => { setShowCorrectionDialog(false); setShowCheckoutDialog(true) }}

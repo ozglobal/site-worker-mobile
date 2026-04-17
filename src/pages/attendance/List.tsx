@@ -5,23 +5,23 @@ import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { MonthSelector, ViewMode } from "@/components/ui/month-selector"
 import { SiteCombobox } from "@/components/ui/site-combobox"
 import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
+import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
 import { QueryErrorState } from "@/components/ui/query-error-state"
-import { recordsToSiteLegend, groupRecordsByDate, getSiteColor } from "@/utils/attendance"
+import { daysToSiteLegend, groupRecordsByDate, getSiteColor } from "@/utils/attendance"
 import { formatTimestamp, formatCurrency } from "@/utils/format"
 import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
 import { CorrectionDialog } from "@/components/ui/correction-dialog"
-import { submitCorrectionRequest } from "@/lib/attendance"
+import { submitCorrectionRequest, type WeeklyAttendanceRecord } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
-
-const currentYear = new Date().getFullYear()
-const currentMonth = new Date().getMonth() + 1
 
 export function ListPage() {
   const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
-  const [year, setYear] = useState(currentYear)
-  const [month, setMonth] = useState(currentMonth)
+  // Evaluate lazily so the page always opens on the real current month,
+  // regardless of when this module was first loaded.
+  const [year, setYear] = useState(() => new Date().getFullYear())
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1)
   const viewMode: ViewMode = "list"
   const [selectedSite, setSelectedSite] = useState("")
 
@@ -42,28 +42,22 @@ export function ListPage() {
     setShowCorrectionDialog(true)
   }
 
-  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string }) => {
+  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string; isOvertime: boolean }) => {
     if (!correctionAttendanceId) return
-    const effortResult = await submitCorrectionRequest({
+    const result = await submitCorrectionRequest({
       attendanceId: correctionAttendanceId,
-      requestType: "work_effort",
-      requestedValue: data.workEffort,
+      workEntryId: correctionAttendanceId,
+      requestType: "work_effort_and_wage",
+      requestedValue: `${data.workEffort}|${data.dailyWage}`,
+      originalEffort: correctionWorkEffort,
+      requestedEffort: data.workEffort,
+      originalWage: correctionDailyWage.replace(/,/g, ""),
+      requestedWage: data.dailyWage,
       reason: data.reason,
     })
-    if (!effortResult.success) {
-      reportError("CORRECTION_SUBMIT_FAIL", effortResult.error)
-      showError(effortResult.error)
-      return
-    }
-    const wageResult = await submitCorrectionRequest({
-      attendanceId: correctionAttendanceId,
-      requestType: "daily_wage",
-      requestedValue: data.dailyWage,
-      reason: data.reason,
-    })
-    if (!wageResult.success) {
-      reportError("CORRECTION_SUBMIT_FAIL", wageResult.error)
-      showError(wageResult.error)
+    if (!result.success) {
+      reportError("CORRECTION_SUBMIT_FAIL", result.error)
+      showError(result.error)
       return
     }
     showSuccess("정정 요청이 제출되었습니다.")
@@ -71,10 +65,55 @@ export function ListPage() {
     setCorrectionAttendanceId(null)
   }
   const { data, isError, refetch } = useMonthlyAttendance(year, month)
-  const records = data?.records || []
-  const sites = useMemo(() => recordsToSiteLegend(records), [records])
-  const attendanceDays = data?.attendanceDays || 0
-  const totalWorkEffort = data?.totalWorkEffort || 0
+  // Build record rows from `days[].entries[]` — each entry becomes one row
+  // on its day. The legacy `records` array is ignored when `days` is present.
+  const records: WeeklyAttendanceRecord[] = useMemo(() => {
+    const fromDays: WeeklyAttendanceRecord[] = []
+    ;(data?.days || []).forEach((d) => {
+      d.entries?.forEach((e, idx) => {
+        const hasCheckedIn = e.hasCheckedIn ?? true
+        const hasCheckedOut = e.hasCheckedOut ?? true
+        fromDays.push({
+          id: e.attendanceId || e.entryId || `${d.date}-${e.siteId}-${idx}`,
+          effectiveDate: d.date,
+          siteId: e.siteId,
+          siteName: e.siteName || "",
+          checkInTime: e.checkInTime ?? 0,
+          checkOutTime: e.checkOutTime,
+          workHours: undefined,
+          workEffort: e.effort,
+          dailyWageSnapshot: e.dailyWageSnapshot,
+          expectedWage: e.expectedWage,
+          status: e.status || "",
+          recordType: e.categoryLabel || e.category || "",
+          hasCheckedIn,
+          hasCheckedOut,
+          complete: hasCheckedOut,
+        })
+      })
+    })
+    if (fromDays.length > 0) return fromDays
+    return data?.records || []
+  }, [data])
+  const sites = useMemo(() => daysToSiteLegend(data?.days || []), [data])
+  const attendanceDays = data?.totalWorkDays || 0
+  const totalWorkEffort = data?.totalEffort || 0
+
+  // Site dropdown options come from today's attendance (daily API),
+  // not the monthly records.
+  const { data: today } = useTodayAttendance()
+  const siteOptions = useMemo(() => {
+    const seen = new Map<string, { value: string; label: string; color: string }>()
+    ;(today?.attendances || []).forEach((a) => {
+      if (!a.siteId || seen.has(a.siteId)) return
+      seen.set(a.siteId, {
+        value: a.siteId,
+        label: a.siteName || "",
+        color: getSiteColor(a.siteId, sites),
+      })
+    })
+    return Array.from(seen.values())
+  }, [today, sites])
 
   // Filter records by selected site
   const filteredRecords = useMemo(() => {
@@ -85,31 +124,20 @@ export function ListPage() {
   // Group records by date
   const dayGroups = useMemo(() => groupRecordsByDate(filteredRecords), [filteredRecords])
 
-  // Calculate total expected wage
-  const totalExpectedWage = useMemo(() => {
-    return records.reduce((sum, r) => sum + (r.expectedWage || 0), 0)
-  }, [records])
+  // Per-site breakdown and total expected wage — sourced from the backend's
+  // siteBreakdown payload instead of being recomputed from records.
+  const siteWorkEfforts = useMemo(
+    () =>
+      (data?.siteBreakdown || []).map((s) => ({
+        siteId: s.siteId,
+        name: s.siteName,
+        effort: s.effort,
+        color: getSiteColor(s.siteId, sites),
+      })),
+    [data, sites]
+  )
 
-  // Calculate work effort by site
-  const siteWorkEfforts = useMemo(() => {
-    const effortMap = new Map<string, { siteId: string; name: string; effort: number; color: string }>()
-    records.forEach((r) => {
-      if (r.siteId) {
-        const existing = effortMap.get(r.siteId)
-        if (existing) {
-          existing.effort += r.workEffort || 0
-        } else {
-          effortMap.set(r.siteId, {
-            siteId: r.siteId,
-            name: r.siteName || "",
-            effort: r.workEffort || 0,
-            color: getSiteColor(r.siteId, sites),
-          })
-        }
-      }
-    })
-    return Array.from(effortMap.values())
-  }, [records, sites])
+  const totalExpectedWage = data?.totalExpectedWage || 0
 
   const handlePrevMonth = () => {
     if (month === 1) {
@@ -188,7 +216,7 @@ export function ListPage() {
                         />
                         <span className="text-sm text-slate-600">{site.name}</span>
                       </div>
-                      <span className="text-sm text-slate-600 shrink-0 ml-2">공수</span>
+                      <span className="text-sm text-slate-600 shrink-0 ml-2">{site.effort}공수</span>
                     </div>
                   ))}
                 </div>
@@ -198,7 +226,7 @@ export function ListPage() {
             {/* 예상 노임 */}
             <div className="flex justify-between items-center pt-4">
               <span className="text-sm text-slate-600">예상 노임</span>
-              <span className="text-sm font-semibold text-slate-900">원</span>
+              <span className="text-sm font-semibold text-slate-900">{formatCurrency(totalExpectedWage)}</span>
             </div>
           </div>
         </div>
@@ -206,7 +234,7 @@ export function ListPage() {
         {/* Site Selector */}
         <div className="px-4 pt-2 pb-6">
           <SiteCombobox
-            options={sites.map((s) => ({ value: s.id, label: s.name, color: s.color }))}
+            options={siteOptions}
             value={selectedSite}
             onChange={setSelectedSite}
           />
@@ -215,7 +243,8 @@ export function ListPage() {
 
         {/* Daily Attendance Cards */}
         {dayGroups.map((group) => {
-          const isGroupToday = group.date === `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`
+          const today = new Date()
+          const isGroupToday = group.date === `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
           return (
             <div key={group.date} className="px-4 pb-6">
               {/* Date Header */}

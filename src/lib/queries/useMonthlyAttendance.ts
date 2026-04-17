@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchMonthlyAttendance } from '@/lib/attendance'
 
-export function useMonthlyAttendance(year: number, month: number) {
+export function useMonthlyAttendance(year: number, month: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['monthlyAttendance', year, month],
     queryFn: async () => {
@@ -11,6 +11,10 @@ export function useMonthlyAttendance(year: number, month: number) {
       }
       return result.data
     },
-    staleTime: Infinity,
+    // Always refetch when /attendance mounts so users get current data —
+    // cached entries don't prevent a fresh network call on page entry.
+    staleTime: 0,
+    refetchOnMount: 'always',
+    enabled: options?.enabled ?? true,
   })
 }

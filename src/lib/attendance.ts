@@ -300,6 +300,35 @@ export interface WeeklyAttendanceRecord {
 // In-flight request deduplication for monthly attendance
 const monthlyAttendanceRequests = new Map<string, Promise<MonthlyAttendanceResponse>>()
 
+export interface MonthlySiteBreakdown {
+  siteId: string
+  siteName: string
+  effort: number
+  expectedWage: number
+}
+
+export interface MonthlyDayEntry {
+  entryId?: string
+  attendanceId?: string
+  effort: number
+  siteId: string
+  siteName?: string
+  category?: string
+  categoryLabel?: string
+  dailyWageSnapshot?: number
+  expectedWage?: number
+  checkInTime?: number
+  checkOutTime?: number
+  status?: string
+  hasCheckedIn?: boolean
+  hasCheckedOut?: boolean
+}
+
+export interface MonthlyDay {
+  date: string
+  entries: MonthlyDayEntry[]
+}
+
 /**
  * Monthly attendance API response
  */
@@ -307,11 +336,14 @@ export interface MonthlyAttendanceResponse {
   success: boolean
   data?: {
     records: WeeklyAttendanceRecord[]
-    attendanceDays: number
+    totalWorkDays: number
     totalWorkHours: number
-    totalWorkEffort: number
+    totalEffort: number
+    totalExpectedWage: number
     startDate: string
     endDate: string
+    siteBreakdown: MonthlySiteBreakdown[]
+    days: MonthlyDay[]
   }
   error?: string
 }
@@ -337,7 +369,7 @@ export const fetchMonthlyAttendance = async (
   const request = (async (): Promise<MonthlyAttendanceResponse> => {
     try {
       const mm = String(month).padStart(2, '0')
-      const endpoint = `/system/worker/me/attendance/monthly?date=${year}-${mm}-01`
+      const endpoint = `/system/worker/me/attendance/monthly?yearMonth=${year}-${mm}-01`
 
       const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
         method: 'GET',
@@ -366,11 +398,14 @@ export const fetchMonthlyAttendance = async (
         success: true,
         data: {
           records,
-          attendanceDays: (payload.attendanceDays as number) || 0,
+          totalWorkDays: (payload.totalWorkDays as number) || 0,
           totalWorkHours: (payload.totalWorkHours as number) || 0,
-          totalWorkEffort: (payload.totalWorkEffort as number) || 0,
+          totalEffort: (payload.totalEffort as number) || 0,
+          totalExpectedWage: (payload.totalExpectedWage as number) || 0,
           startDate: (payload.startDate as string) || '',
           endDate: (payload.endDate as string) || '',
+          siteBreakdown: (payload.siteBreakdown as MonthlySiteBreakdown[]) || [],
+          days: (payload.days as MonthlyDay[]) || [],
         },
       }
     } catch (error) {
@@ -391,31 +426,195 @@ export const fetchMonthlyAttendance = async (
 }
 
 // ============================================
+// Home bundle API
+// GET /system/worker/me/home
+// Aggregates everything Home.tsx needs in a single round trip.
+// ============================================
+
+export interface HomeAttendanceRecord {
+  id?: string
+  workerId: string
+  effectiveDate: string
+  hasCheckedIn: boolean
+  hasCheckedOut: boolean
+  checkInTime: number | null
+  checkOutTime?: number | null
+  siteId: string
+  siteName: string
+  wageSystemSnapshot?: string
+  dailyWageSnapshot: number | null
+  expectedWage?: number
+  workEffort?: number
+}
+
+export interface HomeData {
+  workerName: string
+  currentSiteName: string
+  todayAttendance: HomeAttendanceRecord[]
+  monthlyWorkDays: number
+  monthlyTotalHours: number
+  monthlyEstimatedWage: number
+  unreadNoticeCount: number
+  onboardingCompleted: boolean
+  pendingDocuments: number
+}
+
+export const fetchHomeData = async (): Promise<ApiResult<HomeData>> => {
+  const endpoint = '/system/worker/me/home'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: { 'accept': '*/*' },
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!json) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
+    if (!response.ok) {
+      return { success: false, error: (json.message as string) || `API error: ${response.status}` }
+    }
+
+    const payload = (json.data || json) as Record<string, unknown>
+    const data: HomeData = {
+      workerName: (payload.workerName as string) || '',
+      currentSiteName: (payload.currentSiteName as string) || '',
+      todayAttendance: (payload.todayAttendance as HomeAttendanceRecord[]) || [],
+      monthlyWorkDays: (payload.monthlyWorkDays as number) || 0,
+      monthlyTotalHours: (payload.monthlyTotalHours as number) || 0,
+      monthlyEstimatedWage: (payload.monthlyEstimatedWage as number) || 0,
+      unreadNoticeCount: (payload.unreadNoticeCount as number) || 0,
+      onboardingCompleted: Boolean(payload.onboardingCompleted),
+      pendingDocuments: (payload.pendingDocuments as number) || 0,
+    }
+    return { success: true, data }
+  } catch (error) {
+    console.error('[HOME] Error:', error)
+    reportError('HOME_FETCH_FAIL', error instanceof Error ? error.message : 'Network error', { endpoint })
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
+    }
+  }
+}
+
+// ============================================
+// Today's attendance API
+// GET /system/worker/me/attendance/daily/{yyyy-MM-dd}
+// ============================================
+
+export interface DailyAttendanceEntry {
+  entryId: string
+  category: string
+  categoryLabel: string
+  effort: number
+  dailyWageSnapshot: number
+  expectedWage: number
+  canRequestCorrection: boolean
+  overtime: boolean
+}
+
+export interface DailyAttendanceSite {
+  attendanceId: string
+  siteId: string
+  siteName: string
+  status: string
+  checkInTime: string | null
+  checkOutTime?: string | null
+  totalEffort: number
+  totalExpectedWage: number
+  canRequestCorrection: boolean
+  entries: DailyAttendanceEntry[]
+}
+
+export interface DailyAttendanceData {
+  date: string
+  attendances: DailyAttendanceSite[]
+}
+
+export const fetchTodayAttendance = async (
+  date: string,
+): Promise<ApiResult<DailyAttendanceData>> => {
+  const endpoint = `/system/worker/me/attendance/daily/${date}`
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: { 'accept': '*/*' },
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!json) {
+      return { success: false, error: 'Invalid server response' }
+    }
+
+    if (!response.ok) {
+      return { success: false, error: (json.message as string) || `API error: ${response.status}` }
+    }
+
+    const payload = (json.data || json) as Record<string, unknown>
+    const data: DailyAttendanceData = {
+      date: (payload.date as string) || date,
+      attendances: (payload.attendances as DailyAttendanceSite[]) || [],
+    }
+    return { success: true, data }
+  } catch (error) {
+    console.error('[DAILY] Error:', error)
+    reportError('ATTENDANCE_DAILY_FAIL', error instanceof Error ? error.message : 'Network error', { endpoint })
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
+    }
+  }
+}
+
+// ============================================
 // Correction Request API
 // ============================================
 
 export interface CorrectionRequestParams {
   attendanceId: string
+  workEntryId: string
   requestType: string
   requestedValue: string
+  originalEffort: string
+  requestedEffort: string
+  originalWage: string
+  requestedWage: string
   reason: string
+}
+
+export interface CorrectionRequest {
+  id: string
+  attendanceId: string
+  workEntryId: string
+  requesterId: number
+  requestType: string
+  originalValue: string
+  requestedValue: string
+  reason: string
+  status: string
+  originalEffort: string
+  requestedEffort: string
+  originalWage: string
+  requestedWage: string
 }
 
 export const submitCorrectionRequest = async (
   params: CorrectionRequestParams
-): Promise<ApiResult<void>> => {
+): Promise<ApiResult<CorrectionRequest>> => {
+  const endpoint = '/system/worker/me/attendance/correction-request'
   try {
-    const response = await authFetch(
-      `${API_BASE_URL}/system/attendance/my/correction-request`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'accept': '*/*',
-        },
-        body: JSON.stringify(params),
-      }
-    )
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'accept': '*/*',
+      },
+      body: JSON.stringify(params),
+    })
 
     const data = await safeJson(response) as Record<string, unknown> | null
 
@@ -430,11 +629,25 @@ export const submitCorrectionRequest = async (
       }
     }
 
-    return { success: true, data: undefined }
+    const payload = (data.data || data) as Record<string, unknown>
+    const correction: CorrectionRequest = {
+      id: (payload.id as string) || '',
+      attendanceId: (payload.attendanceId as string) || '',
+      workEntryId: (payload.workEntryId as string) || '',
+      requesterId: (payload.requesterId as number) || 0,
+      requestType: (payload.requestType as string) || '',
+      originalValue: (payload.originalValue as string) || '',
+      requestedValue: (payload.requestedValue as string) || '',
+      reason: (payload.reason as string) || '',
+      status: (payload.status as string) || '',
+      originalEffort: (payload.originalEffort as string) || '',
+      requestedEffort: (payload.requestedEffort as string) || '',
+      originalWage: (payload.originalWage as string) || '',
+      requestedWage: (payload.requestedWage as string) || '',
+    }
+    return { success: true, data: correction }
   } catch (error) {
-    reportError('CORRECTION_REQUEST_FAIL', error instanceof Error ? error.message : 'Network error', {
-      endpoint: '/system/attendance/my/correction-request',
-    })
+    reportError('CORRECTION_REQUEST_FAIL', error instanceof Error ? error.message : 'Network error', { endpoint })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Network error',

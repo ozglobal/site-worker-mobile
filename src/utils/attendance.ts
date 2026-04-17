@@ -2,7 +2,7 @@
  * Pure attendance record transformation utilities
  */
 
-import type { WeeklyAttendanceRecord } from '@/lib/attendance'
+import type { WeeklyAttendanceRecord, MonthlyDay } from '@/lib/attendance'
 import type { CalendarEvent } from '@/components/ui/calendar'
 
 const SITE_COLORS = ["#007DCA", "#F59E0B", "#10B981", "#EF4444"]
@@ -20,6 +20,27 @@ export interface DayGroup {
   dayName: string
   totalExpectedWage: number
   records: WeeklyAttendanceRecord[]
+}
+
+/**
+ * Build a site legend from the monthly `days[].entries[]` structure.
+ * Colors are assigned in first-encountered order — same scheme
+ * `daysToCalendarEvents` uses, so dropdown dots and calendar dots align.
+ */
+export function daysToSiteLegend(days: MonthlyDay[]): SiteLegendItem[] {
+  const seen = new Map<string, SiteLegendItem>()
+  days.forEach((d) => {
+    d.entries?.forEach((e) => {
+      if (!e.siteId || seen.has(e.siteId)) return
+      const index = seen.size
+      seen.set(e.siteId, {
+        id: e.siteId,
+        name: e.siteName || "",
+        color: SITE_COLORS[index % SITE_COLORS.length],
+      })
+    })
+  })
+  return Array.from(seen.values())
 }
 
 /** Extract unique sites with assigned colors from attendance records */
@@ -53,6 +74,28 @@ export function recordsToCalendarEvents(records: WeeklyAttendanceRecord[]): Cale
     label: r.workEffort != null ? r.workEffort.toFixed(2) : "",
     siteId: r.siteId,
   }))
+}
+
+/**
+ * Transform the `days[].entries[]` block from the monthly API directly into
+ * calendar events — one dot per entry per day, colored per site.
+ */
+export function daysToCalendarEvents(days: MonthlyDay[]): CalendarEvent[] {
+  const siteIndexMap = new Map<string, number>()
+  const events: CalendarEvent[] = []
+  days.forEach((d) => {
+    d.entries?.forEach((e) => {
+      if (!e.siteId) return
+      if (!siteIndexMap.has(e.siteId)) siteIndexMap.set(e.siteId, siteIndexMap.size)
+      events.push({
+        date: new Date(d.date),
+        color: SITE_COLORS[(siteIndexMap.get(e.siteId) ?? 0) % SITE_COLORS.length],
+        label: e.effort != null ? e.effort.toFixed(2) : "",
+        siteId: e.siteId,
+      })
+    })
+  })
+  return events
 }
 
 /** Group attendance records by date (sorted descending) */
