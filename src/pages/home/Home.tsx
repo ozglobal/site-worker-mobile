@@ -46,21 +46,26 @@ export function Home() {
   } = useHomeAgent()
 
   // Today's completed records — rendered in the "오늘 근무 기록" card.
-  // Sourced from /daily (not /home) so every row carries an attendanceId.
+  // One row per entry from data.attendances[].entries[], inheriting the
+  // site-level check-in/out times. Every field shown on the card resolves
+  // to either an attendance-level or entry-level property of /daily.
   const todayWorkRecords = useMemo(
     () =>
       (todayDaily?.attendances || [])
         .filter((a) => !!a.checkOutTime)
-        .map((a) => ({
-          id: a.attendanceId,
-          workEntryId: a.entries?.[0]?.entryId || "",
-          siteName: a.siteName || "",
-          checkInTime: a.checkInTime || "",
-          checkOutTime: a.checkOutTime || undefined,
-          workEffort: a.totalEffort,
-          dailyWageSnapshot: a.entries?.[0]?.dailyWageSnapshot,
-          expectedWage: a.totalExpectedWage,
-        })),
+        .flatMap((a) =>
+          (a.entries || []).map((e) => ({
+            id: a.attendanceId,
+            workEntryId: e.entryId || "",
+            siteName: a.siteName || "",
+            checkInTime: a.checkInTime || "",
+            checkOutTime: a.checkOutTime || undefined,
+            recordType: e.categoryLabel || e.category || "",
+            workEffort: e.effort,
+            dailyWageSnapshot: e.dailyWageSnapshot,
+            expectedWage: e.expectedWage,
+          }))
+        ),
     [todayDaily]
   )
 
@@ -270,11 +275,11 @@ export function Home() {
             {todayWorkRecords.length > 0 ? (
               <div className="space-y-3">
                 {todayWorkRecords.map((record, idx) => (
-                  <div key={record.id || `${record.siteName}-${record.checkInTime}-${idx}`}>
+                  <div key={record.workEntryId || `${record.id}-${idx}`}>
                     <AttendanceRecordCard
                       siteName={record.siteName}
                       timeRange={`${formatKstTime(record.checkInTime)} - ${record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}`}
-                      recordType="용역"
+                      recordType={record.recordType || "일반"}
                       workEffort={record.workEffort}
                       dailyWageSnapshot={record.dailyWageSnapshot}
                       expectedWage={record.expectedWage}
