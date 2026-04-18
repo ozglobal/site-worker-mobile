@@ -192,8 +192,10 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
             dailyWageSnapshot: null,
           })
 
-          // Invalidate Home and /attendance caches so both pages refresh.
-          queryClient.invalidateQueries({ queryKey: ['homeData'] })
+          // On check-in the home card rebuilds from /attendance/daily
+          // (`todayAttendance`), not /home — invalidate that plus the
+          // monthly cache so /attendance stays in sync.
+          queryClient.invalidateQueries({ queryKey: ['todayAttendance'] })
           queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
 
           return { success: true, data: result.data }
@@ -235,8 +237,10 @@ export function useAttendanceAgent(): AttendanceAgentState & AttendanceAgentActi
           setCompletedCount((prev) => prev + 1)
           checkinSiteStorage.clear()
 
-          // Invalidate Home and /attendance caches so both pages refresh.
-          queryClient.invalidateQueries({ queryKey: ['homeData'] })
+          // On check-out the home card rebuilds from /attendance/daily
+          // (`todayAttendance`), not /home — invalidate that plus the
+          // monthly cache so /attendance stays in sync.
+          queryClient.invalidateQueries({ queryKey: ['todayAttendance'] })
           queryClient.invalidateQueries({ queryKey: ['monthlyAttendance'] })
 
           return { success: true, attendanceId: result.attendanceId }

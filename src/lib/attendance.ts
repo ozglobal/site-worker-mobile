@@ -516,10 +516,21 @@ export interface DailyAttendanceEntry {
   overtime: boolean
 }
 
+export interface DailySiteSchedule {
+  standardCheckIn?: string
+  standardCheckOut?: string
+  lunchStartTime?: string
+  lunchEndTime?: string
+  restStartTime?: string
+  restStopTime?: string
+}
+
 export interface DailyAttendanceSite {
   attendanceId: string
   siteId: string
   siteName: string
+  siteAddress?: string
+  siteSchedule?: DailySiteSchedule
   status: string
   checkInTime: string | null
   checkOutTime?: string | null

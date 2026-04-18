@@ -45,6 +45,13 @@ export function Home() {
     actions,
   } = useHomeAgent()
 
+  // Active attendance from /daily (currently checked in, not yet checked out).
+  // Drives the site-info block — name, address, and the day's schedule.
+  const activeAttendance = useMemo(
+    () => (todayDaily?.attendances || []).find((a) => !a.checkOutTime),
+    [todayDaily]
+  )
+
   // Today's completed records — rendered in the "오늘 근무 기록" card.
   // One row per entry from data.attendances[].entries[], inheriting the
   // site-level check-in/out times. Every field shown on the card resolves
@@ -184,26 +191,36 @@ export function Home() {
             </div>
 
             <div className="p-4">
-              {/* Work Site Info - only show when currently checked in */}
-              {attendance.isCheckedIn && workSite.name && (
+              {/* Work Site Info - only show when currently checked in.
+                  All fields come from /attendance/daily's active attendance. */}
+              {attendance.isCheckedIn && activeAttendance && (
                 <div className="bg-neutral-100 rounded-xl p-5 mb-4">
                   <h3 className="text-lg font-bold text-slate-900 mb-1">
-                    {workSite.name}
+                    {activeAttendance.siteName}
                   </h3>
-                  {workSite.address && (
+                  {activeAttendance.siteAddress && (
                     <div className="flex items-center gap-1 text-sm text-slate-500">
                       <FmdGoodIcon sx={{ fontSize: 16 }} />
-                      <span>{workSite.address}</span>
+                      <span>{activeAttendance.siteAddress}</span>
                     </div>
                   )}
 
-                  {/* Schedule */}
-                  <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-2 gap-y-2 text-sm">
-                    <div className="flex justify-between pr-4"><span className="text-slate-500">출근</span><span className="text-slate-900">{workSite.workStart || "no data"}</span></div>
-                    <div className="flex justify-between pl-4"><span className="text-slate-500">퇴근</span><span className="text-slate-900">{workSite.workEnd || "no data"}</span></div>
-                    <div className="flex justify-between pr-4"><span className="text-slate-500">점심</span><span className="text-slate-900">{workSite.lunchStart && workSite.lunchEnd ? `${workSite.lunchStart} ~ ${workSite.lunchEnd}` : "no data"}</span></div>
-                    <div className="flex justify-between pl-4"><span className="text-slate-500">휴게</span><span className="text-slate-900">{workSite.breakStart && workSite.breakEnd ? `${workSite.breakStart} ~ ${workSite.breakEnd}` : "no data"}</span></div>
-                  </div>
+                  {/* Schedule — pulled from siteSchedule on the active attendance.
+                      Times arrive as HH:mm:ss; trim to HH:mm for display. */}
+                  {(() => {
+                    const hm = (t?: string) => (t ? t.slice(0, 5) : "")
+                    const s = activeAttendance.siteSchedule
+                    const lunch = hm(s?.lunchStartTime) && hm(s?.lunchEndTime) ? `${hm(s?.lunchStartTime)} ~ ${hm(s?.lunchEndTime)}` : "no data"
+                    const rest = hm(s?.restStartTime) && hm(s?.restStopTime) ? `${hm(s?.restStartTime)} ~ ${hm(s?.restStopTime)}` : "no data"
+                    return (
+                      <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-2 gap-y-2 text-sm">
+                        <div className="flex justify-between pr-4"><span className="text-slate-500">출근</span><span className="text-slate-900">{hm(s?.standardCheckIn) || "no data"}</span></div>
+                        <div className="flex justify-between pl-4"><span className="text-slate-500">퇴근</span><span className="text-slate-900">{hm(s?.standardCheckOut) || "no data"}</span></div>
+                        <div className="flex justify-between pr-4"><span className="text-slate-500">점심</span><span className="text-slate-900">{lunch}</span></div>
+                        <div className="flex justify-between pl-4"><span className="text-slate-500">휴게</span><span className="text-slate-900">{rest}</span></div>
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
 

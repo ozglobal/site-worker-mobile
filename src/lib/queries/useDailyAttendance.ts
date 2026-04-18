@@ -1,38 +1,47 @@
 import { useMemo } from 'react'
-import { useHomeData } from './useHomeData'
+import { useTodayAttendance } from './useTodayAttendance'
 import type { WeeklyAttendanceRecord } from '@/lib/attendance'
 
 /**
- * Today's attendance — derived from `GET /system/worker/me/home` (useHomeData)
- * so the Home page doesn't also need to hit the monthly endpoint.
+ * Today's attendance — derived from `GET /system/worker/me/attendance/daily/{today}`
+ * (useTodayAttendance) so that invalidating `['todayAttendance']` after a
+ * check-in/out immediately refreshes the home agent.
  *
  * Returns records in the WeeklyAttendanceRecord shape for callers that
  * already consume that type (useAttendanceAgent). Fields missing from the
- * home payload (workHours, status, recordType, complete) are filled with
- * safe defaults — none of them are read on the Home page.
+ * daily payload (workHours) are filled with safe defaults.
  */
 export function useDailyAttendance() {
-  const { data, isLoading, refetch } = useHomeData()
+  const { data, isLoading, refetch } = useTodayAttendance()
 
   const todayRecords = useMemo((): WeeklyAttendanceRecord[] => {
-    if (!data?.todayAttendance) return []
-    return data.todayAttendance.map((r) => ({
-      id: r.id || '',
-      effectiveDate: r.effectiveDate,
-      siteId: r.siteId,
-      siteName: r.siteName,
-      checkInTime: r.checkInTime ?? 0,
-      checkOutTime: r.checkOutTime ?? undefined,
-      workHours: undefined,
-      workEffort: r.workEffort,
-      dailyWageSnapshot: r.dailyWageSnapshot ?? undefined,
-      expectedWage: r.expectedWage,
-      status: '',
-      recordType: '',
-      hasCheckedIn: r.hasCheckedIn,
-      hasCheckedOut: r.hasCheckedOut,
-      complete: r.hasCheckedOut,
-    }))
+    if (!data?.attendances) return []
+    const effectiveDate = data.date || ''
+    const toMs = (t: string | null | undefined): number => {
+      if (!t) return 0
+      const ms = Date.parse(t)
+      return Number.isFinite(ms) ? ms : 0
+    }
+    return data.attendances.map((a) => {
+      const firstEntry = a.entries?.[0]
+      return {
+        id: a.attendanceId,
+        effectiveDate,
+        siteId: a.siteId,
+        siteName: a.siteName,
+        checkInTime: toMs(a.checkInTime),
+        checkOutTime: a.checkOutTime ? toMs(a.checkOutTime) : undefined,
+        workHours: undefined,
+        workEffort: a.totalEffort,
+        dailyWageSnapshot: firstEntry?.dailyWageSnapshot,
+        expectedWage: a.totalExpectedWage,
+        status: a.status || '',
+        recordType: firstEntry?.categoryLabel || firstEntry?.category || '',
+        hasCheckedIn: !!a.checkInTime,
+        hasCheckedOut: !!a.checkOutTime,
+        complete: !!a.checkOutTime,
+      }
+    })
   }, [data])
 
   const currentCheckIn = useMemo((): WeeklyAttendanceRecord | null => {

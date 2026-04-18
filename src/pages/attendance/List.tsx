@@ -65,14 +65,34 @@ export function ListPage() {
     setCorrectionAttendanceId(null)
   }
   const { data, isError, refetch } = useMonthlyAttendance(year, month)
+  // Today's daily is authoritative for whether a same-day attendance is
+  // still active — monthly entries alone can't tell us that. Cross-reference
+  // by siteId because monthly entries may not carry the attendanceId.
+  const { data: todayDaily } = useTodayAttendance()
+  const todayStr = todayDaily?.date
+  const activeTodaySiteIds = useMemo(() => {
+    const ids = new Set<string>()
+    ;(todayDaily?.attendances || []).forEach((a) => {
+      if (!a.checkOutTime && a.siteId) ids.add(a.siteId)
+    })
+    return ids
+  }, [todayDaily])
+
   // Build record rows from `days[].entries[]` — each entry becomes one row
   // on its day. The legacy `records` array is ignored when `days` is present.
   const records: WeeklyAttendanceRecord[] = useMemo(() => {
     const fromDays: WeeklyAttendanceRecord[] = []
     ;(data?.days || []).forEach((d) => {
       d.entries?.forEach((e, idx) => {
+        // Today's entries: cross-reference /daily (by siteId) to tell
+        // active from completed. Past days: treat as completed.
+        const isToday = !!todayStr && d.date === todayStr
+        const stillActiveToday = isToday && activeTodaySiteIds.has(e.siteId)
         const hasCheckedIn = e.hasCheckedIn ?? true
-        const hasCheckedOut = e.hasCheckedOut ?? true
+        // Backend-reported hasCheckedOut wins only when it says "not yet
+        // checked out"; otherwise we override with /daily's live state so
+        // today's active rows aren't stuck showing 퇴근 완료.
+        const hasCheckedOut = stillActiveToday ? false : (e.hasCheckedOut ?? true)
         fromDays.push({
           id: e.attendanceId || e.entryId || `${d.date}-${e.siteId}-${idx}`,
           effectiveDate: d.date,
@@ -94,7 +114,7 @@ export function ListPage() {
     })
     if (fromDays.length > 0) return fromDays
     return data?.records || []
-  }, [data])
+  }, [data, todayStr, activeTodaySiteIds])
   const sites = useMemo(() => daysToSiteLegend(data?.days || []), [data])
   const attendanceDays = data?.totalWorkDays || 0
   const totalWorkEffort = data?.totalEffort || 0
