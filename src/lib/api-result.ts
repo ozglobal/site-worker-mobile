@@ -11,10 +11,20 @@ export type ApiResult<T> =
 /**
  * Safely parse JSON from a Response.
  * Returns null instead of throwing on malformed/empty responses.
+ * An empty body (typical for `R<Void>` endpoints) is treated as success
+ * with `null` and is NOT reported as a parse failure.
  */
 export async function safeJson(response: Response): Promise<unknown> {
+  let text: string
   try {
-    return await response.json()
+    text = await response.text()
+  } catch {
+    reportError('JSON_PARSE_FAIL', 'Malformed server response', { level: 'warn' })
+    return null
+  }
+  if (!text) return null
+  try {
+    return JSON.parse(text)
   } catch {
     reportError('JSON_PARSE_FAIL', 'Malformed server response', { level: 'warn' })
     return null

@@ -78,14 +78,14 @@ export const allDocuments: DocumentItem[] = [
  */
 /**
  * Map the backend-reported idType strings to our internal enum.
- *   '주민등록번호'   → 'resident'
- *   '외국인등록번호' → 'alien'
- *   '여권번호'       → 'passport'
+ *   '주민등록번호' / 'resident_id'       → 'resident_id'
+ *   '외국인등록번호' / 'alien_registration' → 'alien_registration'
+ *   '여권번호' / 'passport'              → 'passport'
  */
 export function backendIdTypeToInternal(raw: string | undefined): WorkerMeta['idType'] | undefined {
-  if (raw === '주민등록번호') return 'resident'
-  if (raw === '외국인등록번호') return 'alien'
-  if (raw === '여권번호') return 'passport'
+  if (raw === '주민등록번호' || raw === 'resident_id') return 'resident_id'
+  if (raw === '외국인등록번호' || raw === 'alien_registration') return 'alien_registration'
+  if (raw === '여권번호' || raw === 'passport') return 'passport'
   return undefined
 }
 
@@ -111,6 +111,7 @@ export const requiredDocsCatalogue: Record<string, RequiredDocMeta> = {
   proxy_general:     { code: 'proxy_general',     group: 'proxy_general',     label: '위임장 (일반)',              method: 'eformsign', perSite: true  },
   proxy_contractor:  { code: 'proxy_contractor',  group: 'proxy_contractor',  label: '위임장 (용역)',              method: 'eformsign', perSite: true  },
   equipment_license: { code: 'equipment_license', group: 'equipment_license', label: '장비자격증',                 method: 'upload',    perSite: false },
+  alien_reg:         { code: 'alien_reg',         group: 'alien_reg',         label: '외국인등록증',               method: 'upload',    perSite: false },
   alien_reg_front:   { code: 'alien_reg_front',   group: 'alien_reg',         label: '외국인등록증 앞면',          method: 'upload',    perSite: false },
   alien_reg_back:    { code: 'alien_reg_back',    group: 'alien_reg',         label: '외국인등록증 뒷면',          method: 'upload',    perSite: false },
   business_license:  { code: 'business_license',  group: 'business_license',  label: '사업자등록증',               method: 'upload',    perSite: false },
@@ -134,8 +135,8 @@ export function getRequiredDocuments(meta: WorkerMeta | null): DocumentItem[] {
   const list: DocumentItem[] = []
 
   // 1. ID document — respect idType when known; if unknown, show all 3.
-  if (meta?.idType === 'resident') list.push(ID_CARD)
-  else if (meta?.idType === 'alien') list.push(FOREIGN_CARD)
+  if (meta?.idType === 'resident_id') list.push(ID_CARD)
+  else if (meta?.idType === 'alien_registration') list.push(FOREIGN_CARD)
   else if (meta?.idType === 'passport') list.push(PASSPORT)
   else list.push(ID_CARD, FOREIGN_CARD, PASSPORT)
 

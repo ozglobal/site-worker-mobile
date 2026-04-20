@@ -161,9 +161,12 @@ export function IdCardCamera({ side, title = "신분증", showSide = true, onCap
 
         // Apply 1.5x zoom and continuous autofocus if supported
         const track = stream.getVideoTracks()[0]
-        const capabilities = track.getCapabilities?.()
-        if (capabilities?.zoom) {
-          const maxZoom = capabilities.zoom.max ?? 1
+        // `zoom` + `focusMode` aren't in the baseline MediaTrackCapabilities
+        // TS typings, so we have to reach through `any` for both.
+        const capabilities = track.getCapabilities?.() as Record<string, unknown> | undefined
+        const zoomCap = capabilities?.zoom as { max?: number } | undefined
+        if (zoomCap) {
+          const maxZoom = zoomCap.max ?? 1
           const targetZoom = Math.min(1.5, maxZoom)
           await track.applyConstraints({ advanced: [{ zoom: targetZoom } as any] })
         }

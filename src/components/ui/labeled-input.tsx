@@ -1,6 +1,5 @@
 import * as React from "react"
 import { Input, InputProps } from "./input"
-import { cn } from "@/lib/utils"
 
 export interface LabeledInputProps extends InputProps {
   label: string

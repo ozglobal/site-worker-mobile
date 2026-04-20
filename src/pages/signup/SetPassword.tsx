@@ -56,12 +56,15 @@ export function SetPasswordPage() {
     const result = await registerWorker({
       password: formData.newPassword,
       nameKo: data.nameKo || '',
+      ...(data.nameEn ? { nameEn: data.nameEn } : {}),
       mobilePhone: phone,
       nationalityType: data.nationalityType || '',
       idType: data.idType || '',
       idNumber: data.idNumber || '',
       address: data.address || '',
       addressDetail: '',
+      ...(data.gender ? { gender: data.gender } : {}),
+      ...(data.birthDate ? { birthDate: data.birthDate } : {}),
       personalInfoConsent: data.personalInfoConsent ?? false,
       registrationToken: data.registrationToken || '',
     })

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { MonthSelector, ViewMode } from "@/components/ui/month-selector"
@@ -10,13 +11,14 @@ import { QueryErrorState } from "@/components/ui/query-error-state"
 import { daysToSiteLegend, groupRecordsByDate, getSiteColor } from "@/utils/attendance"
 import { formatTimestamp, formatCurrency } from "@/utils/format"
 import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
-import { CorrectionDialog } from "@/components/ui/correction-dialog"
+import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/ui/correction-dialog"
 import { submitCorrectionRequest, type WeeklyAttendanceRecord } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
 
 export function ListPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { showSuccess, showError } = useToast()
   // Evaluate lazily so the page always opens on the real current month,
   // regardless of when this module was first loaded.
@@ -36,23 +38,21 @@ export function ListPage() {
   const openCorrectionDialog = (record: { id: string; siteName: string; checkInTime: number; checkOutTime?: number; workEffort?: number; dailyWageSnapshot?: number }) => {
     setCorrectionSiteName(record.siteName)
     setCorrectionTimeRange(`${formatTimestamp(record.checkInTime)} - ${formatTimestamp(record.checkOutTime)}`)
-    setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "1.0")
-    setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
+    setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "")
+    setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "")
     setCorrectionAttendanceId(record.id)
     setShowCorrectionDialog(true)
   }
 
-  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string; isOvertime: boolean }) => {
+  const handleCorrectionSubmit = async (data: CorrectionDialogSubmitData) => {
     if (!correctionAttendanceId) return
     const result = await submitCorrectionRequest({
       attendanceId: correctionAttendanceId,
       workEntryId: correctionAttendanceId,
-      requestType: "work_effort_and_wage",
-      requestedValue: `${data.workEffort}|${data.dailyWage}`,
-      originalEffort: correctionWorkEffort,
-      requestedEffort: data.workEffort,
-      originalWage: correctionDailyWage.replace(/,/g, ""),
-      requestedWage: data.dailyWage,
+      requestType: data.requestType,
+      requestedValue: data.requestedValue,
+      requestedEffort: data.requestedEffort,
+      requestedWage: data.requestedWage,
       reason: data.reason,
     })
     if (!result.success) {
@@ -61,6 +61,7 @@ export function ListPage() {
       return
     }
     showSuccess("정정 요청이 제출되었습니다.")
+    queryClient.invalidateQueries({ queryKey: ["todayAttendance"] })
     setShowCorrectionDialog(false)
     setCorrectionAttendanceId(null)
   }
@@ -74,6 +75,17 @@ export function ListPage() {
     const ids = new Set<string>()
     ;(todayDaily?.attendances || []).forEach((a) => {
       if (!a.checkOutTime && a.siteId) ids.add(a.siteId)
+    })
+    return ids
+  }, [todayDaily])
+
+  // Site ids that STILL accept correction requests today. Once a PENDING
+  // request exists the backend drops canRequestCorrection to false; we
+  // mirror that in the UI so the 정정 요청 button disables after submit.
+  const correctableTodaySiteIds = useMemo(() => {
+    const ids = new Set<string>()
+    ;(todayDaily?.attendances || []).forEach((a) => {
+      if (a.siteId && a.canRequestCorrection) ids.add(a.siteId)
     })
     return ids
   }, [todayDaily])
@@ -281,13 +293,14 @@ export function ListPage() {
                     key={record.id || `${group.date}-${index}`}
                     siteName={record.siteName}
                     timeRange={`${formatTimestamp(record.checkInTime)} - ${formatTimestamp(record.checkOutTime)}`}
-                    recordType={record.recordType || "일반"}
+                    recordType={record.recordType || ""}
                     workEffort={record.workEffort}
                     dailyWageSnapshot={record.dailyWageSnapshot}
                     expectedWage={record.expectedWage}
                     statusBadge={record.hasCheckedOut ? "퇴근 완료" : "근무중"}
                     statusVariant={record.hasCheckedOut ? "default" : "active"}
                     showCorrection={isGroupToday}
+                    correctionDisabled={!correctableTodaySiteIds.has(record.siteId)}
                     onCorrectionClick={() => openCorrectionDialog(record)}
                     className="shadow-sm border border-slate-100 p-5"
                   />

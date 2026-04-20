@@ -1,13 +1,15 @@
 import { useState, useMemo, useCallback } from "react"
 import { useNavigate, useParams } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
 import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
-import { formatTimestamp, formatCurrency } from "@/utils/format"
+import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
+import { formatTimestamp } from "@/utils/format"
 import { AlertBanner } from "@/components/ui/alert-banner"
-import { CorrectionDialog } from "@/components/ui/correction-dialog"
+import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/ui/correction-dialog"
 import { submitCorrectionRequest } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
@@ -16,6 +18,7 @@ import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
 
 export function DailyDetailPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { showSuccess, showError } = useToast()
   const { date } = useParams<{ date: string }>()
 
@@ -30,23 +33,21 @@ export function DailyDetailPage() {
   const openCorrectionDialog = (record: { id: string; siteName: string; checkInTime: number; checkOutTime?: number; workEffort?: number; dailyWageSnapshot?: number }) => {
     setCorrectionSiteName(record.siteName)
     setCorrectionTimeRange(`${formatTimestamp(record.checkInTime)} - ${formatTimestamp(record.checkOutTime)}`)
-    setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "1.0")
-    setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "0")
+    setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "")
+    setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "")
     setCorrectionAttendanceId(record.id)
     setShowCorrectionDialog(true)
   }
 
-  const handleCorrectionSubmit = async (data: { workEffort: string; dailyWage: string; reason: string; isOvertime: boolean }) => {
+  const handleCorrectionSubmit = async (data: CorrectionDialogSubmitData) => {
     if (!correctionAttendanceId) return
     const result = await submitCorrectionRequest({
       attendanceId: correctionAttendanceId,
       workEntryId: correctionAttendanceId,
-      requestType: "work_effort_and_wage",
-      requestedValue: `${data.workEffort}|${data.dailyWage}`,
-      originalEffort: correctionWorkEffort,
-      requestedEffort: data.workEffort,
-      originalWage: correctionDailyWage.replace(/,/g, ""),
-      requestedWage: data.dailyWage,
+      requestType: data.requestType,
+      requestedValue: data.requestedValue,
+      requestedEffort: data.requestedEffort,
+      requestedWage: data.requestedWage,
       reason: data.reason,
     })
     if (!result.success) {
@@ -55,6 +56,7 @@ export function DailyDetailPage() {
       return
     }
     showSuccess("정정 요청이 제출되었습니다.")
+    queryClient.invalidateQueries({ queryKey: ["todayAttendance"] })
     setShowCorrectionDialog(false)
     setCorrectionAttendanceId(null)
   }
@@ -79,6 +81,17 @@ export function DailyDetailPage() {
   }, [])
 
   const isToday = date === today
+
+  // Site ids that STILL accept correction requests today. Backend flips
+  // canRequestCorrection to false once a PENDING request exists.
+  const { data: todayDaily } = useTodayAttendance()
+  const correctableTodaySiteIds = useMemo(() => {
+    const ids = new Set<string>()
+    ;(todayDaily?.attendances || []).forEach((a) => {
+      if (a.siteId && a.canRequestCorrection) ids.add(a.siteId)
+    })
+    return ids
+  }, [todayDaily])
 
   const handleNavigation = (item: NavItem) => {
     if (item === "home") navigate("/home")
@@ -141,13 +154,14 @@ export function DailyDetailPage() {
                   key={record.id}
                   siteName={record.siteName}
                   timeRange={`${formatTimestamp(record.checkInTime)} - ${record.checkOutTime ? formatTimestamp(record.checkOutTime) : ""}`}
-                  recordType={record.recordType || "일반"}
+                  recordType={record.recordType || ""}
                   workEffort={record.workEffort}
                   dailyWageSnapshot={record.dailyWageSnapshot}
                   expectedWage={record.expectedWage}
                   statusBadge={record.hasCheckedOut ? "퇴근 완료" : "근무중"}
                   statusVariant={record.hasCheckedOut ? "default" : "active"}
                   showCorrection={isToday}
+                  correctionDisabled={!correctableTodaySiteIds.has(record.siteId)}
                   onCorrectionClick={() => openCorrectionDialog(record)}
                   className="shadow-sm border border-slate-100 p-5"
                 />

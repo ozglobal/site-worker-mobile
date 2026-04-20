@@ -181,12 +181,15 @@ export const verifySmsCode = async (phone: string, verificationCode: string): Pr
 export interface RegisterWorkerParams {
   password: string
   nameKo: string
+  nameEn?: string
   mobilePhone: string
   nationalityType: string
   idType: string
   idNumber: string
   address: string
   addressDetail: string
+  gender?: 'male' | 'female' | string
+  birthDate?: string // yyyy-MM-dd
   personalInfoConsent: boolean
   registrationToken: string
 }

@@ -7,6 +7,7 @@ import { StatusListItem, type StatusType } from "@/components/ui/status-list-ite
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
+import { usePendingSignDocuments } from "@/lib/queries/usePendingSignDocuments"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
 import { requiredDocsCatalogue, type RequiredDocMeta } from "@/lib/documents"
@@ -42,6 +43,9 @@ export function ProfileDocumentsPage() {
   const { showSuccess, showError, showInfo } = useToast()
   const { data: summary, isLoading, isError, refetch } = useDocumentSummary()
   const { data: profile } = useWorkerProfile()
+  // Fire-and-forget: surfaces any eformsign documents the worker still needs
+  // to sign. Payload consumed elsewhere once the UI for it is designed.
+  usePendingSignDocuments()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pendingCodeRef = useRef<string | null>(null)
@@ -61,6 +65,7 @@ export function ProfileDocumentsPage() {
       label: item.label || catalogue?.label || item.code,
       method: item.method || catalogue?.method || "upload",
       status: item.status,
+      state: item.state,
     }
   })
 
@@ -93,16 +98,40 @@ export function ProfileDocumentsPage() {
     }
   }
 
-  const handleRowClick = (code: string, method: string) => {
+  // Viewer-slug map — codes with a dedicated /profile/documents/view/:slug
+  // route. Completed rows for codes in this map open the viewer; others
+  // fall through to an "under construction" toast.
+  const viewerSlugByCode: Record<string, string> = {
+    id_card: "id-card",
+    bankbook: "bankbook",
+    family_relation: "family-relation",
+  }
+
+  const handleRowClick = (code: string, method: string, isCompleted: boolean) => {
     if (uploadingCode) return
+    if (isCompleted) {
+      // alien-reg uses the same submit page for viewing — the page flips into
+      // "already uploaded" mode and swaps its buttons to 보기 automatically.
+      if (code === "alien_reg" || code === "alien_reg_front" || code === "alien_reg_back") {
+        navigate("/profile/documents/alien-reg")
+        return
+      }
+      const slug = viewerSlugByCode[code]
+      if (slug) {
+        navigate(`/profile/documents/view/${slug}`)
+        return
+      }
+      showInfo("미리보기는 준비 중입니다.")
+      return
+    }
     if (method === "eformsign") {
       // TODO: redirect to eformsign flow once backend provides a signing URL.
       showInfo("전자서명 서류는 별도 진행이 필요합니다.")
       return
     }
     // Multi-file / metadata flows — defer to dedicated pages.
-    if (code === "alien_reg_front" || code === "alien_reg_back") {
-      showInfo("외국인등록증은 별도 입력 화면에서 업로드해주세요.")
+    if (code === "alien_reg" || code === "alien_reg_front" || code === "alien_reg_back") {
+      navigate("/profile/documents/alien-reg")
       return
     }
     if (code === "passport") {
@@ -158,14 +187,34 @@ export function ProfileDocumentsPage() {
             {docs.map((doc, idx) => {
               const { status, label } = mapStatus(doc.status)
               const isUploading = uploadingCode === doc.code
+              const isCompleted = doc.state === "completed"
+              const actionLabel = isCompleted ? "보기" : "제출"
+              // 미제출 badge is redundant now that the 제출 button expresses
+              // the same thing — drop the badge in that case.
+              const showBadge = isUploading || status !== "incomplete"
+              const trailing = (
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => handleRowClick(doc.code, doc.method, isCompleted)}
+                  className={
+                    isCompleted
+                      ? "rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                      : "rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+                  }
+                >
+                  {isUploading ? "업로드 중..." : actionLabel}
+                </button>
+              )
               return (
                 <StatusListItem
                   key={doc.code}
                   title={doc.label}
                   subtitle=""
-                  status={isUploading ? "pending" : status}
-                  statusLabel={isUploading ? "업로드 중..." : label}
-                  onClick={() => handleRowClick(doc.code, doc.method)}
+                  status={showBadge ? (isUploading ? "pending" : status) : undefined}
+                  statusLabel={showBadge ? (isUploading ? "업로드 중..." : label) : undefined}
+                  hideChevron
+                  trailing={trailing}
                   className={idx === docs.length - 1 ? "border-b-0" : ""}
                 />
               )

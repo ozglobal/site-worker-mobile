@@ -222,8 +222,8 @@ export const engineerStorage = {
 // ============================================
 
 export interface WorkerMeta {
-  nationalityType?: '내국인' | '외국인'
-  idType?: 'resident' | 'alien' | 'passport'
+  nationalityType?: 'domestic' | 'foreigner_registered' | 'foreigner_unregistered'
+  idType?: 'resident_id' | 'alien_registration' | 'passport'
   wagePaymentTarget?: 'SELF' | 'PROXY' | 'COMPANY'
 }
 
@@ -269,10 +269,13 @@ export const onboardingStorage = {
 export interface SignupData {
   registrationToken?: string
   nameKo?: string
+  nameEn?: string
   nationalityType?: string
   idType?: string
   idNumber?: string
   address?: string
+  gender?: 'male' | 'female' | string
+  birthDate?: string // yyyy-MM-dd
   personalInfoConsent?: boolean
 }
 

@@ -10,27 +10,12 @@ import { Select } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
-import { uploadDocument, updatePayment } from "@/lib/profile"
+import { updatePayment } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 import { workerMetaStorage } from "@/lib/storage"
 import { getWorkerName } from "@/lib/auth"
 import { useQueryClient } from "@tanstack/react-query"
-
-interface Bank {
-  id: string
-  name: string
-}
-
-const banks: Bank[] = [
-  { id: "kb", name: "국민은행" },
-  { id: "shinhan", name: "신한은행" },
-  { id: "woori", name: "우리은행" },
-  { id: "hana", name: "하나은행" },
-  { id: "nh", name: "농협은행" },
-  { id: "ibk", name: "기업은행" },
-  { id: "kakao", name: "카카오뱅크" },
-  { id: "toss", name: "토스뱅크" },
-]
+import { useDictItems } from "@/lib/queries/useDictItems"
 
 interface MyAccountPageProps {
   mode?: "onboarding" | "profile"
@@ -40,13 +25,12 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
+  const { data: banks = [] } = useDictItems("bank")
   const { showSuccess, showError } = useToast()
   const accountNumberRef = useRef<HTMLInputElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [accountHolder, setAccountHolder] = useState(getWorkerName() || "")
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
-  const [certificateFile, setCertificateFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Always fetch fresh /system/worker/me when the page opens so
@@ -67,20 +51,20 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
     // belongs to PROXY/COMPANY and shouldn't leak into the SELF form).
     if (profile.wagePaymentTarget === "SELF") {
       const raw = profile.bankName || ""
-      const bankId = banks.find((b) => b.name === raw)?.id || raw
-      setSelectedBank(bankId)
+      const bankCode = banks.find((b) => b.name === raw)?.code || raw
+      setSelectedBank(bankCode)
       setAccountNumber(profile.bankAccount || "")
     } else {
       setSelectedBank("")
       setAccountNumber("")
     }
-  }, [profile, mode])
+  }, [profile, mode, banks])
 
   const handleSubmit = async () => {
     if (isSubmitting) return
     setIsSubmitting(true)
     try {
-      const bankLabel = banks.find((b) => b.id === selectedBank)?.name || selectedBank
+      const bankLabel = banks.find((b) => b.code === selectedBank)?.name || selectedBank
       const result = await updatePayment({
         wagePaymentTarget: "SELF",
         bankName: bankLabel,
@@ -107,7 +91,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
     navigate(mode === "onboarding" ? "/onboarding/family-account" : "/profile/family-account")
   }
 
-  const isFormValid = selectedBank && accountNumber.length >= 10
+  const isFormValid = !!selectedBank && accountNumber.replace(/\D/g, "").length >= 7
 
   const [viewportHeight, setViewportHeight] = useState<number | null>(null)
   useEffect(() => {
@@ -161,7 +145,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">은행명</label>
           <Select
-            options={banks.map((b) => ({ value: b.id, label: b.name }))}
+            options={banks.map((b) => ({ value: b.code, label: b.name }))}
             value={selectedBank}
             onChange={(v) => { setSelectedBank(v); setTimeout(() => accountNumberRef.current?.focus(), 300) }}
             placeholder="은행 선택"

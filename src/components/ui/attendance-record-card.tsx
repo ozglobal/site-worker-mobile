@@ -11,6 +11,8 @@ interface AttendanceRecordCardProps {
   statusBadge?: string
   statusVariant?: "default" | "active"
   showCorrection?: boolean
+  /** Render 정정 요청 as dimmed / non-clickable (e.g. a PENDING request already exists). */
+  correctionDisabled?: boolean
   onCorrectionClick?: () => void
   className?: string
 }
@@ -18,13 +20,14 @@ interface AttendanceRecordCardProps {
 export function AttendanceRecordCard({
   siteName,
   timeRange,
-  recordType = "일반",
+  recordType,
   workEffort,
   dailyWageSnapshot,
   expectedWage,
   statusBadge,
   statusVariant = "default",
   showCorrection,
+  correctionDisabled,
   onCorrectionClick,
   className,
 }: AttendanceRecordCardProps) {
@@ -50,11 +53,18 @@ export function AttendanceRecordCard({
 
       <div className="rounded-lg overflow-hidden bg-slate-50">
         <div className="px-4 py-2.5 flex items-center justify-between">
-          <span className="text-sm font-bold text-slate-900">{recordType}</span>
+          <span className="text-sm font-bold text-slate-900">{recordType || ""}</span>
           {showCorrection && onCorrectionClick && (
             <button
-              onClick={onCorrectionClick}
-              className="text-sm font-medium text-[#007DCA] flex items-center gap-0.5"
+              type="button"
+              onClick={correctionDisabled ? undefined : onCorrectionClick}
+              disabled={correctionDisabled}
+              className={cn(
+                "text-sm font-medium flex items-center gap-0.5",
+                correctionDisabled
+                  ? "text-slate-300 cursor-not-allowed"
+                  : "text-[#007DCA]"
+              )}
             >
               정정 요청 <span>→</span>
             </button>

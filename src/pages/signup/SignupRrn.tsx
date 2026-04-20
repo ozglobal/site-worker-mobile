@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { signupStorage, workerMetaStorage } from "@/lib/storage"
 
-export function DomesticInfoPage() {
+export function SignupRrnPage() {
   const navigate = useNavigate()
 
   const savedPhone = signupStorage.getPhone()
@@ -50,7 +50,7 @@ export function DomesticInfoPage() {
       idNumber: `${formData.ssnFirst}-${formData.ssnSecond}`,
       address: formData.address,
     })
-    workerMetaStorage.patch({ nationalityType: '내국인', idType: 'resident' })
+    workerMetaStorage.patch({ nationalityType: 'domestic', idType: 'resident_id' })
     navigate("/signup/set-password")
   }
 
@@ -76,6 +76,8 @@ export function DomesticInfoPage() {
               <label className="text-sm font-medium text-slate-700">이름</label>
               <Input
                 ref={nameRef}
+                inputMode="text"
+                lang="ko"
                 value={formData.name}
                 onChange={handleChange("name")}
                 placeholder="이름 입력"

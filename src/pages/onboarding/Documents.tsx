@@ -76,30 +76,6 @@ export function OnboardingDocumentsPage() {
     }
   }, [location.state, navigate, location.pathname])
 
-  const pickAndUpload = (documentType: DocumentType, label: string, trackId: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const input = document.createElement("input")
-      input.type = "file"
-      input.accept = "image/*,.pdf"
-      input.onchange = async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0]
-        if (!file) { resolve(false); return }
-        setUploading(trackId)
-        const result = await uploadDocument(documentType, file)
-        setUploading(null)
-        if (result.success) {
-          setUploaded((prev) => ({ ...prev, [trackId]: true }))
-          showSuccess(`${label} 등록 완료`)
-          resolve(true)
-        } else {
-          showError("업로드에 실패했습니다.")
-          resolve(false)
-        }
-      }
-      input.click()
-    })
-  }
-
   const uploadFile = async (documentType: DocumentType, label: string, trackId: string, file: File): Promise<boolean> => {
     setUploading(trackId)
     const result = await uploadDocument(documentType, file)

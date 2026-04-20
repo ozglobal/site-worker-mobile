@@ -14,22 +14,6 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useDictItems } from "@/lib/queries/useDictItems"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 
-interface Bank {
-  id: string
-  name: string
-}
-
-const banks: Bank[] = [
-  { id: "kb", name: "국민은행" },
-  { id: "shinhan", name: "신한은행" },
-  { id: "woori", name: "우리은행" },
-  { id: "hana", name: "하나은행" },
-  { id: "nh", name: "농협은행" },
-  { id: "ibk", name: "기업은행" },
-  { id: "kakao", name: "카카오뱅크" },
-  { id: "toss", name: "토스뱅크" },
-]
-
 interface FamilyAccountPageProps {
   mode?: "onboarding" | "profile"
 }
@@ -40,12 +24,12 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
   const { showSuccess, showError } = useToast()
   const queryClient = useQueryClient()
   const { data: relationOptions = [] } = useDictItems("account_holder_relation")
+  const { data: banks = [] } = useDictItems("bank")
   const { data: profile, refetch } = useWorkerProfile()
   const [familyName, setFamilyName] = useState("")
   const [relationship, setRelationship] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
-  const [certificateFile, setCertificateFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Always fetch fresh /system/worker/me on open.
@@ -87,8 +71,8 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
 
       // Backend returns bank label (e.g. "국민은행"); Select expects id (e.g. "kb").
       const rawBank = profile.bankName || ""
-      const bankId = banks.find((b) => b.name === rawBank)?.id || rawBank
-      setSelectedBank(bankId)
+      const bankCode = banks.find((b) => b.name === rawBank)?.code || rawBank
+      setSelectedBank(bankCode)
       setAccountNumber(profile.bankAccount || "")
     } else {
       setFamilyName("")
@@ -99,7 +83,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
   }, [profile, mode, relationOptions])
 
   const resolveBankLabel = (code: string) =>
-    banks.find((b) => b.id === code)?.name || code
+    banks.find((b) => b.code === code)?.name || code
 
   const handleSubmit = async () => {
     const bankLabel = resolveBankLabel(selectedBank)
@@ -143,7 +127,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
     }
   }
 
-  const isFormValid = familyName && relationship && selectedBank && accountNumber.length >= 10
+  const isFormValid = !!familyName && !!relationship && !!selectedBank && accountNumber.replace(/\D/g, "").length >= 7
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -196,7 +180,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">은행명</label>
           <Select
-            options={banks.map((b) => ({ value: b.id, label: b.name }))}
+            options={banks.map((b) => ({ value: b.code, label: b.name }))}
             value={selectedBank}
             onChange={setSelectedBank}
             placeholder="은행 선택"

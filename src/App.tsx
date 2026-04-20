@@ -31,9 +31,9 @@ const LoginSetPasswordPage = lazyNamed(() => import('./pages/login'), 'LoginSetP
 const SignUpPage = lazyNamed(() => import('./pages/signup'), 'SignUpPage');
 const AgreementPage = lazyNamed(() => import('./pages/signup'), 'AgreementPage');
 const DomesticForeignPage = lazyNamed(() => import('./pages/signup'), 'DomesticForeignPage');
-const DomesticInfoPage = lazyNamed(() => import('./pages/signup'), 'DomesticInfoPage');
-const ForeignInfoPage = lazyNamed(() => import('./pages/signup'), 'ForeignInfoPage');
-const PassportInfoPage = lazyNamed(() => import('./pages/signup'), 'PassportInfoPage');
+const SignupRrnPage = lazyNamed(() => import('./pages/signup'), 'SignupRrnPage');
+const SignupFrnPage = lazyNamed(() => import('./pages/signup'), 'SignupFrnPage');
+const SignupPnPage = lazyNamed(() => import('./pages/signup'), 'SignupPnPage');
 const SetPasswordPage = lazyNamed(() => import('./pages/signup'), 'SetPasswordPage');
 const SignupSmsVerificationPage = lazyNamed(() => import('./pages/signup/SmsVerification'), 'SmsVerificationPage');
 const SignUpStep3Page = lazyNamed(() => import('./pages/signup/step3'), 'SignUpStep3Page');
@@ -44,8 +44,12 @@ const Home = lazyNamed(() => import('./pages/home'), 'Home');
 
 const MyInfoPage = lazyNamed(() => import('./pages/profile'), 'MyInfoPage');
 const WorkerTypePage = lazyNamed(() => import('./pages/profile/WorkerType'), 'WorkerTypePage');
-const MyInfoDetailPage = lazyNamed(() => import('./pages/profile/MyInfo'), 'MyInfoPage');
+const MyInfoRrnPage = lazyNamed(() => import('./pages/profile/MyInfoRrn'), 'MyInfoRrnPage');
+const MyInfoFrnPage = lazyNamed(() => import('./pages/profile/MyInfoFrn'), 'MyInfoFrnPage');
+const MyInfoPnPage = lazyNamed(() => import('./pages/profile/MyInfoPn'), 'MyInfoPnPage');
 const ProfileDocumentsPage = lazyNamed(() => import('./pages/profile/Documents'), 'ProfileDocumentsPage');
+const DocumentViewerPage = lazyNamed(() => import('./pages/profile/DocumentViewer'), 'DocumentViewerPage');
+const AlienRegistrationPage = lazyNamed(() => import('./pages/profile/AlienRegistration'), 'AlienRegistrationPage');
 const MyAccountPage = lazyNamed(() => import('./pages/profile/MyAccount'), 'MyAccountPage');
 const OutsourcingPage = lazyNamed(() => import('./pages/profile/Outsourcing'), 'OutsourcingPage');
 const EngineerPage = lazyNamed(() => import('./pages/profile/Engineer'), 'EngineerPage');
@@ -123,9 +127,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/signup/nice-api" element={<PublicRoute><NiceApiPage /></PublicRoute>} />
         <Route path="/signup/agreement" element={<PublicRoute><AgreementPage /></PublicRoute>} />
         <Route path="/signup/domestic-foreign" element={<PublicRoute><DomesticForeignPage /></PublicRoute>} />
-        <Route path="/signup/domestic-info" element={<PublicRoute><DomesticInfoPage /></PublicRoute>} />
-        <Route path="/signup/foreign-info" element={<PublicRoute><ForeignInfoPage /></PublicRoute>} />
-        <Route path="/signup/passport-info" element={<PublicRoute><PassportInfoPage /></PublicRoute>} />
+        <Route path="/signup/signup-rrn" element={<PublicRoute><SignupRrnPage /></PublicRoute>} />
+        <Route path="/signup/signup-frn" element={<PublicRoute><SignupFrnPage /></PublicRoute>} />
+        <Route path="/signup/signup-pn" element={<PublicRoute><SignupPnPage /></PublicRoute>} />
         <Route path="/signup/set-password" element={<PublicRoute><SetPasswordPage /></PublicRoute>} />
         <Route path="/signup/step3" element={<PublicRoute><SignUpStep3Page /></PublicRoute>} />
         <Route path="/signup/complete" element={<PublicRoute><SignUpCompletePage /></PublicRoute>} />
@@ -136,8 +140,12 @@ const AppRoutes: React.FC = () => {
         <Route path="/contract" element={<ContractPage />} />
         <Route path="/profile" element={<MyInfoPage />} />
         <Route path="/profile/worker-type" element={<WorkerTypePage />} />
-        <Route path="/profile/myinfo" element={<MyInfoDetailPage />} />
+        <Route path="/profile/myinfo-rrn" element={<MyInfoRrnPage />} />
+        <Route path="/profile/myinfo-frn" element={<MyInfoFrnPage />} />
+        <Route path="/profile/myinfo-pn" element={<MyInfoPnPage />} />
         <Route path="/profile/documents" element={<ProfileDocumentsPage />} />
+        <Route path="/profile/documents/view/:slug" element={<DocumentViewerPage />} />
+        <Route path="/profile/documents/alien-reg" element={<AlienRegistrationPage />} />
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/test/schedule-add" element={<ScheduleAddPage />} />
         <Route path="/" element={<Navigate to="/home" replace />} />

@@ -19,7 +19,8 @@ export function SmsVerificationPage() {
   const navigate = useNavigate()
   const { honeypotProps, isBotDetected } = useHoneypot()
   const { showSuccess, showError } = useToast()
-  const [phoneNumber, setPhoneNumber] = useState("")
+  // TEMP test default — replace/remove before ship.
+  const [phoneNumber, setPhoneNumber] = useState("010-6369-6595")
   const [showVerificationInput, setShowVerificationInput] = useState(false)
   const [verificationCode, setVerificationCode] = useState("")
   const [isSending, setIsSending] = useState(false)

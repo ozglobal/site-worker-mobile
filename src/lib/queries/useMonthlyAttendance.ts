@@ -11,10 +11,10 @@ export function useMonthlyAttendance(year: number, month: number, options?: { en
       }
       return result.data
     },
-    // Always refetch when /attendance mounts so users get current data —
-    // cached entries don't prevent a fresh network call on page entry.
-    staleTime: 0,
-    refetchOnMount: 'always',
+    // 1 min cache — navigating between list/calendar inside /attendance
+    // reuses the fresh fetch without re-hitting the backend; browser back
+    // after a minute still refreshes.
+    staleTime: 60_000,
     enabled: options?.enabled ?? true,
   })
 }

@@ -16,8 +16,11 @@ export function useDictItems(codeName: string, options?: UseDictItemsOptions) {
     queryKey: ['dict', codeName, auth ? 'authed' : 'public'],
     queryFn: async () => {
       const result = await fetchDictItems(codeName, { auth })
-      if (!result.success || !result.data) {
+      if (!result.success) {
         throw new Error(result.error || `Failed to load dict: ${codeName}`)
+      }
+      if (!result.data) {
+        throw new Error(`Failed to load dict: ${codeName}`)
       }
       return result.data
     },

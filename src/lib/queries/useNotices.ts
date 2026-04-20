@@ -10,8 +10,12 @@ export function useNotices() {
       return result.data
     },
     staleTime: 60_000,
-    refetchInterval: 5 * 60_000, // background poll every 5 min
-    refetchOnWindowFocus: true, // refetch when user returns to app
+    // Background poll kept at 30 min to stay friendly on mobile data.
+    // User returning to the app no longer triggers a refetch — they can
+    // pull-to-refresh if they need the latest, and badge counts update on
+    // the next foreground poll.
+    refetchInterval: 30 * 60_000,
+    refetchOnWindowFocus: false,
   })
 }
 

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { signupStorage, workerMetaStorage } from "@/lib/storage"
 
-export function ForeignInfoPage() {
+export function SignupFrnPage() {
   const navigate = useNavigate()
 
   const savedPhone = signupStorage.getPhone()
@@ -50,12 +50,13 @@ export function ForeignInfoPage() {
   const handleSave = () => {
     signupStorage.setData({
       nameKo: formData.name,
+      nameEn: formData.englishName.trim() || undefined,
       nationalityType: 'foreigner_registered',
       idType: 'alien_registration',
       idNumber: `${formData.ssnFirst}-${formData.ssnSecond}`,
       address: formData.address,
     })
-    workerMetaStorage.patch({ nationalityType: '외국인', idType: 'alien' })
+    workerMetaStorage.patch({ nationalityType: 'foreigner_registered', idType: 'alien_registration' })
     navigate("/signup/set-password")
   }
 
@@ -112,8 +113,18 @@ export function ForeignInfoPage() {
               <Input
                 inputMode="text"
                 lang="en"
+                autoComplete="off"
+                autoCapitalize="words"
+                spellCheck={false}
                 value={formData.englishName}
-                onChange={handleChange("englishName")}
+                onChange={(e) =>
+                  setFormData(prev => ({
+                    ...prev,
+                    // Strip anything that isn't a Latin letter / space / hyphen /
+                    // apostrophe — enforces English input regardless of IME.
+                    englishName: e.target.value.replace(/[^A-Za-z\s'-]/g, ""),
+                  }))
+                }
                 placeholder="English name"
                 className="bg-white"
               />
@@ -158,7 +169,7 @@ export function ForeignInfoPage() {
               <div className="flex flex-col gap-1">
                 <span className="text-sm text-gray-600">외국인등록번호가 없다면 여권번호로 가입할 수 있어요.</span>
                 <button
-                  onClick={() => navigate("/signup/passport-info")}
+                  onClick={() => navigate("/signup/signup-pn")}
                   className="text-sm font-medium text-blue-500 text-left"
                 >
                   여권번호로 가입하기

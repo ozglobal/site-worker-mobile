@@ -26,7 +26,7 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
   const capturedRef = useRef(false)
   const [frameRect, setFrameRect] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
-  const { detect, checkStability, resetStability } = useDocumentDetection()
+  const { detect, checkStability } = useDocumentDetection()
   const { play: playShutter } = useShutterSound()
 
   // Calculate frame rect based on container size

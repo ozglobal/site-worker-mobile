@@ -1,10 +1,13 @@
 import { useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { OptionCard } from "@/components/ui/option-card"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
 import { workerMetaStorage } from "@/lib/storage"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { updatePayment } from "@/lib/profile"
+import { useToast } from "@/contexts/ToastContext"
 
 interface PayrollAccountPageProps {
   mode?: "onboarding" | "profile"
@@ -12,8 +15,10 @@ interface PayrollAccountPageProps {
 
 export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { patch: patchDraft } = useOnboardingDraft()
   const { data: profile } = useWorkerProfile()
+  const { showSuccess, showError } = useToast()
 
   const effectiveTarget = profile?.wagePaymentTarget
   const target: 'SELF' | 'PROXY' | 'COMPANY' | undefined =
@@ -22,6 +27,11 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
     effectiveTarget === 'COMPANY'
       ? effectiveTarget
       : undefined
+
+  // Company-account option is only relevant for 용역 (labor_service) workers —
+  // hide for everyone else. Compare case-insensitively since the backend dict
+  // may surface either "labor_service" or "LABOR_SERVICE".
+  const showCompanyOption = (profile?.workerCategory || "").toLowerCase() === "labor_service"
   const routes = mode === "onboarding"
     ? { myAccount: "/onboarding/my-account", familyAccount: "/onboarding/family-account" }
     : { myAccount: "/profile/my-account", familyAccount: "/profile/family-account" }
@@ -45,7 +55,7 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
       : "border-gray-200 bg-gray-100 text-slate-500"
   }
 
-  const handleCompany = () => {
+  const handleCompany = async () => {
     if (mode === "onboarding") {
       patchDraft({
         bankName: null,
@@ -55,11 +65,24 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
         wagePaymentTarget: 'COMPANY',
       })
       navigate("/onboarding/daily-wage")
-    } else {
-      // TODO: PUT /system/worker/me/payment with wagePaymentTarget: 'COMPANY'
-      workerMetaStorage.patch({ wagePaymentTarget: 'COMPANY' })
-      navigate("/profile")
+      return
     }
+
+    const result = await updatePayment({
+      wagePaymentTarget: 'COMPANY',
+      bankName: null,
+      bankAccount: null,
+      accountHolder: null,
+      accountHolderRelation: null,
+    })
+    if (!result.success) {
+      showError(result.error)
+      return
+    }
+    workerMetaStorage.patch({ wagePaymentTarget: 'COMPANY' })
+    queryClient.invalidateQueries({ queryKey: ['workerProfile'] })
+    showSuccess("급여를 소속 회사로 지급합니다.")
+    navigate("/profile")
   }
 
   return (
@@ -100,12 +123,14 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
             onClick={() => selectTarget('PROXY')}
             className={cardClass('PROXY')}
           />
-          <OptionCard
-            title="소속 회사"
-            description="소속된 용역 업체로 급여 지급"
-            onClick={() => selectTarget('COMPANY')}
-            className={cardClass('COMPANY')}
-          />
+          {showCompanyOption && (
+            <OptionCard
+              title="소속 회사"
+              description="소속된 용역 업체로 급여 지급"
+              onClick={() => selectTarget('COMPANY')}
+              className={cardClass('COMPANY')}
+            />
+          )}
         </div>
       </main>
     </div>

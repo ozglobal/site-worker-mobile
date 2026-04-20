@@ -10,11 +10,8 @@ import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
 import { updateWorkerAddress } from "@/lib/profile"
 import { getWorkerName } from "@/lib/auth"
-// TODO: uncomment when 주소검색 API is ready
-// import { AddressSearchDialog } from "@/components/ui/address-search-dialog"
-// import SearchIcon from "@mui/icons-material/Search"
 
-export function MyInfoPage() {
+export function MyInfoFrnPage() {
   const navigate = useNavigate()
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
   const { showSuccess, showError } = useToast()
@@ -22,6 +19,7 @@ export function MyInfoPage() {
 
   const [formData, setFormData] = useState({
     name: "",
+    englishName: "",
     ssnFirst: "",
     ssnSecond: "",
     phone: "",
@@ -31,10 +29,14 @@ export function MyInfoPage() {
 
   useEffect(() => {
     if (profile) {
+      // Backend ships the masked ID as one string like "901010-5******";
+      // split by `-` into the two inputs.
+      const [maskedFirst = "", maskedSecond = ""] = (profile.idNumberMasked || "").split("-")
       const loaded = {
         name: profile.workerName || getWorkerName() || "",
-        ssnFirst: profile.ssnFirst || "590905",
-        ssnSecond: profile.ssnSecond || "1009824",
+        englishName: profile.workerNameEn || "",
+        ssnFirst: profile.ssnFirst || maskedFirst || "",
+        ssnSecond: profile.ssnSecond || maskedSecond || "",
         phone: profile.phone,
         address: profile.address,
       }
@@ -44,7 +46,7 @@ export function MyInfoPage() {
   }, [profile])
 
   const hasChanges = formData.address !== originalData.address
-  const isFormValid = !!(formData.name && formData.ssnFirst && formData.ssnSecond && formData.phone && formData.address)
+  const isFormValid = !!(formData.name && formData.phone && formData.address)
 
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -56,13 +58,6 @@ export function MyInfoPage() {
     viewport.addEventListener("resize", handleResize)
     return () => viewport.removeEventListener("resize", handleResize)
   }, [])
-
-  // TODO: uncomment when 주소검색 API is ready
-  // const [showAddressSearch, setShowAddressSearch] = useState(false)
-  // const handleAddressSelect = (address: string) => {
-  //   setFormData(prev => ({ ...prev, address }))
-  //   setShowAddressSearch(false)
-  // }
 
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
@@ -86,15 +81,10 @@ export function MyInfoPage() {
   }
 
   const handleNavigation = (item: NavItem) => {
-    if (item === "home") {
-      navigate("/home")
-    } else if (item === "attendance") {
-      navigate("/attendance")
-    } else if (item === "contract") {
-      navigate("/contract")
-    } else if (item === "profile") {
-      navigate("/profile")
-    }
+    if (item === "home") navigate("/home")
+    else if (item === "attendance") navigate("/attendance")
+    else if (item === "contract") navigate("/contract")
+    else if (item === "profile") navigate("/profile")
   }
 
   return (
@@ -111,9 +101,9 @@ export function MyInfoPage() {
         ) : (
         <div className="flex flex-col min-h-full">
         <div className="px-4 py-6 space-y-6">
-          {/* 이름 */}
+          {/* 한글 이름 */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">이름</label>
+            <label className="text-sm font-medium text-slate-700">한글 이름</label>
             <Input
               value={formData.name}
               readOnly
@@ -121,9 +111,19 @@ export function MyInfoPage() {
             />
           </div>
 
-          {/* 주민등록번호 */}
+          {/* 영문 이름 */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">주민등록번호</label>
+            <label className="text-sm font-medium text-slate-700">영문 이름</label>
+            <Input
+              value={formData.englishName}
+              readOnly
+              className="bg-gray-100 text-slate-500 pointer-events-none"
+            />
+          </div>
+
+          {/* 외국인등록번호 */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">외국인등록번호</label>
             <div className="flex items-center gap-2">
               <Input
                 value={formData.ssnFirst}
@@ -185,16 +185,6 @@ export function MyInfoPage() {
         onNavigate={handleNavigation}
         className="shrink-0"
       />
-
-      {/* TODO: uncomment when 주소검색 API is ready
-      {showAddressSearch && (
-        <AddressSearchDialog
-          onSelect={handleAddressSelect}
-          onClose={() => setShowAddressSearch(false)}
-        />
-      )}
-      */}
-
     </div>
   )
 }

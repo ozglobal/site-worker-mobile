@@ -28,11 +28,11 @@ export function DomesticForeignPage() {
 
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1 py-4 font-bold shadow-sm text-slate-700 border-gray-200"
-                onClick={() => navigate("/signup/domestic-info")}>
+                onClick={() => navigate("/signup/signup-rrn")}>
                 내국인
               </Button>
               <Button variant="outline" className="flex-1 py-4 font-bold shadow-sm text-slate-700 border-gray-200"
-                onClick={() => navigate("/signup/foreign-info")}>
+                onClick={() => navigate("/signup/signup-frn")}>
                 외국인
               </Button>
             </div>

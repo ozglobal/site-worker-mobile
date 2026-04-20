@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { signupStorage, workerMetaStorage } from "@/lib/storage"
 
-export function PassportInfoPage() {
+export function SignupPnPage() {
   const navigate = useNavigate()
 
   const savedPhone = signupStorage.getPhone()
@@ -46,12 +46,15 @@ export function PassportInfoPage() {
   const handleSave = () => {
     signupStorage.setData({
       nameKo: formData.name,
+      nameEn: formData.englishName.trim() || undefined,
       nationalityType: 'foreigner_unregistered',
       idType: 'passport',
       idNumber: formData.passport,
       address: formData.address,
+      gender: formData.gender || undefined,
+      birthDate: formData.birthdate || undefined,
     })
-    workerMetaStorage.patch({ nationalityType: '외국인', idType: 'passport' })
+    workerMetaStorage.patch({ nationalityType: 'foreigner_unregistered', idType: 'passport' })
     navigate("/signup/set-password")
   }
 
@@ -119,8 +122,8 @@ export function PassportInfoPage() {
                   <input
                     type="radio"
                     name="gender"
-                    value="남자"
-                    checked={formData.gender === "남자"}
+                    value="male"
+                    checked={formData.gender === "male"}
                     onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
                     className="w-4 h-4 text-primary"
                   />
@@ -130,8 +133,8 @@ export function PassportInfoPage() {
                   <input
                     type="radio"
                     name="gender"
-                    value="여자"
-                    checked={formData.gender === "여자"}
+                    value="female"
+                    checked={formData.gender === "female"}
                     onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
                     className="w-4 h-4 text-primary"
                   />

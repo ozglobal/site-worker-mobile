@@ -10,10 +10,12 @@ import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useActivePartners } from "@/lib/queries/useActivePartners"
 import { updateWorkerCategory } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
+import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 
 export function OutsourcingPage() {
   const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
+  const { data: profile } = useWorkerProfile()
   const { data: partners, isLoading, isError, refetch } = useActivePartners()
   const [selectedCompany, setSelectedCompany] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -21,8 +23,11 @@ export function OutsourcingPage() {
   const handleSubmit = async () => {
     if (isSubmitting) return
     setIsSubmitting(true)
-    // TODO: Save outsourcing company selection (selectedCompany)
-    const result = await updateWorkerCategory("SERVICE")
+    const result = await updateWorkerCategory({
+      workerCategory: "labor_service",
+      relatedVendorId: selectedCompany,
+      ...(profile?.relatedSiteId ? { relatedSiteId: profile.relatedSiteId } : {}),
+    })
     setIsSubmitting(false)
     if (!result.success) {
       showError(result.error)

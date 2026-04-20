@@ -11,8 +11,12 @@ export interface WorkerMeResponse {
 
 export interface WorkerMeData {
   workerName: string
+  workerNameEn?: string
   ssnFirst: string
   ssnSecond: string
+  idNumberMasked?: string
+  gender?: string
+  birthDate?: string
   phone: string
   address: string
   accountHolder: string
@@ -25,6 +29,7 @@ export interface WorkerMeData {
   equipmentCompanyName?: string | null
   equipmentCompanyOwner?: string | null
   missingRequiredDocs?: string[]
+  relatedSiteId?: string
 }
 
 /**
@@ -58,8 +63,20 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
         (payload.workerName as string) ||
         (payload.name as string) ||
         '',
+      workerNameEn:
+        (payload.nameEn as string) ||
+        (payload.workerNameEn as string) ||
+        (payload.englishName as string) ||
+        undefined,
       ssnFirst: (payload.ssnFirst as string) || (payload.residentFirst as string) || '',
       ssnSecond: (payload.ssnSecond as string) || (payload.residentSecond as string) || '',
+      idNumberMasked: (payload.idNumberMasked as string) || undefined,
+      gender: (payload.gender as string) || undefined,
+      birthDate:
+        (payload.birthDate as string) ||
+        (payload.birthdate as string) ||
+        (payload.dateOfBirth as string) ||
+        undefined,
       phone:
         (payload.mobilePhone as string) ||
         (payload.phone as string) ||
@@ -78,6 +95,7 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
       missingRequiredDocs: Array.isArray(payload.missingRequiredDocs)
         ? (payload.missingRequiredDocs as string[])
         : [],
+      relatedSiteId: (payload.relatedSiteId as string) || undefined,
     }
 
     return { success: true, data }
@@ -448,10 +466,18 @@ export const updateEngineerCategory = async (data: {
   }
 }
 
+export interface UpdateWorkerCategoryPayload {
+  workerCategory: string
+  relatedVendorId?: string
+  relatedSiteId?: string
+}
+
 export const updateWorkerCategory = async (
-  workerCategory: string,
+  payload: string | UpdateWorkerCategoryPayload,
 ): Promise<ApiResult<void>> => {
   const endpoint = '/system/worker/me/category'
+  const body: UpdateWorkerCategoryPayload =
+    typeof payload === 'string' ? { workerCategory: payload } : payload
   try {
     const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
@@ -459,7 +485,7 @@ export const updateWorkerCategory = async (
         'accept': '*/*',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ workerCategory }),
+      body: JSON.stringify(body),
     })
 
     const json = await safeJson(response) as Record<string, unknown> | null
@@ -587,6 +613,8 @@ export interface DocumentSummaryItem {
   status?: string
   perSite?: boolean
   submittedAt?: string | null
+  /** Which bucket the document came from on the server response. */
+  state?: 'missing' | 'completed'
 }
 
 /**
@@ -610,41 +638,48 @@ export const fetchDocumentSummary = async (): Promise<ApiResult<DocumentSummaryI
     }
 
     const payload = (json.data ?? json.result ?? json) as Record<string, unknown>
-    // eslint-disable-next-line no-console
-    console.log('[DOCS] /document/summary payload keys:', Object.keys(payload), payload)
 
-    // Response ships a `requiredGroups` array. Each entry may either BE an item
-    // directly, or be a group wrapper with nested `items` — flatten both shapes.
-    // Fallback: a flat array at the root for backward compatibility.
-    const groups = Array.isArray(payload.requiredGroups)
-      ? payload.requiredGroups as Array<Record<string, unknown>>
-      : []
-    const flatList: unknown[] = groups.length > 0
-      ? groups.flatMap((g) => (Array.isArray(g.items) ? g.items : [g]))
-      : Array.isArray(payload) ? payload : []
-    // eslint-disable-next-line no-console
-    console.log('[DOCS] flatList length:', flatList.length, flatList)
+    // Response ships `missingGroups` (to submit) and `completedGroups`
+    // (already submitted). Older / alternative shapes (`requiredGroups`,
+    // flat root array) are tolerated as fallbacks.
+    const flattenGroups = (groups: unknown): unknown[] => {
+      if (!Array.isArray(groups)) return []
+      return (groups as Array<Record<string, unknown>>).flatMap((g) =>
+        Array.isArray(g.items) ? g.items : [g]
+      )
+    }
+    const missingList = flattenGroups(payload.missingGroups)
+    const completedList = flattenGroups(payload.completedGroups)
+    const legacyList =
+      missingList.length === 0 && completedList.length === 0
+        ? flattenGroups(payload.requiredGroups).length > 0
+          ? flattenGroups(payload.requiredGroups)
+          : Array.isArray(payload) ? (payload as unknown[]) : []
+        : []
 
-    const items: DocumentSummaryItem[] = flatList
-      .map((entry) => {
-        // requiredGroups ships plain strings (doc codes) alongside the object-form catalogue.
-        if (typeof entry === 'string') {
-          return { code: entry }
-        }
-        const e = entry as Record<string, unknown>
-        const code = (e.code ?? e.value ?? e.documentCode ?? e.documentType ?? '') as string
-        const label = (e.label ?? e.name ?? e.documentName ?? undefined) as string | undefined
-        const method = (e.method ?? e.submissionMethod ?? undefined) as string | undefined
-        const status = (e.status ?? undefined) as string | undefined
-        const perSite = (e.perSite ?? e.siteSpecific ?? undefined) as boolean | undefined
-        const submittedAt = (e.submittedAt ?? e.submitDate ?? null) as string | null
-        return { code: String(code), label, method, status, perSite, submittedAt }
-      })
-      .filter((it) => it.code)
+    const toItem = (entry: unknown, state?: 'missing' | 'completed'): DocumentSummaryItem | null => {
+      if (typeof entry === 'string') {
+        return entry ? { code: entry, state } : null
+      }
+      const e = entry as Record<string, unknown>
+      const code = (e.code ?? e.value ?? e.documentCode ?? e.documentType ?? '') as string
+      if (!code) return null
+      const label = (e.label ?? e.name ?? e.documentName ?? undefined) as string | undefined
+      const method = (e.method ?? e.submissionMethod ?? undefined) as string | undefined
+      const status = (e.status ?? undefined) as string | undefined
+      const perSite = (e.perSite ?? e.siteSpecific ?? undefined) as boolean | undefined
+      const submittedAt = (e.submittedAt ?? e.submitDate ?? null) as string | null
+      return { code: String(code), label, method, status, perSite, submittedAt, state }
+    }
+
+    const items: DocumentSummaryItem[] = [
+      ...missingList.map((e) => toItem(e, 'missing')),
+      ...completedList.map((e) => toItem(e, 'completed')),
+      ...legacyList.map((e) => toItem(e)),
+    ].filter((it): it is DocumentSummaryItem => !!it)
 
     return { success: true, data: items }
-  } catch (error) {
-    console.error('[DOCS] fetchDocumentSummary error:', error)
+  } catch {
     reportError('DOCS_SUMMARY_FAIL', 'Network error', { endpoint })
     return { success: false, error: 'Network error' }
   }
@@ -716,10 +751,137 @@ const postDocumentMultipart = async (
 }
 
 /** 1. 신분증 사본 — POST /system/worker/me/document/id-card */
-export const uploadIdCardDoc = (file: File) => {
+export const uploadIdCardDoc = async (file: File) => {
   const form = new FormData()
   form.append('file', file)
-  return postDocumentMultipart('id-card', form)
+  // eslint-disable-next-line no-console
+  console.log('[ID_CARD] upload start', { fileName: file.name, size: file.size, type: file.type })
+  const result = await postDocumentMultipart('id-card', form)
+  // eslint-disable-next-line no-console
+  console.log('[ID_CARD] upload result', result)
+  return result
+}
+
+export interface DocumentDetail {
+  fileId?: string
+  fileUrl?: string
+  mimeType?: string
+  [key: string]: unknown
+}
+/** @deprecated Use DocumentDetail — kept for back-compat with existing imports. */
+export type IdCardDetail = DocumentDetail
+
+/**
+ * Shared detail loader for GET /system/worker/me/document/{slug}.
+ * Every *DetailResp the backend returns nests the file metadata under
+ * `data.document`; we fall back to `data` / root if a future endpoint
+ * flattens it.
+ */
+const fetchDocumentDetail = async (slug: string): Promise<ApiResult<DocumentDetail>> => {
+  const endpoint = `/system/worker/me/document/${slug}`
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: { 'accept': '*/*' },
+    })
+    const json = await safeJson(response) as Record<string, unknown> | null
+    if (!json) return { success: false, error: 'Invalid server response' }
+    if (!response.ok) {
+      return { success: false, error: (json.message as string) || `API error: ${response.status}` }
+    }
+    const data = (json.data ?? json) as Record<string, unknown>
+    const doc = (data.document ?? data) as DocumentDetail
+    return { success: true, data: doc }
+  } catch {
+    reportError('DOCUMENT_FETCH_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/** GET /system/worker/me/document/id-card — detail for the 보기 flow. */
+export const fetchIdCardDoc = () => fetchDocumentDetail('id-card')
+
+/** GET /system/worker/me/document/bankbook — detail for the 보기 flow. */
+export const fetchBankbookDoc = () => fetchDocumentDetail('bankbook')
+
+/** GET /system/worker/me/document/family-relation — detail for the 보기 flow. */
+export const fetchFamilyRelationDoc = () => fetchDocumentDetail('family-relation')
+
+/** GET /system/worker/me/document/alien-reg — detail for the 보기 flow. */
+export const fetchAlienRegDoc = () => fetchDocumentDetail('alien-reg')
+
+/**
+ * Fetch a file (e.g. `/system/file/{id}/view`) with the same Bearer auth
+ * as other API calls, and turn the body into an object URL the browser
+ * can feed directly to `<img>` / `<iframe>`.
+ *
+ * Caller owns the returned URL — revoke it with URL.revokeObjectURL() when
+ * the viewer closes.
+ */
+export const fetchFileAsObjectUrl = async (
+  fileUrl: string,
+): Promise<ApiResult<{ url: string; mimeType: string }>> => {
+  const absolute =
+    fileUrl.startsWith('http://') || fileUrl.startsWith('https://') || fileUrl.startsWith(API_BASE_URL)
+      ? fileUrl
+      : `${API_BASE_URL}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`
+  try {
+    const response = await authFetch(absolute, {
+      method: 'GET',
+      headers: { 'accept': '*/*' },
+    })
+    if (!response.ok) {
+      return { success: false, error: `파일을 불러오지 못했습니다 (${response.status})` }
+    }
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    return { success: true, data: { url, mimeType: blob.type } }
+  } catch {
+    reportError('FILE_FETCH_FAIL', 'Network error', { endpoint: absolute })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+// ============================================
+// eformsign — pending documents to sign
+// GET /efs/api/documents/worker/{workerId}
+// ============================================
+
+export interface PendingSignDocument {
+  documentId?: string
+  documentName?: string
+  documentCode?: string
+  status?: string
+  templateId?: string
+  signUrl?: string
+  createdAt?: string
+  [key: string]: unknown
+}
+
+export const fetchPendingSignDocuments = async (
+  workerId: string,
+): Promise<ApiResult<PendingSignDocument[]>> => {
+  const endpoint = `/efs/api/documents/worker/${workerId}`
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: { 'accept': '*/*' },
+    })
+    const json = await safeJson(response) as Record<string, unknown> | null
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+    const payload = (json?.data ?? json ?? []) as unknown
+    const list = Array.isArray(payload)
+      ? payload
+      : Array.isArray((payload as Record<string, unknown>)?.items)
+        ? ((payload as Record<string, unknown>).items as unknown[])
+        : []
+    return { success: true, data: list as PendingSignDocument[] }
+  } catch {
+    reportError('PENDING_SIGN_DOCS_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
 }
 
 export interface AlienRegUploadReq {

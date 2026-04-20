@@ -4,43 +4,17 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledInput } from "@/components/ui/labeled-input"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useHoneypot } from "@/hooks/useHoneypot"
 import { signupStorage } from "@/lib/storage"
-
-function formatPhoneNumber(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 11)
-  if (digits.length <= 3) return digits
-  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`
-  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
-}
 
 export function NiceApiPage() {
   const navigate = useNavigate()
-  const { honeypotProps, isBotDetected } = useHoneypot()
   const [name, setName] = useState("")
   const [ssnFirst, setSsnFirst] = useState("")
   const [ssnSecond, setSsnSecond] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
-  const [showVerificationInput, setShowVerificationInput] = useState(false)
-  const [verificationCode, setVerificationCode] = useState("")
 
   const handleBack = () => {
     navigate(-1)
-  }
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value)
-    setPhoneNumber(formatted)
-  }
-
-  const isPhoneComplete = phoneNumber.replace(/\D/g, "").length === 11
-
-  const handleRequestCode = () => {
-    if (isBotDetected) return
-    if (isPhoneComplete) {
-      alert("Backend에 NICE SMS 소지확인 API 요청.")
-      setShowVerificationInput(true)
-    }
   }
 
   return (

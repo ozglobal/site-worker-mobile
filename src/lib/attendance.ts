@@ -588,12 +588,12 @@ export const fetchTodayAttendance = async (
 export interface CorrectionRequestParams {
   attendanceId: string
   workEntryId: string
-  requestType: string
-  requestedValue: string
-  originalEffort: string
-  requestedEffort: string
-  originalWage: string
-  requestedWage: string
+  requestType: 'work_effort' | 'daily_wage' | 'work_effort_and_wage'
+  /** Used for `work_effort` or `daily_wage` (single-field correction). */
+  requestedValue?: string
+  /** Used for `work_effort_and_wage` (combined correction). */
+  requestedEffort?: string
+  requestedWage?: string
   reason: string
 }
 
@@ -617,6 +617,20 @@ export const submitCorrectionRequest = async (
   params: CorrectionRequestParams
 ): Promise<ApiResult<CorrectionRequest>> => {
   const endpoint = '/system/worker/me/attendance/correction-request'
+  // Build body with only the fields the spec accepts for this requestType —
+  // avoids sending both `requestedValue` and `requestedEffort/Wage` at once.
+  const body: Record<string, unknown> = {
+    attendanceId: params.attendanceId,
+    workEntryId: params.workEntryId,
+    requestType: params.requestType,
+    reason: params.reason,
+  }
+  if (params.requestType === 'work_effort_and_wage') {
+    if (params.requestedEffort !== undefined) body.requestedEffort = params.requestedEffort
+    if (params.requestedWage !== undefined) body.requestedWage = params.requestedWage
+  } else {
+    if (params.requestedValue !== undefined) body.requestedValue = params.requestedValue
+  }
   try {
     const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
@@ -624,7 +638,7 @@ export const submitCorrectionRequest = async (
         'Content-Type': 'application/json',
         'accept': '*/*',
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify(body),
     })
 
     const data = await safeJson(response) as Record<string, unknown> | null
@@ -663,6 +677,29 @@ export const submitCorrectionRequest = async (
       success: false,
       error: error instanceof Error ? error.message : 'Network error',
     }
+  }
+}
+
+/**
+ * POST /system/attendance/{id}/overtime-request
+ * Flags the attendance as overtime (isOvertime=true) and suppresses the
+ * missed-checkout alert for the worker. No request body.
+ */
+export const requestOvertime = async (attendanceId: string): Promise<ApiResult<void>> => {
+  const endpoint = `/system/attendance/${attendanceId}/overtime-request`
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: { 'accept': '*/*' },
+    })
+    if (!response.ok) {
+      const data = await safeJson(response) as Record<string, unknown> | null
+      return { success: false, error: (data?.message as string) || `API error: ${response.status}` }
+    }
+    return { success: true, data: undefined }
+  } catch (error) {
+    reportError('OVERTIME_REQUEST_FAIL', error instanceof Error ? error.message : 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
   }
 }
 

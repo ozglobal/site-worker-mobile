@@ -10,6 +10,10 @@ export interface StatusListItemProps {
   statusLabel?: string
   onClick?: () => void
   className?: string
+  /** Hide the trailing chevron `>` icon. */
+  hideChevron?: boolean
+  /** Optional trailing content (e.g. an action button) rendered after the status badge. */
+  trailing?: React.ReactNode
 }
 
 const statusStyles: Record<StatusType, { badge: string; icon: string }> = {
@@ -61,21 +65,26 @@ export function StatusListItem({
   statusLabel,
   onClick,
   className,
+  hideChevron,
+  trailing,
 }: StatusListItemProps) {
   const styles = status ? statusStyles[status] : null
   const label = status ? (statusLabel || defaultStatusLabels[status]) : ""
 
+  const Wrapper: React.ElementType = onClick ? "button" : "div"
+
   return (
-    <button
+    <Wrapper
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 border-b border-gray-200 px-4 py-5 text-left transition-colors hover:bg-gray-50",
+        "flex w-full items-center gap-3 border-b border-gray-200 px-4 py-5 text-left transition-colors",
+        onClick && "hover:bg-gray-50",
         className
       )}
     >
       <div className="flex-1 min-w-0">
         <p className="font-bold text-slate-900">{title}</p>
-        <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
+        {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
@@ -90,16 +99,19 @@ export function StatusListItem({
             {label}
           </span>
         )}
-        <svg
-          className="h-5 w-5 text-gray-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
+        {trailing}
+        {!hideChevron && (
+          <svg
+            className="h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        )}
       </div>
-    </button>
+    </Wrapper>
   )
 }

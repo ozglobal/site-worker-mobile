@@ -3,14 +3,12 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
-import { handleLogout, authFetch } from "@/lib/auth"
-import { useToast } from "@/contexts/ToastContext"
+import { handleLogout } from "@/lib/auth"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useDictItems } from "@/lib/queries/useDictItems"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
-  const { showSuccess, showError } = useToast()
   const { data: profile } = useWorkerProfile()
   const { data: workerCategories = [] } = useDictItems("worker_category")
   const accountIncomplete = !profile?.accountHolder
@@ -53,7 +51,13 @@ export function MyInfoPage() {
             <StatusListItem
               title="개인정보"
               subtitle={profile?.workerName || "이름"}
-              onClick={() => navigate("/profile/myinfo")}
+              onClick={() => {
+                const path =
+                  profile?.idType === "alien_registration" ? "/profile/myinfo-frn"
+                  : profile?.idType === "passport"         ? "/profile/myinfo-pn"
+                  : "/profile/myinfo-rrn"
+                navigate(path)
+              }}
             />
             <StatusListItem
               title="회원유형"
@@ -98,23 +102,6 @@ export function MyInfoPage() {
           </Button>
         </div>
 
-        {/* Test: Purge user data */}
-        <div className="px-4 pb-4">
-          <button
-            onClick={async () => {
-              const id = 1455
-              const res = await authFetch(`/api/system/user/${id}/purge`, { method: "DELETE" })
-              if (res.ok) {
-                showSuccess("사용자 데이터가 초기화되었습니다.")
-              } else {
-                showError("초기화 실패")
-              }
-            }}
-            className="text-xs text-slate-400 underline"
-          >
-            [TEST] 사용자 삭제
-          </button>
-        </div>
       </main>
 
       <AppBottomNav active="profile" onNavigate={handleNavigation} className="shrink-0" />
