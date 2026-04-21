@@ -5,26 +5,27 @@ import { QueryErrorState } from "@/components/ui/query-error-state"
 import { ChevronRight as ChevronRightIcon } from "lucide-react"
 import { useWorkerEquipments } from "@/lib/queries/useWorkerEquipments"
 import { useDictItems } from "@/lib/queries/useDictItems"
+import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
+import { requiredDocsCatalogue } from "@/lib/documents"
 
 export function EquipmentListPage() {
   const navigate = useNavigate()
   const { data: equipments, isLoading, isError, refetch } = useWorkerEquipments()
   const { data: equipmentTypes = [] } = useDictItems("EQUIPMENT_TYPE")
+  const { data: docSummary } = useDocumentSummary()
+  const pageTitle = docSummary?.find((d) => d.code === "equipment_license")?.label
+    || requiredDocsCatalogue["equipment_license"]?.label
+    || "장비 정보"
 
   const resolveLabel = (code: string) =>
     equipmentTypes.find((t) => t.code === code)?.name || code
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
-      <AppTopBar title="장비 정보" onBack={() => navigate(-1)} className="shrink-0" />
+      <AppTopBar title={pageTitle} onBack={() => navigate(-1)} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
-          <div className="px-4 pt-4 pb-2">
-            <h1 className="text-lg font-bold text-slate-900">장비 정보</h1>
-            <p className="mt-1 text-sm text-gray-500">등록된 장비 자격증 목록입니다.</p>
-          </div>
-
           <div className="px-4 py-6 space-y-3">
             {isLoading ? (
               <div className="flex items-center justify-center py-10">

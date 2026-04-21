@@ -18,6 +18,7 @@ import {
   fetchSafetyCertDoc,
   reuploadEquipmentLicense,
   uploadBankbookDoc,
+  uploadIdCardDoc,
   uploadSafetyCertDoc,
   type DocumentDetail,
 } from "@/lib/profile"
@@ -34,7 +35,7 @@ const LOADERS: Record<string, { title: string; load: DocLoader }> = {
 }
 
 // Slugs whose viewer page supports in-place re-upload via 사진 촬영 / 파일 선택.
-const UPLOAD_SUPPORTED = new Set(["bankbook", "safety-cert", "equipment-license"])
+const UPLOAD_SUPPORTED = new Set(["id-card", "bankbook", "safety-cert", "equipment-license"])
 
 export function DocumentViewerPage() {
   const navigate = useNavigate()
@@ -117,6 +118,9 @@ export function DocumentViewerPage() {
   }, [docMeta?.fileUrl])
 
   const runUpload = async (file: File): Promise<ApiResult<void>> => {
+    if (slug === "id-card") {
+      return uploadIdCardDoc(file)
+    }
     if (slug === "bankbook") {
       return uploadBankbookDoc({
         file,
@@ -191,8 +195,7 @@ export function DocumentViewerPage() {
       <main className="flex-1 overflow-auto p-4">
         {supportsUpload ? (
           <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-            <div className="flex items-center gap-2">
-              <p className="flex-1 text-sm font-semibold text-slate-900 truncate">{entry.title}</p>
+            <div className="flex items-center justify-end gap-2">
               {!showUploadButtons ? (
                 <button
                   type="button"

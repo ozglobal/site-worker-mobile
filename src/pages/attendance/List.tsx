@@ -10,7 +10,8 @@ import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
 import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { daysToSiteLegend, groupRecordsByDate, getSiteColor } from "@/utils/attendance"
-import { formatTimestamp, formatCurrency } from "@/utils/format"
+import { formatCurrency } from "@/utils/format"
+import { formatKstTime } from "@/utils/time"
 import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
 import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/ui/correction-dialog"
 import { submitCorrectionRequest, type WeeklyAttendanceRecord } from "@/lib/attendance"
@@ -36,9 +37,15 @@ export function ListPage() {
   const [correctionDailyWage, setCorrectionDailyWage] = useState("")
   const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
 
-  const openCorrectionDialog = (record: { id: string; siteName: string; checkInTime: number; checkOutTime?: number; workEffort?: number; dailyWageSnapshot?: number }) => {
+  const openCorrectionDialog = (
+    record: { id: string; siteName: string; checkInTime: number; checkOutTime?: number; workEffort?: number; dailyWageSnapshot?: number },
+    checkInOverride?: string | null,
+    checkOutOverride?: string | null,
+  ) => {
     setCorrectionSiteName(record.siteName)
-    setCorrectionTimeRange(`${formatTimestamp(record.checkInTime)} - ${formatTimestamp(record.checkOutTime)}`)
+    const ci = checkInOverride ?? record.checkInTime
+    const co = checkOutOverride ?? record.checkOutTime
+    setCorrectionTimeRange(`${formatKstTime(ci as never)} - ${formatKstTime(co as never)}`)
     setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "")
     setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "")
     setCorrectionAttendanceId(record.id)
@@ -282,11 +289,17 @@ export function ListPage() {
 
               {/* Records */}
               <div className="space-y-3">
-                {group.records.map((record, index) => (
+                {group.records.map((record, index) => {
+                  const dailyEntry = isGroupToday
+                    ? (todayDaily?.attendances || []).find((a) => a.siteId === record.siteId)
+                    : null
+                  const checkIn = dailyEntry?.checkInTime ?? record.checkInTime
+                  const checkOut = dailyEntry?.checkOutTime ?? record.checkOutTime
+                  return (
                   <AttendanceRecordCard
                     key={record.id || `${group.date}-${index}`}
                     siteName={record.siteName}
-                    timeRange={`${formatTimestamp(record.checkInTime, true)} - ${formatTimestamp(record.checkOutTime, true)}`}
+                    timeRange={`${formatKstTime(checkIn as never)} - ${formatKstTime(checkOut as never)}`}
                     recordType={record.recordType || ""}
                     workEffort={record.workEffort}
                     dailyWageSnapshot={record.dailyWageSnapshot}
@@ -295,10 +308,11 @@ export function ListPage() {
                     statusVariant={record.hasCheckedOut ? "default" : "active"}
                     showCorrection={isGroupToday}
                     correctionDisabled={!correctableTodaySiteIds.has(record.siteId)}
-                    onCorrectionClick={() => openCorrectionDialog(record)}
+                    onCorrectionClick={() => openCorrectionDialog(record, dailyEntry?.checkInTime, dailyEntry?.checkOutTime)}
                     className="shadow-sm border border-slate-100 p-5"
                   />
-                ))}
+                  )
+                })}
               </div>
             </div>
           )

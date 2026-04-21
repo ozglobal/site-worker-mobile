@@ -115,15 +115,15 @@ export function CalendarPage() {
             setMonth(d.getMonth() + 1)
           }}
           locale={ko}
+          disabled={{ after: new Date() }}
           events={selectedSite ? events.filter((e) => e.siteId === selectedSite) : events}
           className="w-full"
           onSelect={(date) => {
-            if (date) {
-              const y = date.getFullYear()
-              const m = String(date.getMonth() + 1).padStart(2, "0")
-              const d = String(date.getDate()).padStart(2, "0")
-              navigate(`/attendance/detail/${y}-${m}-${d}`)
-            }
+            if (!date || date > new Date()) return
+            const y = date.getFullYear()
+            const m = String(date.getMonth() + 1).padStart(2, "0")
+            const d = String(date.getDate()).padStart(2, "0")
+            navigate(`/attendance/detail/${y}-${m}-${d}`)
           }}
         />
 
