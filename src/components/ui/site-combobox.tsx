@@ -36,6 +36,7 @@ export function SiteCombobox({
   const [open, setOpen] = useState(false)
 
   const selectedLabel = options.find((opt) => opt.value === value)?.label
+  const single = options.length <= 1
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -43,6 +44,7 @@ export function SiteCombobox({
         <button
           role="combobox"
           aria-expanded={open}
+          disabled={single}
           className={cn(
             "flex h-12 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 text-sm",
             "text-slate-900",
@@ -50,7 +52,7 @@ export function SiteCombobox({
           )}
         >
           <span className="truncate font-semibold">{selectedLabel || placeholder}</span>
-          <KeyboardArrowDownIcon size={20} className="text-slate-400 shrink-0" />
+          {!single && <KeyboardArrowDownIcon size={20} className="text-slate-400 shrink-0" />}
         </button>
       </PopoverTrigger>
       <PopoverContent>

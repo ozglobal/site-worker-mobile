@@ -36,7 +36,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const show = useCallback((type: ToastType, title: string, message?: string) => {
     const id = nextId.current++
     setToasts(prev => [...prev, { id, type, title, message }])
-    setTimeout(() => dismiss(id), 3000)
+    setTimeout(() => dismiss(id), 6000)
   }, [dismiss])
 
   const showSuccess = useCallback((title: string, message?: string) => show('success', title, message), [show])

@@ -15,7 +15,6 @@ interface IdFormRrnProps {
   onChange: (field: keyof RrnFormValues, value: string) => void
 }
 
-const readOnlyClass = "bg-gray-100 text-slate-500 pointer-events-none"
 
 export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
   const isSignup = mode === "signup"
@@ -52,9 +51,8 @@ export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
           lang="ko"
           value={values.name}
           onChange={handle("name")}
-          placeholder={isSignup ? "이름 입력" : undefined}
-          readOnly={!isSignup}
-          className={isSignup ? "bg-white" : readOnlyClass}
+          placeholder="이름 입력"
+          className="bg-white"
         />
       </div>
 
@@ -67,9 +65,8 @@ export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
             onChange={handle("ssnFirst")}
             inputMode="numeric"
             maxLength={6}
-            placeholder={isSignup ? "앞 6자리" : undefined}
-            readOnly={!isSignup}
-            className={`flex-1 ${isSignup ? "bg-white" : readOnlyClass}`}
+            placeholder="앞 6자리"
+            className="flex-1 bg-white"
           />
           <span className="text-slate-400">-</span>
           <Input
@@ -78,9 +75,8 @@ export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
             onChange={handle("ssnSecond")}
             inputMode="numeric"
             maxLength={7}
-            placeholder={isSignup ? "뒤 7자리" : undefined}
-            readOnly={!isSignup}
-            className={`flex-1 ${isSignup ? "bg-white" : readOnlyClass}`}
+            placeholder="뒤 7자리"
+            className="flex-1 bg-white"
           />
         </div>
       </div>
@@ -92,7 +88,7 @@ export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
           type="tel"
           value={values.phone}
           readOnly
-          className={isSignup ? "bg-gray-100" : readOnlyClass}
+          className="bg-gray-100 text-slate-500 pointer-events-none"
         />
       </div>
 

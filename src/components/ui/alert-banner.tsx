@@ -12,20 +12,20 @@ const variantStyles = {
   warning: {
     container: "bg-amber-50 border-amber-200",
     icon: "#D97706",
-    title: "text-amber-700",
+    title: "font-bold text-amber-700",
     description: "text-amber-600",
   },
   error: {
     container: "bg-red-50 border-red-200",
     icon: "#DC2626",
-    title: "text-red-600",
+    title: "font-bold text-red-600",
     description: "text-red-500",
   },
   info: {
     container: "bg-slate-100 border-slate-200",
     icon: "#94A3B8",
-    title: "text-gray-700",
-    description: "text-gray-700",
+    title: "text-slate-500",
+    description: "text-slate-500",
   },
 }
 
@@ -66,7 +66,7 @@ export function AlertBanner({
         </svg>
       )}
       <div>
-        <p className={cn("text-sm font-bold", styles.title)}>{title}</p>
+        <p className={cn("text-sm", styles.title)}>{title}</p>
         {description && (
           <p className={cn("text-sm mt-1", styles.description)}>{description}</p>
         )}

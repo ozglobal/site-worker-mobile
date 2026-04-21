@@ -39,14 +39,15 @@ export function MonthSelector({
         <span className="text-lg font-bold text-slate-900 min-w-[100px] text-center">
           {year}년 {month}월
         </span>
-        {!nextDisabled && (
-          <button
-            onClick={onNextMonth}
-            className="flex items-center justify-center w-8 h-8 rounded-md text-slate-500 active:bg-slate-100"
-          >
-            <ChevronRightIcon size={20} />
-          </button>
-        )}
+        <button
+          onClick={nextDisabled ? undefined : onNextMonth}
+          className={cn(
+            "flex items-center justify-center w-8 h-8 rounded-md text-slate-500 active:bg-slate-100",
+            nextDisabled && "invisible"
+          )}
+        >
+          <ChevronRightIcon size={20} />
+        </button>
       </div>
 
       {/* View mode toggle */}

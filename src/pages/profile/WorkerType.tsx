@@ -29,6 +29,8 @@ const lookupMeta = (code: string) =>
 // Match is case-insensitive (backend sometimes ships lower_snake_case, sometimes UPPER).
 // Codes not listed stay on /profile/worker-type (no navigation).
 const profileRouteEntries: Array<[string, string]> = [
+  ["general", "/profile"],
+  ["major_work", "/profile"],
   ["labor_service", "/profile/outsourcing"],
   ["equipment_driver", "/profile/engineer"],
 ]
@@ -130,7 +132,7 @@ export function WorkerTypePage({ mode = "profile" }: WorkerTypePageProps) {
           <QueryErrorState onRetry={() => refetch()} message="회원 유형을 불러오지 못했습니다." />
         ) : (
           <div className="px-4 space-y-3">
-            {(workerTypes ?? []).map((type) => {
+            {(workerTypes ?? []).filter((t) => t.code.toLowerCase() !== "trainee").map((type) => {
               const meta = lookupMeta(type.code)
               const isActive = selected === type.code
               return (

@@ -88,7 +88,7 @@ export function IdFormFrn({ mode, values, onChange }: IdFormFrnProps) {
             // apostrophe — enforces English input regardless of IME.
             onChange("englishName", e.target.value.replace(/[^A-Za-z\s'-]/g, ""))
           }}
-          placeholder={isSignup ? "English name" : undefined}
+          placeholder={isSignup ? "영문 이름" : undefined}
           readOnly={!isSignup}
           className={isSignup ? "bg-white" : readOnlyClass}
         />
@@ -98,18 +98,20 @@ export function IdFormFrn({ mode, values, onChange }: IdFormFrnProps) {
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">외국인등록번호</label>
         <div className="flex items-center gap-2">
-          <Input
-            inputMode="numeric"
-            maxLength={6}
-            value={values.ssnFirst}
-            onChange={handle("ssnFirst")}
-            placeholder={isSignup ? "앞 6자리" : undefined}
-            readOnly={!isSignup}
-            className={`flex-1 ${isSignup ? "bg-white" : readOnlyClass}`}
-          />
+          <div className="flex-1 min-w-0">
+            <Input
+              inputMode="numeric"
+              maxLength={6}
+              value={values.ssnFirst}
+              onChange={handle("ssnFirst")}
+              placeholder={isSignup ? "앞 6자리" : undefined}
+              readOnly={!isSignup}
+              className={isSignup ? "bg-white" : readOnlyClass}
+            />
+          </div>
           <span className="text-slate-400">-</span>
           {isSignup ? (
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <Input
                 ref={ssnSecondRef}
                 inputMode="numeric"
@@ -126,11 +128,13 @@ export function IdFormFrn({ mode, values, onChange }: IdFormFrnProps) {
               </div>
             </div>
           ) : (
-            <Input
-              value={values.ssnSecond}
-              readOnly
-              className={`flex-1 ${readOnlyClass}`}
-            />
+            <div className="flex-1 min-w-0">
+              <Input
+                value={values.ssnSecond}
+                readOnly
+                className={readOnlyClass}
+              />
+            </div>
           )}
         </div>
       </div>

@@ -393,6 +393,38 @@ export const updateBankAccount = async (data: {
   }
 }
 
+export interface WorkerEquipment {
+  id: string
+  workerId?: string
+  equipmentType: string
+  licenseDocId?: string
+  licenseDocStatus?: string
+  validFrom?: string
+  validUntil?: string
+  sortOrder?: number
+  createTime?: string
+}
+
+export const fetchWorkerEquipments = async (): Promise<ApiResult<WorkerEquipment[]>> => {
+  const endpoint = '/system/worker/me/equipment'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: { 'accept': '*/*' },
+    })
+    const json = await safeJson(response) as Record<string, unknown> | null
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+    const payload = (json?.data ?? json ?? []) as unknown
+    const list = Array.isArray(payload) ? payload : []
+    return { success: true, data: list as WorkerEquipment[] }
+  } catch {
+    reportError('EQUIPMENT_FETCH_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
 export interface UploadEquipmentPayload {
   equipmentType: string
   licenseFile: File
@@ -430,6 +462,30 @@ export const uploadEquipment = async (
     return { success: true, data: undefined }
   } catch {
     reportError('EQUIPMENT_UPLOAD_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export const reuploadEquipmentLicense = async (
+  equipmentId: string,
+  file: File,
+): Promise<ApiResult<void>> => {
+  const endpoint = `/system/worker/me/equipment/${equipmentId}`
+  try {
+    const form = new FormData()
+    form.append('licenseFile', file)
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: { 'accept': '*/*' },
+      body: form,
+    })
+    const json = await safeJson(response) as Record<string, unknown> | null
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+    return { success: true, data: undefined }
+  } catch {
+    reportError('EQUIPMENT_REUPLOAD_FAIL', 'Network error', { endpoint })
     return { success: false, error: 'Network error' }
   }
 }
@@ -812,6 +868,10 @@ export const fetchAlienRegDoc = () => fetchDocumentDetail('alien-reg')
 
 /** GET /system/worker/me/document/safety-cert — detail for the 보기 flow. */
 export const fetchSafetyCertDoc = () => fetchDocumentDetail('safety-cert')
+
+/** GET /system/worker/me/document/{licenseDocId} — fetch fileUrl for an equipment license. */
+export const fetchEquipmentLicenseDoc = (licenseDocId: string) => fetchDocumentDetail(licenseDocId)
+
 
 /**
  * Fetch a file (e.g. `/system/file/{id}/view`) with the same Bearer auth

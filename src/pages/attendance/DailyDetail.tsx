@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
 import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
@@ -81,6 +82,7 @@ export function DailyDetailPage() {
   }, [])
 
   const isToday = date === today
+  const nextDisabled = !date || date >= today
 
   // Site ids that STILL accept correction requests today. Backend flips
   // canRequestCorrection to false once a PENDING request exists.
@@ -122,7 +124,7 @@ export function DailyDetailPage() {
           <ChevronLeftIcon className="h-6 w-6 text-slate-900" />
         </button>
         <span className="text-base font-bold text-slate-900">{displayDate}</span>
-        <button onClick={() => navigateDay(1)} className="p-1">
+        <button onClick={nextDisabled ? undefined : () => navigateDay(1)} className={cn("p-1", nextDisabled && "invisible")}>
           <ChevronRightIcon className="h-6 w-6 text-slate-900" />
         </button>
       </div>
@@ -162,7 +164,7 @@ export function DailyDetailPage() {
                 />
               ))
             ) : (
-              <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+              <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-center border border-slate-200">
                 <p className="text-sm text-slate-500 text-center">해당 날짜에 출근 기록이 없습니다.</p>
               </div>
             )}

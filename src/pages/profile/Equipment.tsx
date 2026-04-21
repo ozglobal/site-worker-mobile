@@ -1,28 +1,31 @@
 import { useState, useRef } from "react"
+import { format } from "date-fns"
 import { useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AlertCircle as ErrorOutlineIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
+import { DateInput } from "@/components/ui/date-input"
 import { useDictItems } from "@/lib/queries/useDictItems"
 import { uploadEquipment } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 
 export function EquipmentPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { showSuccess, showError } = useToast()
   const { data: equipmentTypes = [] } = useDictItems("EQUIPMENT_TYPE")
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const validFromInputRef = useRef<HTMLInputElement>(null)
-  const expiryInputRef = useRef<HTMLInputElement>(null)
   const [selectedEquipment, setSelectedEquipment] = useState("")
   const [certFile, setCertFile] = useState<File | null>(null)
-  const [validFrom, setValidFrom] = useState("")
-  const [expiryDate, setExpiryDate] = useState("")
+  const [validFrom, setValidFrom] = useState<Date | undefined>()
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const isFormValid = selectedEquipment && certFile && validFrom && expiryDate
+  const expiryAfterIssue = validFrom && expiryDate ? expiryDate >= validFrom : true
+  const isFormValid = selectedEquipment && certFile && validFrom && expiryDate && expiryAfterIssue
 
   const keyboardOpen = useKeyboardOpen()
 
@@ -67,46 +70,17 @@ export function EquipmentPage() {
                   type="file"
                   accept="image/*,.pdf"
                   ref={fileInputRef}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null
-                    setCertFile(file)
-                    if (file) setTimeout(() => { validFromInputRef.current?.focus() }, 300)
-                  }}
+                  onChange={(e) => { setCertFile(e.target.files?.[0] || null) }}
                   className="hidden"
                 />
               </label>
               <label className="block text-sm font-medium text-slate-700 mt-4 mb-2">자격증 발급일</label>
-              <input
-                ref={validFromInputRef}
-                type="text"
-                value={validFrom}
-                onChange={(e) => { setValidFrom(e.target.value); if (e.target.value) setTimeout(() => expiryInputRef.current?.focus(), 100) }}
-                onFocus={(e) => { e.target.type = "date" }}
-                onClick={(e) => {
-                  const el = e.currentTarget
-                  el.type = "date"
-                  try { el.showPicker?.() } catch { /* ignore */ }
-                }}
-                onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
-                placeholder="발급일 입력"
-                className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
-              />
+              <DateInput value={validFrom} onChange={setValidFrom} />
               <label className="block text-sm font-medium text-slate-700 mt-4 mb-2">자격증 만료일</label>
-              <input
-                ref={expiryInputRef}
-                type="text"
-                value={expiryDate}
-                onChange={(e) => { setExpiryDate(e.target.value); if (e.target.value) setTimeout(() => e.target.blur(), 100) }}
-                onFocus={(e) => { e.target.type = "date" }}
-                onClick={(e) => {
-                  const el = e.currentTarget
-                  el.type = "date"
-                  try { el.showPicker?.() } catch { /* ignore */ }
-                }}
-                onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
-                placeholder="만료일 입력"
-                className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
-              />
+              <DateInput value={expiryDate} onChange={setExpiryDate} />
+              {!expiryAfterIssue && (
+                <p className="mt-1 text-sm text-red-500">만료일은 발급일보다 이후여야 합니다.</p>
+              )}
             </div>
           </div>
 
@@ -116,13 +90,15 @@ export function EquipmentPage() {
               size="full"
               disabled={!isFormValid || isSubmitting}
               onClick={async () => {
-                if (!certFile) return
+                if (!certFile || !validFrom || !expiryDate) return
                 setIsSubmitting(true)
+                const validFromStr = format(validFrom, "yyyy-MM-dd")
+                const expiryDateStr = format(expiryDate, "yyyy-MM-dd")
                 const result = await uploadEquipment({
                   equipmentType: selectedEquipment,
                   licenseFile: certFile,
-                  validFrom,
-                  validUntil: expiryDate,
+                  validFrom: validFromStr,
+                  validUntil: expiryDateStr,
                 })
                 setIsSubmitting(false)
                 if (!result.success) {
@@ -131,7 +107,8 @@ export function EquipmentPage() {
                 }
                 const equipmentName = equipmentTypes.find((t) => t.code === selectedEquipment)?.name || selectedEquipment
                 showSuccess(`[${equipmentName}] 장비가 등록되었습니다.`)
-                navigate("/profile/equipments-list", { state: { name: equipmentName, expiryDate } })
+                queryClient.invalidateQueries({ queryKey: ["workerEquipments"] })
+                navigate("/profile/equipments-list")
               }}
             >
               {isSubmitting ? "등록 중..." : "등록하기"}

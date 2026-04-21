@@ -286,7 +286,7 @@ export function ListPage() {
                   <AttendanceRecordCard
                     key={record.id || `${group.date}-${index}`}
                     siteName={record.siteName}
-                    timeRange={`${formatTimestamp(record.checkInTime)} - ${formatTimestamp(record.checkOutTime)}`}
+                    timeRange={`${formatTimestamp(record.checkInTime, true)} - ${formatTimestamp(record.checkOutTime, true)}`}
                     recordType={record.recordType || ""}
                     workEffort={record.workEffort}
                     dailyWageSnapshot={record.dailyWageSnapshot}

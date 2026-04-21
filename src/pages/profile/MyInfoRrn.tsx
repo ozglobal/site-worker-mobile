@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
-import { updateWorkerAddress } from "@/lib/profile"
+import { updateWorkerAddress, updateWorkerProfile } from "@/lib/profile"
 import { getWorkerName } from "@/lib/auth"
 import { IdFormRrn, type RrnFormValues } from "@/components/profile/IdFormRrn"
 
@@ -26,7 +26,7 @@ export function MyInfoRrnPage() {
     phone: "",
     address: "",
   })
-  const [originalAddress, setOriginalAddress] = useState("")
+  const [original, setOriginal] = useState<RrnFormValues>({ name: "", ssnFirst: "", ssnSecond: "", phone: "", address: "" })
 
   useEffect(() => {
     if (profile) {
@@ -41,11 +41,15 @@ export function MyInfoRrnPage() {
         address: profile.address,
       }
       setFormData(loaded)
-      setOriginalAddress(loaded.address)
+      setOriginal(loaded)
     }
   }, [profile])
 
-  const hasChanges = formData.address !== originalAddress
+  const hasChanges =
+    formData.name !== original.name ||
+    formData.ssnFirst !== original.ssnFirst ||
+    formData.ssnSecond !== original.ssnSecond ||
+    formData.address !== original.address
   const isFormValid = !!(formData.name && formData.ssnFirst && formData.ssnSecond && formData.phone && formData.address)
 
   const keyboardOpen = useKeyboardOpen()
@@ -58,7 +62,19 @@ export function MyInfoRrnPage() {
     if (isSubmitting) return
     setIsSubmitting(true)
     try {
-      const result = await updateWorkerAddress(formData.address)
+      const nameOrSsnChanged =
+        formData.name !== original.name ||
+        formData.ssnFirst !== original.ssnFirst ||
+        formData.ssnSecond !== original.ssnSecond
+      const result = nameOrSsnChanged
+        ? await updateWorkerProfile({
+            workerName: formData.name,
+            ssnFirst: formData.ssnFirst,
+            ssnSecond: formData.ssnSecond,
+            phone: formData.phone,
+            address: formData.address,
+          })
+        : await updateWorkerAddress(formData.address)
       if (result.success) {
         await refetch()
         showSuccess("저장되었습니다.")

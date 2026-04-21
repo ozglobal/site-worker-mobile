@@ -141,6 +141,10 @@ export function ProfileDocumentsPage() {
       navigate("/profile/documents/alien-reg")
       return
     }
+    if (code === "equipment_license") {
+      navigate("/profile/equipments-list")
+      return
+    }
     const slug = viewerSlugByCode[code]
     if (slug) {
       navigate(`/profile/documents/view/${slug}`)

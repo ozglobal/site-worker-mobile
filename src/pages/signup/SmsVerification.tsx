@@ -74,14 +74,14 @@ export function SmsVerificationPage() {
 
             {/* 휴대폰 번호 */}
             <div className="space-y-2">
-              <div className="flex items-end gap-2">
+              <div className="flex items-end gap-3">
                 <LabeledInput
                   label="휴대폰 번호"
                   type="tel"
                   placeholder="010-0000-0000"
                   value={phoneNumber}
                   onChange={handlePhoneChange}
-                  className="w-[190px]"
+                  className="flex-1"
                 />
                 <Button
                   variant={isPhoneComplete && !isSending ? "primary" : "primaryDisabled"}

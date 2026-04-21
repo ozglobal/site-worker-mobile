@@ -38,7 +38,7 @@ export function OutsourcingPage() {
     const companyName =
       partners?.find((p) => p.id === selectedCompany)?.partnerName || selectedCompany
     showSuccess(`[${companyName}]으로 변경되었습니다.`)
-    navigate("/profile/worker-type")
+    navigate("/profile")
   }
 
   const isFormValid = selectedCompany !== ""

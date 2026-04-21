@@ -119,7 +119,7 @@ export function AppBottomNav({
             <Icon active={isActive} />
             <span
               className={cn(
-                "text-xs",
+                "text-sm",
                 isActive ? "font-bold" : "font-medium"
               )}
             >

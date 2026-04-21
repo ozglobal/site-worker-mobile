@@ -91,9 +91,9 @@ export function ToastContainer() {
             >
               <Icon />
               <div className="flex-1">
-                <p className="font-medium text-sm">{toast.title}</p>
+                <p className="font-medium text-base">{toast.title}</p>
                 {toast.message && (
-                  <p className={`text-xs ${subtitleMap[toast.type]} mt-0.5`}>{toast.message}</p>
+                  <p className={`text-base ${subtitleMap[toast.type]} mt-0.5`}>{toast.message}</p>
                 )}
               </div>
             </div>

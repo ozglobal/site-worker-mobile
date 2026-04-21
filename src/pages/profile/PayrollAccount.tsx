@@ -100,6 +100,7 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
       <main className="flex-1 overflow-y-auto px-4 pt-4">
         <div className="pb-6">
           <h1 className="text-lg font-bold text-slate-900">급여 지급 방식</h1>
+          <p className="mt-1 text-sm text-gray-500">급여 지급 방식을 선택해주세요</p>
         </div>
 
         <div className="space-y-3">

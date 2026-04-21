@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
-import { useQueryClient } from "@tanstack/react-query"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate, useParams, useSearchParams } from "react-router-dom"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
@@ -11,10 +11,12 @@ import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import {
   fetchAlienRegDoc,
   fetchBankbookDoc,
+  fetchEquipmentLicenseDoc,
   fetchFamilyRelationDoc,
   fetchFileAsObjectUrl,
   fetchIdCardDoc,
   fetchSafetyCertDoc,
+  reuploadEquipmentLicense,
   uploadBankbookDoc,
   uploadSafetyCertDoc,
   type DocumentDetail,
@@ -32,21 +34,47 @@ const LOADERS: Record<string, { title: string; load: DocLoader }> = {
 }
 
 // Slugs whose viewer page supports in-place re-upload via 사진 촬영 / 파일 선택.
-const UPLOAD_SUPPORTED = new Set(["bankbook", "safety-cert"])
+const UPLOAD_SUPPORTED = new Set(["bankbook", "safety-cert", "equipment-license"])
 
 export function DocumentViewerPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { slug = "" } = useParams<{ slug: string }>()
-  const entry = LOADERS[slug]
+  const { slug = "", docId } = useParams<{ slug: string; docId?: string }>()
+  const [searchParams] = useSearchParams()
+  const equipmentId = searchParams.get("equipmentId") ?? undefined
+  const entry = useMemo<{ title: string; load: DocLoader } | undefined>(() => {
+    if (slug === "equipment-license" && docId) {
+      const name = searchParams.get("name") || "장비 자격증"
+      return { title: name, load: () => fetchEquipmentLicenseDoc(docId) }
+    }
+    return LOADERS[slug]
+  }, [slug, docId, searchParams])
   const { showSuccess, showError } = useToast()
   const { data: profile } = useWorkerProfile()
 
+  const [reloadKey, setReloadKey] = useState(0)
+
+  const { data: docMeta, isLoading: metaLoading, error: metaErr } = useQuery({
+    queryKey: ["docDetail", slug, docId ?? "", reloadKey],
+    queryFn: async () => {
+      const result = await entry!.load()
+      if (!result.success) throw new Error(result.error)
+      if (!result.data?.fileUrl) throw new Error("파일을 찾을 수 없습니다.")
+      return result.data
+    },
+    enabled: !!entry,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  })
+
   const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const [mimeType, setMimeType] = useState<string>("")
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(!!entry)
-  const [reloadKey, setReloadKey] = useState(0)
+  const [blobError, setBlobError] = useState<string | null>(null)
+  const [blobLoading, setBlobLoading] = useState(false)
+
+  const isLoading = metaLoading || blobLoading
+  const error = (metaErr as Error | null)?.message ?? blobError
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showGuide, setShowGuide] = useState(false)
@@ -54,48 +82,39 @@ export function DocumentViewerPage() {
   const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
-    if (!entry) return
+    const fileUrl = docMeta?.fileUrl
+    if (!fileUrl) {
+      setBlobUrl(null)
+      return
+    }
     let cancelled = false
     let createdUrl: string | null = null
-    setIsLoading(true)
-    setError(null)
+    setBlobLoading(true)
+    setBlobError(null)
     setBlobUrl(null)
 
     ;(async () => {
-      const meta = await entry.load()
-      if (cancelled) return
-      if (!meta.success) {
-        setError(meta.error)
-        setIsLoading(false)
-        return
-      }
-      const fileUrl = meta.data?.fileUrl
-      if (!fileUrl) {
-        setError("파일을 찾을 수 없습니다.")
-        setIsLoading(false)
-        return
-      }
       const blob = await fetchFileAsObjectUrl(fileUrl)
       if (cancelled) {
         if (blob.success) URL.revokeObjectURL(blob.data.url)
         return
       }
       if (!blob.success) {
-        setError(blob.error)
-        setIsLoading(false)
+        setBlobError(blob.error)
+        setBlobLoading(false)
         return
       }
       createdUrl = blob.data.url
-      setMimeType(meta.data?.mimeType || blob.data.mimeType || "")
+      setMimeType(blob.data.mimeType || "")
       setBlobUrl(blob.data.url)
-      setIsLoading(false)
+      setBlobLoading(false)
     })()
 
     return () => {
       cancelled = true
       if (createdUrl) URL.revokeObjectURL(createdUrl)
     }
-  }, [entry, reloadKey])
+  }, [docMeta?.fileUrl])
 
   const runUpload = async (file: File): Promise<ApiResult<void>> => {
     if (slug === "bankbook") {
@@ -108,6 +127,9 @@ export function DocumentViewerPage() {
     }
     if (slug === "safety-cert") {
       return uploadSafetyCertDoc(file)
+    }
+    if (slug === "equipment-license" && equipmentId) {
+      return reuploadEquipmentLicense(equipmentId, file)
     }
     return { success: false, error: "지원되지 않는 서류입니다." }
   }
@@ -123,6 +145,9 @@ export function DocumentViewerPage() {
     showSuccess(`${entry?.title ?? "서류"}이(가) 업데이트되었습니다.`)
     queryClient.invalidateQueries({ queryKey: ["documentSummary"] })
     queryClient.invalidateQueries({ queryKey: ["workerProfile"] })
+    if (slug === "equipment-license") {
+      queryClient.invalidateQueries({ queryKey: ["workerEquipments"] })
+    }
     setReloadKey((k) => k + 1)
   }
 
@@ -156,8 +181,8 @@ export function DocumentViewerPage() {
   }
 
   const supportsUpload = UPLOAD_SUPPORTED.has(slug)
-  // Only bankbook has a capture-guide screen for now.
   const hasGuide = slug === "bankbook"
+  const [showUploadButtons, setShowUploadButtons] = useState(false)
 
   return (
     <div className="flex h-screen flex-col bg-white">
@@ -168,22 +193,34 @@ export function DocumentViewerPage() {
           <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
             <div className="flex items-center gap-2">
               <p className="flex-1 text-sm font-semibold text-slate-900 truncate">{entry.title}</p>
-              <button
-                type="button"
-                disabled={isUploading}
-                onClick={() => (hasGuide ? setShowGuide(true) : setShowCapture(true))}
-                className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-              >
-                {isUploading ? "업로드 중..." : "사진 촬영"}
-              </button>
-              <button
-                type="button"
-                disabled={isUploading}
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >
-                파일 선택
-              </button>
+              {!showUploadButtons ? (
+                <button
+                  type="button"
+                  onClick={() => setShowUploadButtons(true)}
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  재등록
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={isUploading}
+                    onClick={() => (hasGuide ? setShowGuide(true) : setShowCapture(true))}
+                    className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {isUploading ? "업로드 중..." : "사진 촬영"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isUploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    파일 선택
+                  </button>
+                </>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"

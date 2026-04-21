@@ -145,6 +145,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/profile/myinfo-pn" element={<MyInfoPnPage />} />
         <Route path="/profile/documents" element={<ProfileDocumentsPage />} />
         <Route path="/profile/documents/view/:slug" element={<DocumentViewerPage />} />
+        <Route path="/profile/documents/view/:slug/:docId" element={<DocumentViewerPage />} />
         <Route path="/profile/documents/alien-reg" element={<AlienRegistrationPage />} />
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/test/schedule-add" element={<ScheduleAddPage />} />

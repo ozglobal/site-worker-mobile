@@ -1,35 +1,18 @@
-import { useState } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
-import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
+import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
-import { IconTrash } from "@tabler/icons-react"
-import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
+import { QueryErrorState } from "@/components/ui/query-error-state"
+import { ChevronRight as ChevronRightIcon } from "lucide-react"
+import { useWorkerEquipments } from "@/lib/queries/useWorkerEquipments"
+import { useDictItems } from "@/lib/queries/useDictItems"
 
 export function EquipmentListPage() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const incoming = location.state as { name?: string; expiryDate?: string } | null
+  const { data: equipments, isLoading, isError, refetch } = useWorkerEquipments()
+  const { data: equipmentTypes = [] } = useDictItems("EQUIPMENT_TYPE")
 
-  const [items, setItems] = useState<{ name: string; expiryDate: string }[]>(() => {
-    if (incoming?.name && incoming?.expiryDate) {
-      return [{ name: incoming.name, expiryDate: incoming.expiryDate }]
-    }
-    return []
-  })
-
-  const handleAdd = () => {
-    navigate("/profile/equipments")
-  }
-
-  const handleDelete = (index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const handleSubmit = () => {
-    navigate("/profile")
-  }
-
-  const keyboardOpen = useKeyboardOpen()
+  const resolveLabel = (code: string) =>
+    equipmentTypes.find((t) => t.code === code)?.name || code
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -38,38 +21,63 @@ export function EquipmentListPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
           <div className="px-4 pt-4 pb-2">
-            <h1 className="text-lg font-bold text-slate-900">장비 정보를 입력해주세요</h1>
-            <p className="mt-1 text-sm text-gray-500">입력한 정보는 나중에 언제든지 변경할 수 있어요.</p>
+            <h1 className="text-lg font-bold text-slate-900">장비 정보</h1>
+            <p className="mt-1 text-sm text-gray-500">등록된 장비 자격증 목록입니다.</p>
           </div>
 
           <div className="px-4 py-6 space-y-3">
-            {items.map((item, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-4 rounded-xl bg-gray-50"
-              >
-                <div>
-                  <p className="text-base font-bold text-slate-900">{item.name.replace(/^\d+\.\s*/, "")}</p>
-                  <p className="text-sm text-slate-500 mt-1">자격증 만료일: {item.expiryDate}</p>
-                </div>
-                <button onClick={() => handleDelete(index)} className="p-1">
-                  <IconTrash className="h-5 w-5 text-red-500" stroke={1.5} />
-                </button>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Spinner />
               </div>
-            ))}
+            ) : isError ? (
+              <QueryErrorState onRetry={() => refetch()} message="장비 정보를 불러오지 못했습니다." />
+            ) : (
+              <>
+                {(equipments ?? []).length === 0 ? (
+                  <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-center border border-slate-200">
+                    <p className="text-sm text-slate-500">등록된 장비가 없습니다.</p>
+                  </div>
+                ) : (
+                  (equipments ?? []).map((item) => {
+                    const label = resolveLabel(item.equipmentType)
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-4 rounded-xl bg-gray-50"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-base font-bold text-slate-900">{label}</p>
+                          {item.validUntil && (
+                            <p className="text-sm text-slate-500 mt-1">자격증 만료일: {item.validUntil}</p>
+                          )}
+                        </div>
+                        {item.licenseDocId && (
+                          <button
+                            type="button"
+                            onClick={() => navigate(
+                              `/profile/documents/view/equipment-license/${item.licenseDocId}` +
+                              `?name=${encodeURIComponent(label)}&equipmentId=${item.id}`
+                            )}
+                            className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700 shrink-0 ml-3"
+                          >
+                            보기
+                            <ChevronRightIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
 
-            <button
-              onClick={handleAdd}
-              className="flex items-center justify-center w-full h-12 rounded-lg border border-[#E5E5E5] bg-white text-base font-medium text-slate-900 shadow-sm"
-            >
-              장비 추가 등록
-            </button>
-          </div>
-
-          <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
-            <Button variant="primary" size="full" onClick={handleSubmit}>
-              저장
-            </Button>
+                <button
+                  onClick={() => navigate("/profile/equipments")}
+                  className="flex items-center justify-center w-full h-12 rounded-lg border border-[#E5E5E5] bg-white text-base font-medium text-slate-900 shadow-sm"
+                >
+                  장비 추가 등록
+                </button>
+              </>
+            )}
           </div>
         </div>
       </main>
