@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useNotices, useMarkRead, useMarkAllRead } from "@/lib/queries/useNotices"
 import type { NoticeItem } from "@/lib/notice"
-import CloseIcon from "@mui/icons-material/Close"
+import { X as CloseIcon } from "lucide-react"
 
 const NOTICE_TYPE_LABELS: Record<string, string> = {
   ANNOUNCEMENT: '공지',
@@ -133,7 +133,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
               onClick={handleClose}
               className="w-8 h-8 flex items-center justify-center rounded-full active:bg-gray-100"
             >
-              <CloseIcon className="text-gray-400" style={{ fontSize: 20 }} />
+              <CloseIcon size={20} className="text-gray-400" />
             </button>
           </div>
         </div>

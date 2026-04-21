@@ -810,6 +810,9 @@ export const fetchFamilyRelationDoc = () => fetchDocumentDetail('family-relation
 /** GET /system/worker/me/document/alien-reg — detail for the 보기 flow. */
 export const fetchAlienRegDoc = () => fetchDocumentDetail('alien-reg')
 
+/** GET /system/worker/me/document/safety-cert — detail for the 보기 flow. */
+export const fetchSafetyCertDoc = () => fetchDocumentDetail('safety-cert')
+
 /**
  * Fetch a file (e.g. `/system/file/{id}/view`) with the same Bearer auth
  * as other API calls, and turn the body into an object URL the browser

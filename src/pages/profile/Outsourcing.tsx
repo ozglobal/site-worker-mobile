@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { AppTopBar } from "@/components/layout/AppTopBar"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
+import { AlertCircle as ErrorOutlineIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
@@ -41,28 +43,9 @@ export function OutsourcingPage() {
 
   const isFormValid = selectedCompany !== ""
 
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
-  }, [])
+  const keyboardOpen = useKeyboardOpen()
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") {
-      navigate("/home")
-    } else if (item === "attendance") {
-      navigate("/attendance")
-    } else if (item === "contract") {
-      navigate("/contract")
-    } else if (item === "profile") {
-      navigate("/profile")
-    }
-  }
+  const handleNavigation = useBottomNavHandler()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">

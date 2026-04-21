@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { StatusListItem } from "@/components/ui/status-list-item"
 import { Button } from "@/components/ui/button"
 import { handleLogout } from "@/lib/auth"
@@ -35,11 +36,7 @@ export function MyInfoPage() {
 
   const docsIncomplete = (profile?.missingRequiredDocs?.length ?? 0) > 0
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") navigate("/home")
-    else if (item === "attendance") navigate("/attendance")
-    else if (item === "contract") navigate("/contract")
-  }
+  const handleNavigation = useBottomNavHandler()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100">

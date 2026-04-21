@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import ArrowBack from "@mui/icons-material/ArrowBack"
+import { ArrowLeft as ArrowBack } from "lucide-react"
 import { useUnreadCount } from "@/lib/queries/useNotices"
 import { NotificationPanel } from "@/components/NotificationPanel"
 

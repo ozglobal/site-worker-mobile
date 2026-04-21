@@ -1,7 +1,5 @@
 import { Button } from "@/components/ui/button"
-import CreditCardIcon from "@mui/icons-material/CreditCard"
-import BadgeIcon from "@mui/icons-material/Badge"
-import FlightIcon from "@mui/icons-material/Flight"
+import { CreditCard as CreditCardIcon, IdCard as BadgeIcon, Plane as FlightIcon } from "lucide-react"
 
 export type IdCardType = "id_card" | "passport"
 

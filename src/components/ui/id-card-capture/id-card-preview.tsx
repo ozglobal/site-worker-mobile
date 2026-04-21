@@ -1,7 +1,5 @@
 import { useState } from "react"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import CameraAltIcon from "@mui/icons-material/CameraAlt"
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
+import { ArrowLeft as ArrowBackIcon, Camera as CameraAltIcon, ChevronDown as ExpandMoreIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface IdCardPreviewProps {

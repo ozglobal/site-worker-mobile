@@ -75,6 +75,15 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          query: ["@tanstack/react-query"],
+          i18n: ["i18next", "react-i18next"],
+        },
+      },
+    },
   },
 
   optimizeDeps: {
@@ -87,8 +96,6 @@ export default defineConfig({
       "i18next",
       "@tabler/icons-react",
       "lucide-react",
-      "@mui/material",
-      "@mui/icons-material",
       "date-fns",
     ],
   },

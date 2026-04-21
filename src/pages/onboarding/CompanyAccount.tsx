@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { ArrowLeft as ArrowBackIcon } from "lucide-react"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
 import { workerMetaStorage } from "@/lib/storage"

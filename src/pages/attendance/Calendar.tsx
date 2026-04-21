@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { MonthSelector, ViewMode } from "@/components/ui/month-selector"
 import { SiteCombobox } from "@/components/ui/site-combobox"
 import { Calendar } from "@/components/ui/calendar"
@@ -10,6 +10,7 @@ import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
 import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
 import { daysToCalendarEvents, daysToSiteLegend, getSiteColor } from "@/utils/attendance"
 import { formatCurrency } from "@/utils/format"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 
 export function CalendarPage() {
   const navigate = useNavigate()
@@ -75,15 +76,7 @@ export function CalendarPage() {
     }
   }
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") {
-      navigate("/home")
-    } else if (item === "contract") {
-      navigate("/contract")
-    } else if (item === "profile") {
-      navigate("/profile")
-    }
-  }
+  const handleNavigation = useBottomNavHandler()
 
   const handleViewModeChange = (mode: ViewMode) => {
     if (mode === "list") {

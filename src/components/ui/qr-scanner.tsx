@@ -150,7 +150,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     try {
       const videoElement = videoRef.current;
       if (!videoElement) {
-        console.log('Video element not found');
+        logDebug('Video element not found');
         return null;
       }
 
@@ -160,7 +160,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
 
       const ctx = canvas.getContext('2d');
       if (!ctx) {
-        console.log('Canvas context not available');
+        logDebug('Canvas context not available');
         return null;
       }
 
@@ -203,7 +203,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
       setError(null);
       onScanSuccess?.(result.data);
     } else {
-      console.log('Parse error:', result.error);
+      logDebug('Parse error:', result.error);
       // Still show the raw text even if parsing fails
       setScannedData(null);
       setError(result.error);
@@ -219,7 +219,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
       try {
         controlsRef.current.stop();
       } catch (err) {
-        console.warn('Error stopping scanner:', err);
+        logError('Error stopping scanner', { code: String(err) });
       }
       controlsRef.current = null;
     }
@@ -247,7 +247,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     try {
       await getLocation();
     } catch (geoErr) {
-      console.warn('[QRScanner] Failed to get location, continuing without it:', geoErr);
+      logDebug('[QRScanner] Failed to get location, continuing without it', geoErr);
       reportError('GEO_SCAN_FAIL', 'Geolocation failed during scan', { level: 'warn' });
       // Continue without location - don't block scanning
     }
@@ -276,7 +276,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
         setIsScanning(true);
       }
     } catch (err) {
-      console.error('Failed to start scanner:', err);
+      logError('Failed to start scanner', { code: String(err) });
       const errorMsg = err instanceof Error ? err.message : 'Failed to start camera';
 
       if (errorMsg.includes('Permission') || errorMsg.includes('NotAllowed')) {

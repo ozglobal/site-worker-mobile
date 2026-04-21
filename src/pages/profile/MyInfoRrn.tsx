@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { AppTopBar } from "@/components/layout/AppTopBar"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
-import { Input } from "@/components/ui/input"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
@@ -10,6 +11,7 @@ import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
 import { updateWorkerAddress } from "@/lib/profile"
 import { getWorkerName } from "@/lib/auth"
+import { IdFormRrn, type RrnFormValues } from "@/components/profile/IdFormRrn"
 
 export function MyInfoRrnPage() {
   const navigate = useNavigate()
@@ -17,21 +19,21 @@ export function MyInfoRrnPage() {
   const { showSuccess, showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RrnFormValues>({
     name: "",
     ssnFirst: "",
     ssnSecond: "",
     phone: "",
     address: "",
   })
-  const [originalData, setOriginalData] = useState({ ...formData })
+  const [originalAddress, setOriginalAddress] = useState("")
 
   useEffect(() => {
     if (profile) {
       // Backend ships the masked ID as one string like "901010-1******";
       // split by `-` into the two inputs.
       const [maskedFirst = "", maskedSecond = ""] = (profile.idNumberMasked || "").split("-")
-      const loaded = {
+      const loaded: RrnFormValues = {
         name: profile.workerName || getWorkerName() || "",
         ssnFirst: profile.ssnFirst || maskedFirst || "",
         ssnSecond: profile.ssnSecond || maskedSecond || "",
@@ -39,26 +41,17 @@ export function MyInfoRrnPage() {
         address: profile.address,
       }
       setFormData(loaded)
-      setOriginalData(loaded)
+      setOriginalAddress(loaded.address)
     }
   }, [profile])
 
-  const hasChanges = formData.address !== originalData.address
+  const hasChanges = formData.address !== originalAddress
   const isFormValid = !!(formData.name && formData.ssnFirst && formData.ssnSecond && formData.phone && formData.address)
 
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
-  }, [])
+  const keyboardOpen = useKeyboardOpen()
 
-  const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [field]: e.target.value }))
+  const handleFieldChange = (field: keyof RrnFormValues, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleSave = async () => {
@@ -78,12 +71,7 @@ export function MyInfoRrnPage() {
     }
   }
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") navigate("/home")
-    else if (item === "attendance") navigate("/attendance")
-    else if (item === "contract") navigate("/contract")
-    else if (item === "profile") navigate("/profile")
-  }
+  const handleNavigation = useBottomNavHandler()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -98,62 +86,8 @@ export function MyInfoRrnPage() {
           <QueryErrorState onRetry={() => refetch()} message="내 정보를 불러오지 못했습니다." />
         ) : (
         <div className="flex flex-col min-h-full">
-        <div className="px-4 py-6 space-y-6">
-          {/* 이름 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">이름</label>
-            <Input
-              value={formData.name}
-              readOnly
-              className="bg-gray-100 text-slate-500 pointer-events-none"
-            />
-          </div>
+          <IdFormRrn mode="edit" values={formData} onChange={handleFieldChange} />
 
-          {/* 주민등록번호 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">주민등록번호</label>
-            <div className="flex items-center gap-2">
-              <Input
-                value={formData.ssnFirst}
-                readOnly
-                className="flex-1 bg-gray-100 text-slate-500 pointer-events-none"
-              />
-              <span className="text-slate-400">-</span>
-              <Input
-                value={formData.ssnSecond}
-                readOnly
-                className="flex-1 bg-gray-100 text-slate-500 pointer-events-none"
-              />
-            </div>
-          </div>
-
-          {/* 연락처 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">연락처</label>
-            <Input
-              id="phone"
-              type="tel"
-              value={formData.phone}
-              readOnly
-              className="bg-gray-100 text-slate-500 pointer-events-none"
-            />
-          </div>
-
-          {/* 주소 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">주소</label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={handleChange("address")}
-              placeholder="주소 입력"
-              className="bg-white"
-            />
-          </div>
-
-        </div>
-
-          {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
               variant={isFormValid && hasChanges && !isSubmitting ? "primary" : "primaryDisabled"}

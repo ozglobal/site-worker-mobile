@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { IconTrash } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -28,16 +29,7 @@ export function EquipmentListPage() {
     navigate("/profile")
   }
 
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
-  }, [])
+  const keyboardOpen = useKeyboardOpen()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">

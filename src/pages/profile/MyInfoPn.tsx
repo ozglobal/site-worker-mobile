@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { AppTopBar } from "@/components/layout/AppTopBar"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
-import { Input } from "@/components/ui/input"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
@@ -10,6 +11,7 @@ import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
 import { updateWorkerAddress } from "@/lib/profile"
 import { getWorkerName } from "@/lib/auth"
+import { IdFormPn, type PnFormValues } from "@/components/profile/IdFormPn"
 
 export function MyInfoPnPage() {
   const navigate = useNavigate()
@@ -17,7 +19,7 @@ export function MyInfoPnPage() {
   const { showSuccess, showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PnFormValues>({
     name: "",
     englishName: "",
     gender: "",
@@ -26,14 +28,14 @@ export function MyInfoPnPage() {
     phone: "",
     address: "",
   })
-  const [originalData, setOriginalData] = useState({ ...formData })
+  const [originalAddress, setOriginalAddress] = useState("")
 
   useEffect(() => {
     if (profile) {
       // Normalize gender to canonical "male"/"female" regardless of backend
       // shape (M/F, MALE/FEMALE, male/female, 남/여, 남자/여자).
       const rawGender = (profile.gender || "").toString().trim().toUpperCase()
-      const genderValue =
+      const genderValue: PnFormValues["gender"] =
         rawGender === "M" || rawGender === "MALE" || rawGender === "남" || rawGender === "남자"
           ? "male"
           : rawGender === "F" || rawGender === "FEMALE" || rawGender === "여" || rawGender === "여자"
@@ -46,7 +48,7 @@ export function MyInfoPnPage() {
         ? `${rawBirth.slice(0, 4)}-${rawBirth.slice(4, 6)}-${rawBirth.slice(6, 8)}`
         : rawBirth
 
-      const loaded = {
+      const loaded: PnFormValues = {
         name: profile.workerName || getWorkerName() || "",
         englishName: profile.workerNameEn || "",
         gender: genderValue,
@@ -57,26 +59,17 @@ export function MyInfoPnPage() {
         address: profile.address,
       }
       setFormData(loaded)
-      setOriginalData(loaded)
+      setOriginalAddress(loaded.address)
     }
   }, [profile])
 
-  const hasChanges = formData.address !== originalData.address
+  const hasChanges = formData.address !== originalAddress
   const isFormValid = !!(formData.name && formData.phone && formData.address)
 
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
-  }, [])
+  const keyboardOpen = useKeyboardOpen()
 
-  const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [field]: e.target.value }))
+  const handleFieldChange = (field: keyof PnFormValues, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value as never }))
   }
 
   const handleSave = async () => {
@@ -96,12 +89,7 @@ export function MyInfoPnPage() {
     }
   }
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") navigate("/home")
-    else if (item === "attendance") navigate("/attendance")
-    else if (item === "contract") navigate("/contract")
-    else if (item === "profile") navigate("/profile")
-  }
+  const handleNavigation = useBottomNavHandler()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -116,102 +104,8 @@ export function MyInfoPnPage() {
           <QueryErrorState onRetry={() => refetch()} message="내 정보를 불러오지 못했습니다." />
         ) : (
         <div className="flex flex-col min-h-full">
-        <div className="px-4 py-6 space-y-6">
-          {/* 휴대폰 번호 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">휴대폰 번호</label>
-            <Input
-              type="tel"
-              value={formData.phone}
-              readOnly
-              className="bg-gray-100 text-slate-500 pointer-events-none"
-            />
-          </div>
+          <IdFormPn mode="edit" values={formData} onChange={handleFieldChange} />
 
-          {/* 한글 이름 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">한글 이름</label>
-            <Input
-              value={formData.name}
-              readOnly
-              className="bg-gray-100 text-slate-500 pointer-events-none"
-            />
-          </div>
-
-          {/* 영문 이름 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">영문 이름</label>
-            <Input
-              value={formData.englishName}
-              readOnly
-              className="bg-gray-100 text-slate-500 pointer-events-none"
-            />
-          </div>
-
-          {/* 성별 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">성별</label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 w-[150px]">
-                <input
-                  type="radio"
-                  name="gender"
-                  value="male"
-                  checked={formData.gender === "male"}
-                  disabled
-                  className="w-4 h-4 text-primary"
-                />
-                <span className="text-sm text-slate-700">남자</span>
-              </label>
-              <label className="flex items-center gap-2 w-[150px]">
-                <input
-                  type="radio"
-                  name="gender"
-                  value="female"
-                  checked={formData.gender === "female"}
-                  disabled
-                  className="w-4 h-4 text-primary"
-                />
-                <span className="text-sm text-slate-700">여자</span>
-              </label>
-            </div>
-          </div>
-
-          {/* 여권번호 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">여권번호</label>
-            <Input
-              value={formData.passport}
-              readOnly
-              className="bg-gray-100 text-slate-500 pointer-events-none"
-            />
-          </div>
-
-          {/* 생년월일 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">생년월일</label>
-            <Input
-              value={formData.birthdate}
-              readOnly
-              className="bg-gray-100 text-slate-500 pointer-events-none"
-            />
-          </div>
-
-          {/* 주소 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">주소</label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={handleChange("address")}
-              placeholder="주소 입력"
-              className="bg-white"
-            />
-          </div>
-
-        </div>
-
-          {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
               variant={isFormValid && hasChanges && !isSubmitting ? "primary" : "primaryDisabled"}

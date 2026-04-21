@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppTopBar } from "@/components/layout/AppTopBar"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { OptionCard } from "@/components/ui/option-card"
@@ -10,6 +10,7 @@ import { engineerStorage } from "@/lib/storage"
 import { updateEngineerCategory } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 import { useQueryClient } from "@tanstack/react-query"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 
 type EngineerType = "representative" | "employee"
 
@@ -57,17 +58,7 @@ export function EngineerPage() {
     }
   }
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") {
-      navigate("/home")
-    } else if (item === "attendance") {
-      navigate("/attendance")
-    } else if (item === "contract") {
-      navigate("/contract")
-    } else if (item === "profile") {
-      navigate("/profile")
-    }
-  }
+  const handleNavigation = useBottomNavHandler()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">

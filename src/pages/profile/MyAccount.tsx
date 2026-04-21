@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { ProgressBar } from "@/components/ui/progress-bar"
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
+import { AlertCircle as ErrorOutlineIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
@@ -15,7 +15,9 @@ import { useToast } from "@/contexts/ToastContext"
 import { workerMetaStorage } from "@/lib/storage"
 import { getWorkerName } from "@/lib/auth"
 import { useQueryClient } from "@tanstack/react-query"
-import { useDictItems } from "@/lib/queries/useDictItems"
+import { useBankNames } from "@/lib/queries/useBankNames"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
+import { codeOfNameOrCode, labelOf } from "@/utils/dict"
 
 interface MyAccountPageProps {
   mode?: "onboarding" | "profile"
@@ -25,7 +27,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
-  const { data: banks = [] } = useDictItems("bank")
+  const { data: banks = [] } = useBankNames()
   const { showSuccess, showError } = useToast()
   const accountNumberRef = useRef<HTMLInputElement>(null)
   const [accountHolder, setAccountHolder] = useState(getWorkerName() || "")
@@ -50,9 +52,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
     // Otherwise show an empty form (the backend's single payment record
     // belongs to PROXY/COMPANY and shouldn't leak into the SELF form).
     if (profile.wagePaymentTarget === "SELF") {
-      const raw = profile.bankName || ""
-      const bankCode = banks.find((b) => b.name === raw)?.code || raw
-      setSelectedBank(bankCode)
+      setSelectedBank(codeOfNameOrCode(banks, profile.bankName || ""))
       setAccountNumber(profile.bankAccount || "")
     } else {
       setSelectedBank("")
@@ -64,7 +64,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
     if (isSubmitting) return
     setIsSubmitting(true)
     try {
-      const bankLabel = banks.find((b) => b.code === selectedBank)?.name || selectedBank
+      const bankLabel = labelOf(banks, selectedBank, selectedBank)
       const result = await updatePayment({
         wagePaymentTarget: "SELF",
         bankName: bankLabel,
@@ -105,12 +105,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
     return () => viewport.removeEventListener("resize", handleResize)
   }, [])
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") navigate("/home")
-    else if (item === "attendance") navigate("/attendance")
-    else if (item === "contract") navigate("/contract")
-    else if (item === "profile") navigate("/profile")
-  }
+  const handleNavigation = useBottomNavHandler()
 
   const content = (
     <>

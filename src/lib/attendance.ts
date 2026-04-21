@@ -1,6 +1,7 @@
 import { authFetch, getWorkerId } from './auth'
 import { safeJson, type ApiResult } from './api-result'
 import { reportError } from './errorReporter'
+import { logError } from '../utils/devLog'
 
 import { API_BASE_URL } from './config'
 
@@ -409,7 +410,7 @@ export const fetchMonthlyAttendance = async (
         },
       }
     } catch (error) {
-      console.error('[MONTHLY] Error:', error)
+      logError('[MONTHLY] Error', { code: String(error) })
       reportError('ATTENDANCE_MONTHLY_FAIL', error instanceof Error ? error.message : 'Network error')
       return {
         success: false,

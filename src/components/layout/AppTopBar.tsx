@@ -1,4 +1,4 @@
-import ArrowBackSharp from "@mui/icons-material/ArrowBackSharp"
+import { ArrowLeft as ArrowBackSharp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 

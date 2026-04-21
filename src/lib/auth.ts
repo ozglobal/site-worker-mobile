@@ -1,4 +1,4 @@
-import { devLogApiPair } from '../utils/devLog'
+import { devLogApiPair, logError } from '../utils/devLog'
 import { API_BASE_URL, X_TENANT_ID } from './config'
 import { authStorage, workerStorage, clearAllStorage } from './storage'
 import { safeJson, type ApiResult } from './api-result'
@@ -17,6 +17,7 @@ interface InMemoryWorkerInfo {
   username?: string
   onboardingCompleted?: boolean
   requiredDocsCompleted?: boolean
+  requiredContractsCompleted?: boolean
   workerCategory?: string | null
 }
 let inMemoryWorkerInfo: InMemoryWorkerInfo | null = null
@@ -286,7 +287,7 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
 
     return { success: true }
   } catch (error) {
-    console.error('[LOGIN] Error:', error)
+    logError('[LOGIN] Error', { code: String(error) })
     reportError('AUTH_LOGIN_FAIL', 'Network error', { endpoint: '/auth/login' })
     return { success: false, error: 'Network error' }
   }
@@ -332,6 +333,9 @@ export const setWorkerInfo = (workerInfo: Record<string, unknown>) => {
   if (typeof workerInfo.requiredDocsCompleted === 'boolean') {
     info.requiredDocsCompleted = workerInfo.requiredDocsCompleted
   }
+  if (typeof workerInfo.requiredContractsCompleted === 'boolean') {
+    info.requiredContractsCompleted = workerInfo.requiredContractsCompleted
+  }
   if ('workerCategory' in workerInfo) {
     info.workerCategory = (workerInfo.workerCategory as string | null) ?? null
   }
@@ -355,7 +359,12 @@ export const getWorkerInfo = () => {
     workerName: mem?.workerName || cached?.workerName || null,
     relatedSiteId: mem?.relatedSiteId || cached?.relatedSiteId || null,
     onboardingCompleted: mem?.onboardingCompleted ?? null,
-    requiredDocsCompleted: mem?.requiredDocsCompleted ?? null,
+    // TODO: backend not yet providing `requiredDocsCompleted` /
+    // `requiredContractsCompleted`. Hardcoded to `false` so the
+    // "제출하지 않은 서류" / "서명하지 않은 근로계약서" banners render for testing.
+    // Revert to `mem?.requiredDocsCompleted ?? null` / `mem?.requiredContractsCompleted ?? null` once wired.
+    requiredDocsCompleted: false,
+    requiredContractsCompleted: false,
     workerCategory: mem?.workerCategory ?? null,
   }
 }
@@ -580,11 +589,17 @@ export const authFetch = async (
     }
   }
 
-  // Log response
+  // Log response. Skip JSON parsing for non-JSON responses (binary file
+  // downloads, HTML error pages) so they don't trigger JSON_PARSE_FAIL.
   try {
-    const clone = response.clone()
-    const json = await safeJson(clone)
-    log.end({ status: response.status, data: json })
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      const clone = response.clone()
+      const json = await safeJson(clone)
+      log.end({ status: response.status, data: json })
+    } else {
+      log.end({ status: response.status })
+    }
   } catch {
     log.end({ status: response.status })
   }
@@ -619,9 +634,14 @@ export const loggedFetch = async (
   try {
     const response = await fetch(url, options)
     try {
-      const clone = response.clone()
-      const json = await safeJson(clone)
-      log.end({ status: response.status, data: json })
+      const contentType = response.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        const clone = response.clone()
+        const json = await safeJson(clone)
+        log.end({ status: response.status, data: json })
+      } else {
+        log.end({ status: response.status })
+      }
     } catch {
       log.end({ status: response.status })
     }

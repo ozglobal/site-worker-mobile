@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
+import { ArrowLeft as ArrowBackIcon, AlertCircle as ErrorOutlineIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
@@ -21,16 +21,7 @@ export function OnboardingOutsourcingPage() {
 
   const isFormValid = selectedCompany !== ""
 
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
-  }, [])
+  const keyboardOpen = useKeyboardOpen()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">

@@ -5,9 +5,11 @@ import { AppTopBar } from "@/components/layout/AppTopBar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { IdCardCamera } from "@/components/ui/id-card-capture/id-card-camera"
+import { CaptureGuideIdcard } from "@/components/ui/document-capture/CaptureGuideIdcard"
 import { useToast } from "@/contexts/ToastContext"
 import { fetchAlienRegDoc, fetchFileAsObjectUrl, uploadAlienRegDoc } from "@/lib/profile"
 import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
+import { useBlobUrl } from "@/hooks/useBlobUrl"
 
 export function AlienRegistrationPage() {
   const navigate = useNavigate()
@@ -28,6 +30,7 @@ export function AlienRegistrationPage() {
   const [frontFile, setFrontFile] = useState<File | null>(null)
   const [backFile, setBackFile] = useState<File | null>(null)
   const [cameraSide, setCameraSide] = useState<"front" | "back" | null>(null)
+  const [guideSide, setGuideSide] = useState<"front" | "back" | null>(null)
   const [nationality, setNationality] = useState("")
   const [residenceStatus, setResidenceStatus] = useState("")
   const [residencePeriodStart, setResidencePeriodStart] = useState("")
@@ -36,25 +39,11 @@ export function AlienRegistrationPage() {
   const [hydrated, setHydrated] = useState(false)
   const [frontImageUrl, setFrontImageUrl] = useState<string | null>(null)
   const [backImageUrl, setBackImageUrl] = useState<string | null>(null)
-  const [frontFilePreviewUrl, setFrontFilePreviewUrl] = useState<string | null>(null)
-  const [backFilePreviewUrl, setBackFilePreviewUrl] = useState<string | null>(null)
 
-  // Build a local blob URL whenever the user picks or captures a file, so
-  // the card can show a thumbnail of the selection (not just the filename).
-  // Revoke on replace / unmount.
-  useEffect(() => {
-    if (!frontFile) { setFrontFilePreviewUrl(null); return }
-    const url = URL.createObjectURL(frontFile)
-    setFrontFilePreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
-  }, [frontFile])
-
-  useEffect(() => {
-    if (!backFile) { setBackFilePreviewUrl(null); return }
-    const url = URL.createObjectURL(backFile)
-    setBackFilePreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
-  }, [backFile])
+  // Local blob URL for the just-picked file, so the card can show a
+  // thumbnail. Auto-revoked on replace / unmount by the hook.
+  const frontFilePreviewUrl = useBlobUrl(frontFile)
+  const backFilePreviewUrl = useBlobUrl(backFile)
 
   // Blob URLs we created — survive dep-change cleanups via a ref so the
   // effect below doesn't revoke URLs that are still in use. Revoked only
@@ -210,7 +199,7 @@ export function AlienRegistrationPage() {
             frontFile,
             frontFilePreviewUrl,
             frontImageUrl,
-            () => setCameraSide("front"),
+            () => setGuideSide("front"),
             () => frontRef.current?.click(),
           )}
           {fileCard(
@@ -218,7 +207,7 @@ export function AlienRegistrationPage() {
             backFile,
             backFilePreviewUrl,
             backImageUrl,
-            () => setCameraSide("back"),
+            () => setGuideSide("back"),
             () => backRef.current?.click(),
           )}
         </div>
@@ -313,6 +302,14 @@ export function AlienRegistrationPage() {
           {isSubmitting ? "제출 중..." : "제출"}
         </Button>
       </div>
+
+      {guideSide && (
+        <CaptureGuideIdcard
+          title="외국인등록증"
+          onStart={() => { setCameraSide(guideSide); setGuideSide(null) }}
+          onClose={() => setGuideSide(null)}
+        />
+      )}
 
       {cameraSide && (
         <IdCardCamera

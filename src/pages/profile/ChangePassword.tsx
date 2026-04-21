@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { AppTopBar } from "@/components/layout/AppTopBar"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useChangePassword } from "@/lib/queries/useChangePassword"
@@ -29,16 +31,7 @@ export function ChangePasswordPage() {
     isPasswordValid &&
     formData.newPassword === formData.confirmPassword
 
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
-  }, [])
+  const keyboardOpen = useKeyboardOpen()
 
   const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }))
@@ -64,17 +57,7 @@ export function ChangePasswordPage() {
     )
   }
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") {
-      navigate("/home")
-    } else if (item === "attendance") {
-      navigate("/attendance")
-    } else if (item === "contract") {
-      navigate("/contract")
-    } else if (item === "profile") {
-      navigate("/profile")
-    }
-  }
+  const handleNavigation = useBottomNavHandler()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">

@@ -4,7 +4,6 @@
  * Coordinates sub-agents for the home page:
  * - AttendanceAgent: Check-in/out state and API operations
  * - LocationAgent: Geolocation and permission handling
- * - CalendarAgent: Weekly calendar events
  * - NotificationAgent: Toast notifications
  */
 
@@ -12,9 +11,9 @@ import { useState, useCallback, useMemo } from "react"
 import { getWorkerName } from "@/lib/auth"
 import { useAttendanceAgent } from "./agents/attendance"
 import { useLocationAgent } from "./agents/location"
-import { useCalendarAgent } from "./agents/calendar"
 import { useNotificationAgent } from "./agents/notification"
-import type { Location, Site, TodayWorkRecord } from "./home.types"
+import { useCorrectionAgent } from "./agents/correction"
+import type { Location, TodayWorkRecord } from "./home.types"
 import type { QRCodeData } from "@/components/ui/qr-scanner"
 
 // ============================================
@@ -54,18 +53,9 @@ interface HomeAgentReturn {
     breakStart?: string
     breakEnd?: string
   }
-  sites: Site[]
 
   // Today's work records (for 오늘 근무 현황 card)
   todayWorkRecords: TodayWorkRecord[]
-
-  // Calendar (from sub-agent)
-  calendar: {
-    events: Array<{ date: Date; color: string }>
-    hasEventsThisWeek: boolean
-    isLoading: boolean
-    onDateSelect: (date: Date) => void
-  }
 
   // Scanner UI state
   scanner: {
@@ -98,6 +88,8 @@ interface HomeAgentReturn {
   actions: {
     clockIn: () => Promise<void>
     clockOut: () => Promise<{ success: boolean; attendanceId?: string | null } | undefined>
+    submitCorrection: ReturnType<typeof useCorrectionAgent>["submit"]
+    requestOvertime: ReturnType<typeof useCorrectionAgent>["overtime"]
   }
 }
 
@@ -111,8 +103,8 @@ export function useHomeAgent(): HomeAgentReturn {
   // ============================================
   const attendance = useAttendanceAgent()
   const location = useLocationAgent()
-  const calendar = useCalendarAgent() // Sites will be computed from attendance records
   const notifications = useNotificationAgent()
+  const correction = useCorrectionAgent()
 
   // ============================================
   // Local UI State
@@ -296,18 +288,9 @@ export function useHomeAgent(): HomeAgentReturn {
 
     // Work site
     workSite,
-    sites: calendar.sites,
 
     // Today's work records
     todayWorkRecords,
-
-    // Calendar
-    calendar: {
-      events: calendar.events,
-      hasEventsThisWeek: calendar.hasEventsThisWeek,
-      isLoading: calendar.isLoading,
-      onDateSelect: calendar.selectDate,
-    },
 
     // Scanner
     scanner: {
@@ -346,6 +329,8 @@ export function useHomeAgent(): HomeAgentReturn {
     actions: {
       clockIn: handleClockIn,
       clockOut: handleClockOut,
+      submitCorrection: correction.submit,
+      requestOvertime: correction.overtime,
     },
   }
 }

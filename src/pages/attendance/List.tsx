@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { MonthSelector, ViewMode } from "@/components/ui/month-selector"
 import { SiteCombobox } from "@/components/ui/site-combobox"
 import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
@@ -61,7 +62,8 @@ export function ListPage() {
       return
     }
     showSuccess("정정 요청이 제출되었습니다.")
-    queryClient.invalidateQueries({ queryKey: ["todayAttendance"] })
+    if (todayStr) queryClient.invalidateQueries({ queryKey: ["todayAttendance", todayStr] })
+    else queryClient.invalidateQueries({ queryKey: ["todayAttendance"] })
     setShowCorrectionDialog(false)
     setCorrectionAttendanceId(null)
   }
@@ -189,15 +191,7 @@ export function ListPage() {
     }
   }
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") {
-      navigate("/home")
-    } else if (item === "contract") {
-      navigate("/contract")
-    } else if (item === "profile") {
-      navigate("/profile")
-    }
-  }
+  const handleNavigation = useBottomNavHandler()
 
   const handleViewModeChange = (mode: ViewMode) => {
     if (mode === "calendar") {

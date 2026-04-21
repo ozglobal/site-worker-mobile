@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import ChevronRightIcon from "@mui/icons-material/ChevronRight"
+import { ArrowLeft as ArrowBackIcon, ChevronRight as ChevronRightIcon } from "lucide-react"
 import { IconCircleCheck } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { ProgressBar } from "@/components/ui/progress-bar"
@@ -11,6 +10,8 @@ import { type IdCardType } from "@/components/ui/id-card-upload-dialog"
 import { IdCardCamera } from "@/components/ui/id-card-capture/id-card-camera"
 import { IdCardPreview } from "@/components/ui/id-card-capture/id-card-preview"
 import { DocumentCapture } from "@/components/ui/document-capture/document-capture"
+import { CaptureGuideIdcard } from "@/components/ui/document-capture/CaptureGuideIdcard"
+import { CaptureGuidePassport } from "@/components/ui/id-card-capture/CaptureGuidePassport"
 import { useToast } from "@/contexts/ToastContext"
 import { workerMetaStorage, type WorkerMeta } from "@/lib/storage"
 import { getRequiredDocuments, allDocuments, backendIdTypeToInternal, type DocumentItem } from "@/lib/documents"
@@ -24,6 +25,7 @@ export function OnboardingDocumentsPage() {
   const [uploading, setUploading] = useState<string | null>(null)
   const [showDocCapture, setShowDocCapture] = useState(false)
   const [captureDoc, setCaptureDoc] = useState<DocumentItem | null>(null)
+  const [guideDoc, setGuideDoc] = useState<DocumentItem | null>(null)
   const [idCardType, setIdCardType] = useState<IdCardType | null>(null)
   const [idCardSide, setIdCardSide] = useState<"front" | "back" | null>(null)
   const [showCamera, setShowCamera] = useState(false)
@@ -131,7 +133,20 @@ export function OnboardingDocumentsPage() {
   }
 
   const handleUpload = async (doc: DocumentItem) => {
+    // Show a guide screen first for id-card / foreign-card / passport,
+    // then open DocumentCapture once the user taps 촬영.
+    if (doc.id === "id-card" || doc.id === "foreign-card" || doc.id === "passport") {
+      setGuideDoc(doc)
+      return
+    }
     setCaptureDoc(doc)
+    setShowDocCapture(true)
+  }
+
+  const handleGuideStart = () => {
+    if (!guideDoc) return
+    setCaptureDoc(guideDoc)
+    setGuideDoc(null)
     setShowDocCapture(true)
   }
 
@@ -271,6 +286,21 @@ export function OnboardingDocumentsPage() {
         <DocumentCapture
           onConfirm={handleDocCaptureConfirm}
           onClose={() => { setShowDocCapture(false); setCaptureDoc(null) }}
+        />
+      )}
+
+      {guideDoc && guideDoc.id === "passport" && (
+        <CaptureGuidePassport
+          onStart={handleGuideStart}
+          onClose={() => setGuideDoc(null)}
+        />
+      )}
+
+      {guideDoc && guideDoc.id !== "passport" && (
+        <CaptureGuideIdcard
+          title={guideDoc.title}
+          onStart={handleGuideStart}
+          onClose={() => setGuideDoc(null)}
         />
       )}
     </div>

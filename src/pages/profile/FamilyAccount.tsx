@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,7 +14,9 @@ import { updatePayment } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 import { useQueryClient } from "@tanstack/react-query"
 import { useDictItems } from "@/lib/queries/useDictItems"
+import { useBankNames } from "@/lib/queries/useBankNames"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { codeOfNameOrCode, labelOf } from "@/utils/dict"
 
 interface FamilyAccountPageProps {
   mode?: "onboarding" | "profile"
@@ -24,7 +28,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
   const { showSuccess, showError } = useToast()
   const queryClient = useQueryClient()
   const { data: relationOptions = [] } = useDictItems("account_holder_relation")
-  const { data: banks = [] } = useDictItems("bank")
+  const { data: banks = [] } = useBankNames()
   const { data: profile, refetch } = useWorkerProfile()
   const [familyName, setFamilyName] = useState("")
   const [relationship, setRelationship] = useState("")
@@ -64,15 +68,10 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
           CHILD: relationOptions.find((o) => /child|자녀|자식/i.test(o.name || ""))?.code,
         }[rawRel.toUpperCase()] as string | undefined) ??
         rawRel
-      // Debug — remove once the relationship dropdown is confirmed populating.
-      // eslint-disable-next-line no-console
-      console.log('[FamilyAccount] accountHolderRelation', rawRel, '→ resolved to', relCode, 'dict:', relationOptions)
       setRelationship(relCode)
 
       // Backend returns bank label (e.g. "국민은행"); Select expects id (e.g. "kb").
-      const rawBank = profile.bankName || ""
-      const bankCode = banks.find((b) => b.name === rawBank)?.code || rawBank
-      setSelectedBank(bankCode)
+      setSelectedBank(codeOfNameOrCode(banks, profile.bankName || ""))
       setAccountNumber(profile.bankAccount || "")
     } else {
       setFamilyName("")
@@ -80,10 +79,9 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
       setSelectedBank("")
       setAccountNumber("")
     }
-  }, [profile, mode, relationOptions])
+  }, [profile, mode, relationOptions, banks])
 
-  const resolveBankLabel = (code: string) =>
-    banks.find((b) => b.code === code)?.name || code
+  const resolveBankLabel = (code: string) => labelOf(banks, code, code)
 
   const handleSubmit = async () => {
     const bankLabel = resolveBankLabel(selectedBank)
@@ -129,23 +127,9 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
 
   const isFormValid = !!familyName && !!relationship && !!selectedBank && accountNumber.replace(/\D/g, "").length >= 7
 
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
-  useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
-    const handleResize = () => {
-      setKeyboardOpen(window.innerHeight - viewport.height > 150)
-    }
-    viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
-  }, [])
+  const keyboardOpen = useKeyboardOpen()
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") navigate("/home")
-    else if (item === "attendance") navigate("/attendance")
-    else if (item === "contract") navigate("/contract")
-    else if (item === "profile") navigate("/profile")
-  }
+  const handleNavigation = useBottomNavHandler()
 
   const content = (
     <>

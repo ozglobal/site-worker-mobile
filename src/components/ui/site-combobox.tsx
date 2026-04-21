@@ -8,8 +8,7 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command"
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
-import CheckIcon from "@mui/icons-material/Check"
+import { ChevronDown as KeyboardArrowDownIcon, Check as CheckIcon } from "lucide-react"
 
 export interface SiteOption {
   value: string
@@ -51,7 +50,7 @@ export function SiteCombobox({
           )}
         >
           <span className="truncate font-semibold">{selectedLabel || placeholder}</span>
-          <KeyboardArrowDownIcon sx={{ fontSize: 20 }} className="text-slate-400 shrink-0" />
+          <KeyboardArrowDownIcon size={20} className="text-slate-400 shrink-0" />
         </button>
       </PopoverTrigger>
       <PopoverContent>
@@ -68,7 +67,7 @@ export function SiteCombobox({
               >
                 <span className="flex-1">전체 현장</span>
                 {value === "" && (
-                  <CheckIcon sx={{ fontSize: 16 }} className="text-primary shrink-0" />
+                  <CheckIcon size={16} className="text-primary shrink-0" />
                 )}
               </CommandItem>
               {options.map((option) => (
@@ -85,7 +84,7 @@ export function SiteCombobox({
                   )}
                   <span className="flex-1">{option.label}</span>
                   {value === option.value && (
-                    <CheckIcon sx={{ fontSize: 16 }} className="text-primary shrink-0" />
+                    <CheckIcon size={16} className="text-primary shrink-0" />
                   )}
                 </CommandItem>
               ))}

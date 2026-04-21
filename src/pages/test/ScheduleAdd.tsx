@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
-import ArrowBack from "@mui/icons-material/ArrowBack"
+import { ArrowLeft as ArrowBack } from "lucide-react"
 
 export function ScheduleAddPage() {
   const navigate = useNavigate()

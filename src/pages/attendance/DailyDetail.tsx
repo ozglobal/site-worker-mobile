@@ -2,11 +2,11 @@ import { useState, useMemo, useCallback } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { AppTopBar } from "@/components/layout/AppTopBar"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
-import ChevronRightIcon from "@mui/icons-material/ChevronRight"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
+import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from "lucide-react"
 import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
 import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { formatTimestamp } from "@/utils/format"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/ui/correction-dialog"
@@ -56,7 +56,7 @@ export function DailyDetailPage() {
       return
     }
     showSuccess("정정 요청이 제출되었습니다.")
-    queryClient.invalidateQueries({ queryKey: ["todayAttendance"] })
+    if (date) queryClient.invalidateQueries({ queryKey: ["todayAttendance", date] })
     setShowCorrectionDialog(false)
     setCorrectionAttendanceId(null)
   }
@@ -93,12 +93,7 @@ export function DailyDetailPage() {
     return ids
   }, [todayDaily])
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") navigate("/home")
-    else if (item === "attendance") navigate("/attendance")
-    else if (item === "contract") navigate("/contract")
-    else if (item === "profile") navigate("/profile")
-  }
+  const handleNavigation = useBottomNavHandler()
 
   // Format date for display: "2025년 12월 24일"
   const displayDate = useMemo(() => {

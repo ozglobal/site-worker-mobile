@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react"
-import CloseIcon from "@mui/icons-material/Close"
+import { X as CloseIcon } from "lucide-react"
 import { useDocumentDetection } from "./useDocumentDetection"
 import { cropToFrame } from "./cropToFrame"
 import { useShutterSound } from "../camera-utils/useShutterSound"

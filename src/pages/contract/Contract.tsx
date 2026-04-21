@@ -1,20 +1,18 @@
 import { useState, useCallback } from "react"
-import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { Badge } from "@/components/ui/badge"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { useContracts } from "@/lib/queries/useContracts"
 import { fetchSigningLink, fetchDocumentPdf } from "@/lib/contract"
 import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
-import ChevronRightIcon from "@mui/icons-material/ChevronRight"
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
+import { ChevronRight as ChevronRightIcon, ChevronDown as ExpandMoreIcon } from "lucide-react"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 
 const currentYear = new Date().getFullYear()
 
 export function ContractPage() {
-  const navigate = useNavigate()
   const [year, setYear] = useState(currentYear)
   const [yearOpen, setYearOpen] = useState(false)
 
@@ -43,7 +41,10 @@ export function ContractPage() {
     try {
       const result = await fetchDocumentPdf(documentId)
       if (result.success && result.data) {
-        window.open(result.data, "_blank")
+        const blobUrl = result.data
+        window.open(blobUrl, "_blank")
+        // Give the new tab time to load the blob before revoking.
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
       } else {
         showError(!result.success ? result.error : 'PDF를 열 수 없습니다.')
       }
@@ -54,17 +55,7 @@ export function ContractPage() {
 
   const years = Array.from({ length: 2 }, (_, i) => currentYear - i)
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "home") {
-      navigate("/home")
-    } else if (item === "attendance") {
-      navigate("/attendance")
-    } else if (item === "contract") {
-      // Already on contract page
-    } else if (item === "profile") {
-      navigate("/profile")
-    }
-  }
+  const handleNavigation = useBottomNavHandler()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
@@ -75,8 +66,8 @@ export function ContractPage() {
         {!isLoading && !isError && contracts.some((c) => c.status === "sent") && (
           <div className="px-4 pt-4">
             <AlertBanner
-              title="서명되지 않은 근로계약서가 있어요"
-              description="월말까지 서명되지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
+              title="서명하지 않은 근로계약서가 있어요"
+              description="월말까지 서명하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
             />
           </div>
         )}

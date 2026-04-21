@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { searchAddress, type JusoAddress } from "@/lib/juso"
-import SearchIcon from "@mui/icons-material/Search"
-import CloseIcon from "@mui/icons-material/Close"
+import { Search as SearchIcon, X as CloseIcon } from "lucide-react"
 
 interface AddressSearchDialogProps {
   onSelect: (address: string) => void
@@ -71,7 +70,7 @@ export function AddressSearchDialog({ onSelect, onClose }: AddressSearchDialogPr
       {/* Search Input */}
       <div className="px-4 py-3 shrink-0">
         <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" style={{ fontSize: 20 }} />
+          <SearchIcon size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <Input
             ref={inputRef}
             value={keyword}

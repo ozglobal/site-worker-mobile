@@ -1,8 +1,6 @@
 import { cn } from "@/lib/utils"
 import { IconCalendarMonth } from "@tabler/icons-react"
-import FormatListBulletedOutlinedIcon from "@mui/icons-material/FormatListBulletedOutlined"
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
-import ChevronRightIcon from "@mui/icons-material/ChevronRight"
+import { List as FormatListBulletedOutlinedIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from "lucide-react"
 
 export type ViewMode = "calendar" | "list"
 
@@ -36,7 +34,7 @@ export function MonthSelector({
       {/* Year/Month navigation */}
       <div className="flex items-center gap-1">
         <button onClick={onPrevMonth} className="flex items-center justify-center w-8 h-8 rounded-md text-slate-500 active:bg-slate-100">
-          <ChevronLeftIcon sx={{ fontSize: 20 }} />
+          <ChevronLeftIcon size={20} />
         </button>
         <span className="text-lg font-bold text-slate-900 min-w-[100px] text-center">
           {year}년 {month}월
@@ -46,7 +44,7 @@ export function MonthSelector({
             onClick={onNextMonth}
             className="flex items-center justify-center w-8 h-8 rounded-md text-slate-500 active:bg-slate-100"
           >
-            <ChevronRightIcon sx={{ fontSize: 20 }} />
+            <ChevronRightIcon size={20} />
           </button>
         )}
       </div>
@@ -73,7 +71,7 @@ export function MonthSelector({
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <FormatListBulletedOutlinedIcon sx={{ fontSize: 18 }} />
+          <FormatListBulletedOutlinedIcon size={18} />
         </button>
       </div>
     </div>

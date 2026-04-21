@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import FmdGoodIcon from "@mui/icons-material/FmdGood"
-import MeetingRoomOutlinedIcon from "@mui/icons-material/MeetingRoomOutlined"
+import { MapPin as FmdGoodIcon } from "lucide-react"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { AppBottomNav, NavItem } from "@/components/layout/AppBottomNav"
+import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import QRCodeScanner from "@/components/ui/qr-scanner"
 import { LocationPermissionPopup } from "@/components/ui/location-permission-popup"
 import { formatKstTime } from "@/utils/time"
@@ -13,19 +12,16 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { useToast } from "@/contexts/ToastContext"
-import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/AuthContext"
-import { submitCorrectionRequest, requestOvertime } from "@/lib/attendance"
-import { reportError } from "@/lib/errorReporter"
 import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/ui/correction-dialog"
 import { useHomeAgent } from "./useHomeAgent"
 import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
 import { useHomeData } from "@/lib/queries/useHomeData"
+import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 
 export function Home() {
   const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
-  const queryClient = useQueryClient()
   const { worker } = useAuth()
   // Fire GET /system/worker/me/home first — aggregates today's attendance,
   // monthly stats, unread notices, and onboarding/documents flags in one call.
@@ -105,7 +101,7 @@ export function Home() {
       return
     }
 
-    const result = await submitCorrectionRequest({
+    const result = await actions.submitCorrection({
       attendanceId: correctionAttendanceId,
       workEntryId: correctionWorkEntryId || correctionAttendanceId,
       requestType: data.requestType,
@@ -115,27 +111,17 @@ export function Home() {
       reason: data.reason,
     })
     if (!result.success) {
-      reportError("CORRECTION_SUBMIT_FAIL", result.error)
       showError(result.error)
       return
     }
 
     showSuccess("정정 요청이 제출되었습니다.")
-    queryClient.invalidateQueries({ queryKey: ["todayAttendance"] })
     setCorrectionAttendanceId(null)
     setCorrectionWorkEntryId(null)
     setShowCorrectionDialog(false)
   }
 
-  const handleNavigation = (item: NavItem) => {
-    if (item === "attendance") {
-      navigate("/attendance")
-    } else if (item === "contract") {
-      navigate("/contract")
-    } else if (item === "profile") {
-      navigate("/profile")
-    }
-  }
+  const handleNavigation = useBottomNavHandler()
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -153,7 +139,7 @@ export function Home() {
           </h1>
         </div>
 
-        {(worker?.onboardingCompleted === false || worker?.requiredDocsCompleted === false) && (
+        {(worker?.onboardingCompleted === false || worker?.requiredContractsCompleted === false || worker?.requiredDocsCompleted === false) && (
           <div className="px-4 shrink-0 space-y-3">
             {worker?.onboardingCompleted === false && (
               <AlertBanner
@@ -162,11 +148,18 @@ export function Home() {
                 onClick={() => navigate("/profile")}
               />
             )}
+            {worker?.requiredContractsCompleted === false && (
+              <AlertBanner
+                title="서명하지 않은 근로계약서가 있어요"
+                description="월말까지 서명하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
+                onClick={() => navigate("/contract")}
+              />
+            )}
             {worker?.requiredDocsCompleted === false && (
               <AlertBanner
-                title="서명되지 않은 근로계약서가 있어요"
-                description="월말까지 서명되지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
-                onClick={() => navigate("/contract")}
+                title="제출하지 않은 서류가 있어요."
+                description="월말까지 제출하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
+                onClick={() => navigate("/profile/documents")}
               />
             )}
           </div>
@@ -185,7 +178,6 @@ export function Home() {
                     : "text-slate-500 bg-slate-100"
                 }`}
               >
-                {attendance.status === "퇴근 완료" && <MeetingRoomOutlinedIcon sx={{ fontSize: 16 }} />}
                 {attendance.status}
               </span>
             </div>
@@ -200,7 +192,7 @@ export function Home() {
                   </h3>
                   {activeAttendance.siteAddress && (
                     <div className="flex items-center gap-1 text-sm text-slate-500">
-                      <FmdGoodIcon sx={{ fontSize: 16 }} />
+                      <FmdGoodIcon size={16} />
                       <span>{activeAttendance.siteAddress}</span>
                     </div>
                   )}
@@ -262,11 +254,6 @@ export function Home() {
                     onTouchStart={() => !attendance.canCheckIn && setShowMaxCheckInTooltip(true)}
                     onTouchEnd={() => setTimeout(() => setShowMaxCheckInTooltip(false), 2000)}
                   >
-                    {showMaxCheckInTooltip && (
-                      <div className="mb-2 bg-slate-800 text-white text-sm text-center rounded-lg px-4 py-2.5">
-                        하루에 최대 두 개 현장에만 출근할 수 있습니다.
-                      </div>
-                    )}
                     <Button
                       variant={!attendance.canCheckIn || attendance.isProcessing ? "primaryDisabled" : "primary"}
                       size="full"
@@ -277,6 +264,11 @@ export function Home() {
                     >
                       {attendance.isProcessing ? "처리 중..." : "출근하기"}
                     </Button>
+                    {showMaxCheckInTooltip && (
+                      <div className="mt-2 bg-slate-800 text-white text-sm text-center rounded-lg px-4 py-2.5">
+                        하루에 최대 두 개 현장에만 출근할 수 있습니다.
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -456,7 +448,7 @@ export function Home() {
                     showError("출퇴근 기록을 찾을 수 없습니다.")
                     return
                   }
-                  const result = await requestOvertime(id)
+                  const result = await actions.requestOvertime(id)
                   if (result.success) {
                     setOvertimeApplied(true)
                     showSuccess("야근 상태가 정상적으로 기록되었습니다.")
