@@ -26,7 +26,7 @@ jobs:
           echo "${{ secrets.UAT_EC2_SSH_KEY }}" > ~/.ssh/uat_key
           chmod 600 ~/.ssh/dev_key ~/.ssh/uat_key
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          ssh-keyscan -H 3.37.62.58 >> ~/.ssh/known_hosts
+          ssh-keyscan -H 3.34.165.192 >> ~/.ssh/known_hosts
 
       - name: Deploy to dev (workerm.work365.com)
         run: |
@@ -38,9 +38,9 @@ jobs:
         run: |
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/uat_key" \
-            dist/ root@3.37.62.58:/var/www/site-worker-mobile/
+            dist/ root@3.34.165.192:/var/www/site-worker-mobile/
 
       - name: Reload Nginx (dev + UAT)
         run: |
           ssh -i ~/.ssh/dev_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo systemctl reload nginx || true"
-          ssh -i ~/.ssh/uat_key root@3.37.62.58 "systemctl reload nginx"
+          ssh -i ~/.ssh/uat_key root@3.34.165.192 "systemctl reload nginx"
