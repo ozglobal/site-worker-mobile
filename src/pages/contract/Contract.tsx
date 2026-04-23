@@ -4,7 +4,9 @@ import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { Spinner } from "@/components/ui/spinner"
 import { useContracts } from "@/lib/queries/useContracts"
-import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type SigningStage } from "@/lib/contract"
+import { fetchSigningLink, type EfsDocument, type SigningStage } from "@/lib/contract"
+import { getAccessToken } from "@/lib/auth"
+import { API_BASE_URL } from "@/lib/config"
 import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { ChevronRight as ChevronRightIcon, ChevronDown as ExpandMoreIcon } from "lucide-react"
@@ -134,14 +136,11 @@ export function ContractPage() {
           showError(!result.success ? result.error : '서명 링크를 가져올 수 없습니다.')
         }
       } else if (doc.signingStage === 'COMPLETED' || doc.signingStage === 'SENT') {
-        const result = await fetchDocumentPdf(doc.id)
-        if (result.success && result.data) {
-          const blobUrl = result.data
-          openUrl(blobUrl)
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
-        } else {
-          showError(!result.success ? result.error : 'PDF를 열 수 없습니다.')
-        }
+        const token = getAccessToken()
+        const params = new URLSearchParams()
+        if (token) params.set('token', token)
+        const pdfUrl = `${API_BASE_URL}/efs/api/documents/${encodeURIComponent(doc.id)}/pdf${token ? `?${params}` : ''}`
+        openUrl(pdfUrl)
       }
     } finally {
       setActionLoading(null)
