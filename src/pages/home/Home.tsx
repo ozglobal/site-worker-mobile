@@ -27,8 +27,8 @@ export function Home() {
   // Fire GET /system/worker/me/home first — aggregates today's attendance,
   // monthly stats, unread notices, and onboarding/documents flags in one call.
   const { data: homeData } = useHomeData()
-  const hasPendingDocs = (homeData?.pendingDocuments ?? 0) > 0
   const onboardingIncomplete = homeData?.onboardingCompleted === false
+  const hasPendingDocs = worker?.requiredDocsCompleted === false
   const { data: contractGroups = [] } = useContracts(worker?.userId ?? null, new Date().getFullYear())
   const unsignedCount = useMemo(
     () => contractGroups.flatMap((g) => [g.contract, g.delegation, ...g.extras])

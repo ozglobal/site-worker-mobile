@@ -393,12 +393,8 @@ export const getWorkerInfo = () => {
     userId: mem?.userId ?? null,
     relatedSiteId: mem?.relatedSiteId || cached?.relatedSiteId || null,
     onboardingCompleted: mem?.onboardingCompleted ?? null,
-    // TODO: backend not yet providing `requiredDocsCompleted` /
-    // `requiredContractsCompleted`. Hardcoded to `false` so the
-    // "제출하지 않은 서류" / "서명하지 않은 근로계약서" banners render for testing.
-    // Revert to `mem?.requiredDocsCompleted ?? null` / `mem?.requiredContractsCompleted ?? null` once wired.
-    requiredDocsCompleted: false,
-    requiredContractsCompleted: false,
+    requiredDocsCompleted: mem?.requiredDocsCompleted ?? null,
+    requiredContractsCompleted: mem?.requiredContractsCompleted ?? null,
     workerCategory: mem?.workerCategory ?? null,
     idType: mem?.idType ?? metaIdType,
   }
