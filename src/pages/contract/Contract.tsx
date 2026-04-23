@@ -108,6 +108,20 @@ export function ContractPage() {
 
   const hasUnsigned = groups.some((g) => g.contract?.signingStage === 'AWAITING_WORKER')
 
+  const openUrl = (url: string, filename?: string) => {
+    const a = document.createElement('a')
+    a.href = url
+    if (filename) {
+      a.download = filename
+    } else {
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
+    }
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
+
   const handleAction = useCallback(async (doc: EfsDocument) => {
     if (actionLoading) return
     setActionLoading(doc.id)
@@ -115,7 +129,7 @@ export function ContractPage() {
       if (doc.signingStage === 'AWAITING_WORKER') {
         const result = await fetchSigningLink(doc.id)
         if (result.success && result.data) {
-          window.open(result.data, '_blank')
+          openUrl(result.data)
         } else {
           showError(!result.success ? result.error : '서명 링크를 가져올 수 없습니다.')
         }
@@ -123,7 +137,7 @@ export function ContractPage() {
         const result = await fetchDocumentPdf(doc.id)
         if (result.success && result.data) {
           const blobUrl = result.data
-          window.open(blobUrl, '_blank')
+          openUrl(blobUrl, 'document.pdf')
           setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
         } else {
           showError(!result.success ? result.error : 'PDF를 열 수 없습니다.')
