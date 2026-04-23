@@ -28,6 +28,7 @@ export function Home() {
   // monthly stats, unread notices, and onboarding/documents flags in one call.
   const { data: homeData } = useHomeData()
   const hasPendingDocs = (homeData?.pendingDocuments ?? 0) > 0
+  const onboardingIncomplete = homeData?.onboardingCompleted === false
   const { data: contractGroups = [] } = useContracts(worker?.userId ?? null, new Date().getFullYear())
   const unsignedCount = useMemo(
     () => contractGroups.flatMap((g) => [g.contract, g.delegation, ...g.extras])
@@ -150,9 +151,9 @@ export function Home() {
         {/* Main Content - Scrollable */}
         <div className="flex-1 p-4 space-y-3 overflow-y-auto">
           {/* Notice banners */}
-          {(worker?.onboardingCompleted === false || unsignedCount > 0 || hasPendingDocs) && (
+          {(onboardingIncomplete || unsignedCount > 0 || hasPendingDocs) && (
             <div className="space-y-3">
-              {worker?.onboardingCompleted === false && (
+              {onboardingIncomplete && (
                 <AlertBanner
                   title="필수 정보 입력이 완료되지 않았어요"
                   description="내정보 메뉴에서 회원 정보 입력을 완료해주세요."

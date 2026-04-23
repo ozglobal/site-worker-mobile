@@ -456,7 +456,7 @@ export interface HomeData {
   monthlyTotalHours: number
   monthlyEstimatedWage: number
   unreadNoticeCount: number
-  onboardingCompleted: boolean
+  onboardingCompleted: boolean | null
   pendingDocuments: number
 }
 
@@ -487,7 +487,7 @@ export const fetchHomeData = async (): Promise<ApiResult<HomeData>> => {
       monthlyTotalHours: (payload.monthlyTotalHours as number) || 0,
       monthlyEstimatedWage: (payload.monthlyEstimatedWage as number) || 0,
       unreadNoticeCount: (payload.unreadNoticeCount as number) || 0,
-      onboardingCompleted: Boolean(payload.onboardingCompleted),
+      onboardingCompleted: payload.onboardingCompleted == null ? null : Boolean(payload.onboardingCompleted),
       pendingDocuments: (payload.pendingDocuments as number) || 0,
     }
     return { success: true, data }
