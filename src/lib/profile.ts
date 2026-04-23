@@ -894,6 +894,9 @@ export const fetchAlienRegDoc = () => fetchDocumentDetail('alien-reg')
 /** GET /system/worker/me/document/safety-cert — detail for the 보기 flow. */
 export const fetchSafetyCertDoc = () => fetchDocumentDetail('safety-cert')
 
+/** GET /system/worker/me/document/passport — detail for the 보기 flow. */
+export const fetchPassportDoc = () => fetchDocumentDetail('passport')
+
 /** GET /system/worker/me/document/{licenseDocId} — fetch fileUrl for an equipment license. */
 export const fetchEquipmentLicenseDoc = (licenseDocId: string) => fetchDocumentDetail(licenseDocId)
 

@@ -18,6 +18,7 @@ import { useHomeAgent } from "./useHomeAgent"
 import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
 import { useHomeData } from "@/lib/queries/useHomeData"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
+import { useContracts } from "@/lib/queries/useContracts"
 
 export function Home() {
   const navigate = useNavigate()
@@ -26,6 +27,12 @@ export function Home() {
   // Fire GET /system/worker/me/home first — aggregates today's attendance,
   // monthly stats, unread notices, and onboarding/documents flags in one call.
   useHomeData()
+  const { data: contractGroups = [] } = useContracts(worker?.userId ?? null, new Date().getFullYear())
+  const unsignedCount = useMemo(
+    () => contractGroups.flatMap((g) => [g.contract, g.delegation, ...g.extras])
+      .filter((d) => d?.signingStage === 'AWAITING_WORKER').length,
+    [contractGroups]
+  )
   // /attendance/daily carries per-site `attendanceId` which /home omits — we
   // need it to open the correction dialog against a specific record.
   const { data: todayDaily } = useTodayAttendance()
@@ -142,7 +149,7 @@ export function Home() {
         {/* Main Content - Scrollable */}
         <div className="flex-1 p-4 space-y-3 overflow-y-auto">
           {/* Notice banners */}
-          {(worker?.onboardingCompleted === false || worker?.requiredContractsCompleted === false || worker?.requiredDocsCompleted === false) && (
+          {(worker?.onboardingCompleted === false || unsignedCount > 0 || worker?.requiredDocsCompleted === false) && (
             <div className="space-y-3">
               {worker?.onboardingCompleted === false && (
                 <AlertBanner
@@ -151,16 +158,16 @@ export function Home() {
                   onClick={() => navigate("/profile")}
                 />
               )}
-              {worker?.requiredContractsCompleted === false && (
+              {unsignedCount > 0 && (
                 <AlertBanner
-                  title="서명하지 않은 근로계약서가 있어요"
+                  title="서명하지 않은 서류가 있어요"
                   description="월말까지 서명하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
                   onClick={() => navigate("/contract")}
                 />
               )}
               {worker?.requiredDocsCompleted === false && (
                 <AlertBanner
-                  title="제출하지 않은 서류가 있어요."
+                  title="제출하지 않은 서류가 있어요"
                   description="월말까지 제출하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
                   onClick={() => navigate("/profile/documents")}
                 />

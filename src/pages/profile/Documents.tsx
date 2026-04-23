@@ -24,6 +24,7 @@ import {
   uploadFamilyRelationDoc,
   uploadBusinessLicenseDoc,
   uploadHealthCheckupDoc,
+  uploadPassportDoc,
 } from "@/lib/profile"
 import type { ApiResult } from "@/lib/api-result"
 
@@ -106,11 +107,10 @@ export function ProfileDocumentsPage() {
         return uploadBusinessLicenseDoc(file)
       case "health_checkup":
         return uploadHealthCheckupDoc(file)
+      case "passport":
+        return uploadPassportDoc({ file })
       default:
-        return {
-          success: false,
-          error: `No single-file upload flow for "${code}" — needs a dedicated form page.`,
-        }
+        return { success: true, data: undefined }
     }
   }
 
@@ -119,6 +119,7 @@ export function ProfileDocumentsPage() {
     bankbook: "bankbook",
     family_relation: "family-relation",
     safety_cert: "safety-cert",
+    passport: "passport",
   }
 
   const runUpload = async (code: string, file: File) => {

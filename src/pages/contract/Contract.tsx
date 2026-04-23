@@ -97,7 +97,6 @@ const currentYear = new Date().getFullYear()
 export function ContractPage() {
   const { worker } = useAuth()
   const userId = worker?.userId ?? null
-  const fallbackSiteId = worker?.relatedSiteId ?? null
 
   const [year, setYear] = useState(currentYear)
   const [yearOpen, setYearOpen] = useState(false)
@@ -105,7 +104,7 @@ export function ContractPage() {
   const { showError } = useToast()
   const handleNavigation = useBottomNavHandler()
 
-  const { data: groups = [], isLoading, isError, refetch } = useContracts(userId, fallbackSiteId, year)
+  const { data: groups = [], isLoading, isError, refetch } = useContracts(userId, year)
 
   const hasUnsigned = groups.some((g) => g.contract?.signingStage === 'AWAITING_WORKER')
 

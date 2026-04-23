@@ -15,10 +15,12 @@ import {
   fetchFamilyRelationDoc,
   fetchFileAsObjectUrl,
   fetchIdCardDoc,
+  fetchPassportDoc,
   fetchSafetyCertDoc,
   reuploadEquipmentLicense,
   uploadBankbookDoc,
   uploadIdCardDoc,
+  uploadPassportDoc,
   uploadSafetyCertDoc,
   type DocumentDetail,
 } from "@/lib/profile"
@@ -32,10 +34,11 @@ const LOADERS: Record<string, { title: string; load: DocLoader }> = {
   "family-relation": { title: "가족관계증명서", load: fetchFamilyRelationDoc },
   "alien-reg": { title: "외국인등록증", load: fetchAlienRegDoc },
   "safety-cert": { title: "기초안전보건교육 이수증", load: fetchSafetyCertDoc },
+  passport: { title: "여권 사본", load: fetchPassportDoc },
 }
 
 // Slugs whose viewer page supports in-place re-upload via 사진 촬영 / 파일 선택.
-const UPLOAD_SUPPORTED = new Set(["id-card", "bankbook", "safety-cert", "equipment-license"])
+const UPLOAD_SUPPORTED = new Set(["id-card", "bankbook", "safety-cert", "equipment-license", "passport"])
 
 export function DocumentViewerPage() {
   const navigate = useNavigate()
@@ -131,6 +134,9 @@ export function DocumentViewerPage() {
     }
     if (slug === "safety-cert") {
       return uploadSafetyCertDoc(file)
+    }
+    if (slug === "passport") {
+      return uploadPassportDoc({ file })
     }
     if (slug === "equipment-license" && equipmentId) {
       return reuploadEquipmentLicense(equipmentId, file)
