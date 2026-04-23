@@ -54,7 +54,7 @@ function DocRow({ doc, label, onAction, loading }: DocRowProps) {
   const badge = stageBadge(doc.signingStage)
   const canAct = doc.signingStage === 'AWAITING_WORKER' || doc.signingStage === 'COMPLETED' || doc.signingStage === 'SENT'
   const isUrgent = doc.signingStage === 'AWAITING_WORKER' || doc.signingStage === 'SENT'
-  const actionLabel = doc.signingStage === 'COMPLETED' ? '보기' : '서명하기'
+  const actionLabel = doc.signingStage === 'AWAITING_WORKER' ? '서명하기' : '보기'
 
   return (
     <div
@@ -121,7 +121,7 @@ export function ContractPage() {
     const win = window.open('about:blank', '_blank')
 
     try {
-      if (doc.signingStage === 'AWAITING_WORKER' || doc.signingStage === 'SENT') {
+      if (doc.signingStage === 'AWAITING_WORKER') {
         const result = await fetchSigningLink(doc.id)
         if (result.success && result.data) {
           if (win) win.location.href = result.data
@@ -129,7 +129,7 @@ export function ContractPage() {
           win?.close()
           showError(!result.success ? result.error : '서명 링크를 가져올 수 없습니다.')
         }
-      } else if (doc.signingStage === 'COMPLETED') {
+      } else if (doc.signingStage === 'COMPLETED' || doc.signingStage === 'SENT') {
         const result = await fetchDocumentPdf(doc.id)
         if (result.success && result.data) {
           if (win) win.location.href = result.data
