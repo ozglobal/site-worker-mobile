@@ -112,15 +112,11 @@ export function ContractPage() {
 
   const hasUnsigned = groups.some((g) => g.contract?.signingStage === 'AWAITING_WORKER')
 
-  const openUrl = (url: string, filename?: string) => {
+  const openUrl = (url: string) => {
     const a = document.createElement('a')
     a.href = url
-    if (filename) {
-      a.download = filename
-    } else {
-      a.target = '_blank'
-      a.rel = 'noopener noreferrer'
-    }
+    a.target = '_blank'
+    a.rel = 'noopener noreferrer'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -141,7 +137,7 @@ export function ContractPage() {
         const result = await fetchDocumentPdf(doc.id)
         if (result.success && result.data) {
           const blobUrl = result.data
-          openUrl(blobUrl, 'document.pdf')
+          openUrl(blobUrl)
           setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
         } else {
           showError(!result.success ? result.error : 'PDF를 열 수 없습니다.')
