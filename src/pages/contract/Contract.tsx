@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { useContracts } from "@/lib/queries/useContracts"
 import { useHomeData } from "@/lib/queries/useHomeData"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { useDictItems } from "@/lib/queries/useDictItems"
 import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type MonthGroup, type SigningStage } from "@/lib/contract"
 import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
@@ -20,14 +21,6 @@ function formatMonth(yyyyMM: string): string {
   return `${Number(m)}월`
 }
 
-function workerTypeLabel(type: string | null | undefined): string {
-  if (!type) return ''
-  if (type === 'SERVICE' || type === 'labor_service') return '용역'
-  if (type === 'GENERAL') return '일반'
-  if (type === 'SPECIALTY') return '특수'
-  if (type === 'ENGINEER' || type === 'equipment_driver') return '기술자'
-  return type
-}
 
 function badgeText(stage: SigningStage): string {
   switch (stage) {
@@ -152,10 +145,13 @@ export function ContractPage() {
   const { data: groups = [], isLoading, isError, refetch } = useContracts(userId, year)
   const { data: homeData } = useHomeData()
   const { data: profile } = useWorkerProfile()
+  const { data: workerCategories = [] } = useDictItems('worker_category')
   const attendance = homeData?.todayAttendance.find((a) => a.dailyWageSnapshot != null) ?? homeData?.todayAttendance[0]
   const dailyWageSnapshot = attendance?.dailyWageSnapshot ?? null
   const siteName = attendance?.siteName ?? ''
-  const categoryLabel = workerTypeLabel(profile?.workerCategory)
+  const categoryLabel = profile?.workerCategory
+    ? (workerCategories.find((c) => c.code === profile.workerCategory)?.name ?? profile.workerCategory)
+    : ''
 
   const hasUnsigned = groups.some((g) =>
     [g.contract, g.delegation, ...g.extras].some((d) => d?.signingStage === 'AWAITING_WORKER')
