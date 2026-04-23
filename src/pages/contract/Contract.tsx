@@ -54,32 +54,36 @@ function DocRow({ doc, label, onAction, loading }: DocRowProps) {
   const badge = stageBadge(doc.signingStage)
   const canAct = doc.signingStage === 'AWAITING_WORKER' || (doc.hasPdf && doc.signingStage === 'COMPLETED')
   const isUrgent = doc.signingStage === 'AWAITING_WORKER'
+  const actionLabel = doc.signingStage === 'AWAITING_WORKER' ? '서명하기' : '보기'
 
   return (
-    <button
-      onClick={() => canAct && onAction(doc)}
-      disabled={!canAct || loading}
-      className={`flex w-full items-center justify-between rounded-xl border bg-white p-4 shadow-sm transition-opacity ${
-        isUrgent
-          ? 'border-red-300 ring-2 ring-red-200'
-          : 'border-slate-200'
-      } ${!canAct ? 'opacity-60 cursor-default' : 'cursor-pointer active:opacity-80'}`}
+    <div
+      className={`flex items-center justify-between rounded-xl border bg-white p-4 shadow-sm ${
+        isUrgent ? 'border-red-300 ring-2 ring-red-200' : 'border-slate-200'
+      }`}
     >
-      <div className="flex flex-col items-start gap-1.5">
+      <div className="flex flex-col items-start gap-1.5 min-w-0 flex-1">
         <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${badge.className}`}>
           {badge.label}
         </span>
         <span className="text-sm font-semibold text-slate-900">{label}</span>
       </div>
-      <div className="flex shrink-0 items-center gap-1 text-sm text-slate-400">
-        {loading ? <Spinner size="sm" /> : (
-          <>
-            {doc.signingStage === 'AWAITING_WORKER' ? '서명하기' : doc.hasPdf ? '보기' : ''}
-            {canAct && <ChevronRightIcon className="h-4 w-4" />}
-          </>
-        )}
-      </div>
-    </button>
+      {canAct && (
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => onAction(doc)}
+          className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700 disabled:opacity-50"
+        >
+          {loading ? <Spinner size="sm" /> : (
+            <>
+              {actionLabel}
+              <ChevronRightIcon className="h-4 w-4" />
+            </>
+          )}
+        </button>
+      )}
+    </div>
   )
 }
 
