@@ -113,7 +113,7 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot }: MonthC
         return (
           <div
             key={doc.id}
-            className={`flex items-center gap-3 px-4 py-3 ${i >= 2 ? 'border-t border-slate-100' : 'bg-transparent'}`}
+            className={`flex items-center gap-3 px-4 py-3 ${i >= 2 ? 'border-t border-slate-100' : 'bg-slate-100'}`}
           >
             <span className="w-20 shrink-0 text-sm font-semibold text-slate-900">{label}</span>
             <div className="flex-1">
