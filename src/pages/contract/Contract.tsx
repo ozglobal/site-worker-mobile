@@ -20,11 +20,6 @@ function formatMonth(yyyyMM: string): string {
   return `${Number(m)}월`
 }
 
-function formatWage(wage: number | null | undefined): string {
-  if (!wage) return ''
-  return wage.toLocaleString('ko-KR') + '원'
-}
-
 function workerTypeLabel(type: string | null | undefined): string {
   if (!type) return ''
   if (type === 'SERVICE' || type === 'labor_service') return '용역'
@@ -48,17 +43,6 @@ function badgeText(stage: SigningStage): string {
   }
 }
 
-function badgeColor(stage: SigningStage): string {
-  switch (stage) {
-    case 'AWAITING_WORKER':  return 'text-red-500'
-    case 'AWAITING_MANAGER': return 'text-orange-500'
-    case 'COMPLETED':        return 'text-green-600'
-    case 'SENT':             return 'text-blue-600'
-    case 'REJECTED':         return 'text-orange-500'
-    default:                 return 'text-slate-400'
-  }
-}
-
 // ── Month Card ────────────────────────────────────────────
 
 interface MonthCardProps {
@@ -67,9 +51,21 @@ interface MonthCardProps {
   onAction: (doc: EfsDocument) => void
   dailyWageSnapshot?: number | null
   workerCategoryLabel?: string
+  siteName?: string
 }
 
-function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCategoryLabel }: MonthCardProps) {
+function badgePill(stage: SigningStage) {
+  switch (stage) {
+    case 'AWAITING_WORKER':  return { text: badgeText(stage), cls: 'bg-red-50 text-red-500' }
+    case 'AWAITING_MANAGER': return { text: badgeText(stage), cls: 'bg-orange-50 text-orange-500' }
+    case 'COMPLETED':        return { text: badgeText(stage), cls: 'bg-green-50 text-green-600' }
+    case 'SENT':             return { text: badgeText(stage), cls: 'bg-blue-50 text-blue-600' }
+    case 'REJECTED':         return { text: badgeText(stage), cls: 'bg-orange-50 text-orange-500' }
+    default:                 return { text: badgeText(stage), cls: 'bg-slate-100 text-slate-400' }
+  }
+}
+
+function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCategoryLabel, siteName }: MonthCardProps) {
   const allDocs: { doc: EfsDocument; label: string }[] = []
   if (group.contract)   allDocs.push({ doc: group.contract,   label: '근로계약서' })
   if (group.delegation) allDocs.push({ doc: group.delegation, label: '노무비위임장' })
@@ -77,12 +73,8 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
 
   const needsSign = allDocs.some((d) => d.doc.signingStage === 'AWAITING_WORKER')
 
-  // header info — prefer contract doc fields, fall back to delegation
-  const ref = group.contract ?? group.delegation ?? group.extras[0]
-  const wType = workerTypeLabel(ref?.workerType)
-  const wage  = formatWage(ref?.dailyWage)
-  const site  = ref?.siteName ?? ''
-  const showHeader = wType || wage || site
+  const headerParts = [workerCategoryLabel, dailyWageSnapshot != null ? `${dailyWageSnapshot.toLocaleString('ko-KR')}원` : ''].filter(Boolean)
+  const headerLine = headerParts.join(' · ')
 
   return (
     <div
@@ -90,26 +82,10 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
         needsSign ? 'border-2 border-red-400' : 'border border-slate-200'
       }`}
     >
-      {(workerCategoryLabel || dailyWageSnapshot != null) && (
-        <div className="border-b border-slate-100 px-4 py-3">
-          {workerCategoryLabel && (
-            <p className="text-sm font-bold text-slate-900">{workerCategoryLabel}</p>
-          )}
-          {dailyWageSnapshot != null && (
-            <p className="text-sm font-bold text-slate-900">
-              {dailyWageSnapshot.toLocaleString('ko-KR')}원
-            </p>
-          )}
-        </div>
-      )}
-      {showHeader && (
+      {(headerLine || siteName) && (
         <div className="border-b border-slate-100 px-4 py-4">
-          {(wType || wage) && (
-            <p className="text-base font-bold text-slate-900">
-              {[wType, wage].filter(Boolean).join(' · ')}
-            </p>
-          )}
-          {site && <p className="mt-0.5 text-sm text-slate-500">{site}</p>}
+          {headerLine && <p className="text-base font-bold text-slate-900">{headerLine}</p>}
+          {siteName && <p className="mt-0.5 text-sm text-slate-500">{siteName}</p>}
         </div>
       )}
 
@@ -118,23 +94,18 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
           || doc.signingStage === 'COMPLETED'
           || doc.signingStage === 'SENT'
         const loading = actionLoading === doc.id
+        const pill = badgePill(doc.signingStage)
 
         return (
           <div
             key={doc.id}
-            className={`flex items-center gap-3 px-4 py-3 ${i >= 2 ? 'border-t border-slate-100' : 'bg-slate-100'}`}
+            className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-slate-100' : ''}`}
           >
             <span className="w-20 shrink-0 text-sm font-semibold text-slate-900">{label}</span>
             <div className="flex-1">
-              {doc.signingStage === 'SENT' ? (
-                <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600">
-                  {badgeText(doc.signingStage)}
-                </span>
-              ) : (
-                <span className={`text-sm font-medium ${badgeColor(doc.signingStage)}`}>
-                  {badgeText(doc.signingStage)}
-                </span>
-              )}
+              <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${pill.cls}`}>
+                {pill.text}
+              </span>
             </div>
             {canAct && (
               loading ? (
@@ -181,7 +152,9 @@ export function ContractPage() {
   const { data: groups = [], isLoading, isError, refetch } = useContracts(userId, year)
   const { data: homeData } = useHomeData()
   const { data: profile } = useWorkerProfile()
-  const dailyWageSnapshot = homeData?.todayAttendance.find((a) => a.dailyWageSnapshot != null)?.dailyWageSnapshot ?? null
+  const attendance = homeData?.todayAttendance.find((a) => a.dailyWageSnapshot != null) ?? homeData?.todayAttendance[0]
+  const dailyWageSnapshot = attendance?.dailyWageSnapshot ?? null
+  const siteName = attendance?.siteName ?? ''
   const categoryLabel = workerTypeLabel(profile?.workerCategory)
 
   const hasUnsigned = groups.some((g) =>
@@ -280,6 +253,7 @@ export function ContractPage() {
                   onAction={handleAction}
                   dailyWageSnapshot={dailyWageSnapshot}
                   workerCategoryLabel={categoryLabel}
+                  siteName={siteName}
                 />
               </section>
             ))
