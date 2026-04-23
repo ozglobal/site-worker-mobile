@@ -26,7 +26,8 @@ export function Home() {
   const { worker } = useAuth()
   // Fire GET /system/worker/me/home first — aggregates today's attendance,
   // monthly stats, unread notices, and onboarding/documents flags in one call.
-  useHomeData()
+  const { data: homeData } = useHomeData()
+  const hasPendingDocs = (homeData?.pendingDocuments ?? 0) > 0
   const { data: contractGroups = [] } = useContracts(worker?.userId ?? null, new Date().getFullYear())
   const unsignedCount = useMemo(
     () => contractGroups.flatMap((g) => [g.contract, g.delegation, ...g.extras])
@@ -149,7 +150,7 @@ export function Home() {
         {/* Main Content - Scrollable */}
         <div className="flex-1 p-4 space-y-3 overflow-y-auto">
           {/* Notice banners */}
-          {(worker?.onboardingCompleted === false || unsignedCount > 0 || worker?.requiredDocsCompleted === false) && (
+          {(worker?.onboardingCompleted === false || unsignedCount > 0 || hasPendingDocs) && (
             <div className="space-y-3">
               {worker?.onboardingCompleted === false && (
                 <AlertBanner
@@ -165,7 +166,7 @@ export function Home() {
                   onClick={() => navigate("/contract")}
                 />
               )}
-              {worker?.requiredDocsCompleted === false && (
+              {hasPendingDocs && (
                 <AlertBanner
                   title="제출하지 않은 서류가 있어요"
                   description="월말까지 제출하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
