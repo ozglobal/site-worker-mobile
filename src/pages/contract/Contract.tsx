@@ -4,9 +4,7 @@ import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { Spinner } from "@/components/ui/spinner"
 import { useContracts } from "@/lib/queries/useContracts"
-import { fetchSigningLink, type EfsDocument, type SigningStage } from "@/lib/contract"
-import { getAccessToken } from "@/lib/auth"
-import { API_BASE_URL } from "@/lib/config"
+import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type SigningStage } from "@/lib/contract"
 import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { ChevronRight as ChevronRightIcon, ChevronDown as ExpandMoreIcon } from "lucide-react"
@@ -114,33 +112,34 @@ export function ContractPage() {
 
   const hasUnsigned = groups.some((g) => g.contract?.signingStage === 'AWAITING_WORKER')
 
-  const openUrl = (url: string) => {
-    const a = document.createElement('a')
-    a.href = url
-    a.target = '_blank'
-    a.rel = 'noopener noreferrer'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-  }
-
   const handleAction = useCallback(async (doc: EfsDocument) => {
     if (actionLoading) return
     setActionLoading(doc.id)
+
+    // Open the window synchronously inside the user gesture so mobile browsers
+    // don't block it as a popup. We navigate it to the real URL after the fetch.
+    const win = window.open('about:blank', '_blank')
+
     try {
       if (doc.signingStage === 'AWAITING_WORKER') {
         const result = await fetchSigningLink(doc.id)
         if (result.success && result.data) {
-          openUrl(result.data)
+          if (win) win.location.href = result.data
         } else {
+          win?.close()
           showError(!result.success ? result.error : '서명 링크를 가져올 수 없습니다.')
         }
       } else if (doc.signingStage === 'COMPLETED' || doc.signingStage === 'SENT') {
-        const token = getAccessToken()
-        const params = new URLSearchParams()
-        if (token) params.set('token', token)
-        const pdfUrl = `${API_BASE_URL}/efs/api/documents/${encodeURIComponent(doc.id)}/pdf${token ? `?${params}` : ''}`
-        openUrl(pdfUrl)
+        const result = await fetchDocumentPdf(doc.id)
+        if (result.success && result.data) {
+          if (win) win.location.href = result.data
+          setTimeout(() => URL.revokeObjectURL(result.data), 60_000)
+        } else {
+          win?.close()
+          showError(!result.success ? result.error : 'PDF를 열 수 없습니다.')
+        }
+      } else {
+        win?.close()
       }
     } finally {
       setActionLoading(null)
