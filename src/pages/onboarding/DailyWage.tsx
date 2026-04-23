@@ -4,7 +4,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AlertCircle as ErrorOutlineIcon } from "lucide-react"
-import { submitWorkerOnboarding, completeWorkerOnboarding } from "@/lib/profile"
+import { submitWorkerOnboarding, completeWorkerOnboarding, updateDailyWage } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
 import { workerMetaStorage } from "@/lib/storage"
@@ -43,7 +43,7 @@ export function OnboardingDailyWagePage() {
     if (!amount) return
     setIsSubmitting(true)
     const draft = getDraft()
-    const result = await submitWorkerOnboarding({
+    const onboardingResult = await submitWorkerOnboarding({
       bankName: draft.bankName,
       bankAccount: draft.bankAccount,
       accountHolder: draft.accountHolder,
@@ -51,11 +51,17 @@ export function OnboardingDailyWagePage() {
       equipmentCompanyName: draft.equipmentCompanyName,
       equipmentCompanyOwner: draft.equipmentCompanyOwner,
       wagePaymentTarget: draft.wagePaymentTarget,
-      dailyWage: amount,
+      dailyWage: null,
     })
-    if (!result.success) {
+    if (!onboardingResult.success) {
       setIsSubmitting(false)
-      showError(result.error)
+      showError(onboardingResult.error)
+      return
+    }
+    const wageResult = await updateDailyWage(amount)
+    if (!wageResult.success) {
+      setIsSubmitting(false)
+      showError(wageResult.error)
       return
     }
     const completeResult = await completeWorkerOnboarding()

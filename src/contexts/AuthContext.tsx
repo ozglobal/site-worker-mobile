@@ -15,10 +15,12 @@ import { autoLoginStorage, workerStorage, checkinSiteStorage } from '@/lib/stora
 interface WorkerInfo {
   workerId: string | null
   workerName: string | null
+  userId: string | null
   relatedSiteId: string | null
   onboardingCompleted: boolean | null
   requiredDocsCompleted: boolean | null
   requiredContractsCompleted: boolean | null
+  idType: string | null
 }
 
 interface AuthContextType {

@@ -1,69 +1,149 @@
 import { useState, useCallback } from "react"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav } from "@/components/layout/AppBottomNav"
-import { Badge } from "@/components/ui/badge"
 import { AlertBanner } from "@/components/ui/alert-banner"
+import { Spinner } from "@/components/ui/spinner"
 import { useContracts } from "@/lib/queries/useContracts"
-import { fetchSigningLink, fetchDocumentPdf } from "@/lib/contract"
+import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type SigningStage } from "@/lib/contract"
 import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { ChevronRight as ChevronRightIcon, ChevronDown as ExpandMoreIcon } from "lucide-react"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
+import { useAuth } from "@/contexts/AuthContext"
+
+// ── Badge ─────────────────────────────────────────────────
+
+interface BadgeConfig {
+  label: string
+  className: string
+}
+
+function stageBadge(stage: SigningStage): BadgeConfig {
+  switch (stage) {
+    case 'COMPLETED':
+      return { label: '서명 완료', className: 'bg-green-50 text-green-600 border-green-200' }
+    case 'AWAITING_WORKER':
+      return { label: '서명 필요', className: 'bg-red-50 text-red-500 border-red-200' }
+    case 'AWAITING_MANAGER':
+      return { label: '관리자 서명 대기', className: 'bg-blue-50 text-blue-600 border-blue-200' }
+    case 'SENT':
+      return { label: '발송 완료', className: 'bg-blue-50 text-blue-600 border-blue-200' }
+    case 'DRAFT':
+      return { label: '미발송', className: 'bg-slate-50 text-slate-500 border-slate-200' }
+    case 'REJECTED':
+      return { label: '반려', className: 'bg-orange-50 text-orange-500 border-orange-200' }
+    case 'CANCELLED':
+      return { label: '취소', className: 'bg-slate-50 text-slate-400 border-slate-200' }
+    case 'EXPIRED':
+      return { label: '만료', className: 'bg-slate-50 text-slate-400 border-slate-200' }
+    default:
+      return { label: stage, className: 'bg-slate-50 text-slate-500 border-slate-200' }
+  }
+}
+
+// ── Document Row ──────────────────────────────────────────
+
+interface DocRowProps {
+  doc: EfsDocument
+  label: string
+  onAction: (doc: EfsDocument) => void
+  loading: boolean
+}
+
+function DocRow({ doc, label, onAction, loading }: DocRowProps) {
+  const badge = stageBadge(doc.signingStage)
+  const canAct = doc.signingStage === 'AWAITING_WORKER' || (doc.hasPdf && doc.signingStage === 'COMPLETED')
+  const isUrgent = doc.signingStage === 'AWAITING_WORKER'
+
+  return (
+    <button
+      onClick={() => canAct && onAction(doc)}
+      disabled={!canAct || loading}
+      className={`flex w-full items-center justify-between rounded-xl border bg-white p-4 shadow-sm transition-opacity ${
+        isUrgent
+          ? 'border-red-300 ring-2 ring-red-200'
+          : 'border-slate-200'
+      } ${!canAct ? 'opacity-60 cursor-default' : 'cursor-pointer active:opacity-80'}`}
+    >
+      <div className="flex flex-col items-start gap-1.5">
+        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${badge.className}`}>
+          {badge.label}
+        </span>
+        <span className="text-sm font-semibold text-slate-900">{label}</span>
+      </div>
+      <div className="flex shrink-0 items-center gap-1 text-sm text-slate-400">
+        {loading ? <Spinner size="sm" /> : (
+          <>
+            {doc.signingStage === 'AWAITING_WORKER' ? '서명하기' : doc.hasPdf ? '보기' : ''}
+            {canAct && <ChevronRightIcon className="h-4 w-4" />}
+          </>
+        )}
+      </div>
+    </button>
+  )
+}
+
+// ── Month Section ─────────────────────────────────────────
+
+function formatMonth(yyyyMM: string): string {
+  const [y, m] = yyyyMM.split('-')
+  return `${y}년 ${Number(m)}월`
+}
+
+// ── Page ──────────────────────────────────────────────────
 
 const currentYear = new Date().getFullYear()
 
 export function ContractPage() {
+  const { worker } = useAuth()
+  const userId = worker?.userId ?? null
+  const fallbackSiteId = worker?.relatedSiteId ?? null
+
   const [year, setYear] = useState(currentYear)
   const [yearOpen, setYearOpen] = useState(false)
-
-  const { data: contracts = [], isLoading, isError, refetch } = useContracts(year)
-  const { showError } = useToast()
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-
-  const handleSigningClick = useCallback(async (efsDocumentId: string) => {
-    if (actionLoading) return
-    setActionLoading(efsDocumentId)
-    try {
-      const result = await fetchSigningLink(efsDocumentId)
-      if (result.success && result.data) {
-        window.open(result.data, "_blank")
-      } else {
-        showError(!result.success ? result.error : '서명 링크를 가져올 수 없습니다.')
-      }
-    } finally {
-      setActionLoading(null)
-    }
-  }, [actionLoading, showError])
-
-  const handlePdfClick = useCallback(async (documentId: string) => {
-    if (actionLoading) return
-    setActionLoading(documentId)
-    try {
-      const result = await fetchDocumentPdf(documentId)
-      if (result.success && result.data) {
-        const blobUrl = result.data
-        window.open(blobUrl, "_blank")
-        // Give the new tab time to load the blob before revoking.
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
-      } else {
-        showError(!result.success ? result.error : 'PDF를 열 수 없습니다.')
-      }
-    } finally {
-      setActionLoading(null)
-    }
-  }, [actionLoading, showError])
-
-  const years = Array.from({ length: 2 }, (_, i) => currentYear - i)
-
+  const { showError } = useToast()
   const handleNavigation = useBottomNavHandler()
+
+  const { data: groups = [], isLoading, isError, refetch } = useContracts(userId, fallbackSiteId, year)
+
+  const hasUnsigned = groups.some((g) => g.contract?.signingStage === 'AWAITING_WORKER')
+
+  const handleAction = useCallback(async (doc: EfsDocument) => {
+    if (actionLoading) return
+    setActionLoading(doc.id)
+    try {
+      if (doc.signingStage === 'AWAITING_WORKER') {
+        const result = await fetchSigningLink(doc.id)
+        if (result.success && result.data) {
+          window.open(result.data, '_blank')
+        } else {
+          showError(!result.success ? result.error : '서명 링크를 가져올 수 없습니다.')
+        }
+      } else if (doc.hasPdf) {
+        const result = await fetchDocumentPdf(doc.id)
+        if (result.success && result.data) {
+          const blobUrl = result.data
+          window.open(blobUrl, '_blank')
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
+        } else {
+          showError(!result.success ? result.error : 'PDF를 열 수 없습니다.')
+        }
+      }
+    } finally {
+      setActionLoading(null)
+    }
+  }, [actionLoading, showError])
+
+  const years = Array.from({ length: 3 }, (_, i) => currentYear - i)
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
-      <AppHeader showLeftAction={false} title="시재건설" showRightAction={true} className="shrink-0" />
+      <AppHeader showLeftAction={false} title="계약서" showRightAction={true} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
-        {/* Unsigned Contract Alert */}
-        {!isLoading && !isError && contracts.some((c) => c.status === "sent") && (
+        {/* Unsigned alert */}
+        {!isLoading && !isError && hasUnsigned && (
           <div className="px-4 pt-4">
             <AlertBanner
               title="서명하지 않은 근로계약서가 있어요"
@@ -72,8 +152,8 @@ export function ContractPage() {
           </div>
         )}
 
-        {/* Year Selector */}
-        <div className="px-4 pt-4 pb-2 relative">
+        {/* Year selector */}
+        <div className="relative px-4 pt-4 pb-2">
           <button
             onClick={() => setYearOpen(!yearOpen)}
             className="flex items-center gap-1 text-lg font-bold text-slate-900"
@@ -82,12 +162,14 @@ export function ContractPage() {
             <ExpandMoreIcon className="h-5 w-5 text-slate-500" />
           </button>
           {yearOpen && (
-            <div className="absolute top-full left-4 z-10 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg">
+            <div className="absolute top-full left-4 z-10 mt-1 rounded-lg border border-gray-200 bg-white shadow-lg">
               {years.map((y) => (
                 <button
                   key={y}
                   onClick={() => { setYear(y); setYearOpen(false) }}
-                  className={`block w-full px-6 py-3 text-left text-base ${y === year ? "font-bold text-primary" : "text-slate-700"} hover:bg-slate-50`}
+                  className={`block w-full px-6 py-3 text-left text-base ${
+                    y === year ? 'font-bold text-primary' : 'text-slate-700'
+                  } hover:bg-slate-50`}
                 >
                   {y}년
                 </button>
@@ -96,75 +178,53 @@ export function ContractPage() {
           )}
         </div>
 
-        {/* Contract List */}
-        <div className="px-4 py-2 space-y-3">
+        {/* Content */}
+        <div className="px-4 py-2 space-y-6 pb-8">
           {isLoading ? (
-            <div className="text-center py-8 text-slate-500">로딩 중...</div>
+            <div className="flex justify-center py-12">
+              <Spinner />
+            </div>
           ) : isError ? (
             <QueryErrorState onRetry={() => refetch()} message="계약서를 불러오지 못했습니다." />
-          ) : contracts.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">계약서가 없습니다.</div>
+          ) : !userId ? (
+            <p className="py-8 text-center text-sm text-slate-500">사용자 정보를 불러오는 중입니다.</p>
+          ) : groups.length === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-500">{year}년 계약서가 없습니다.</p>
           ) : (
-            contracts.map((contract) => (
-              <div
-                key={contract.id}
-                role="button"
-                tabIndex={0}
-                onClick={
-                  contract.status === "sent"
-                    ? () => handleSigningClick(contract.id)
-                    : contract.status === "in_progress" || contract.status === "completed"
-                    ? () => handlePdfClick(contract.id)
-                    : undefined
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    if (contract.status === "sent") handleSigningClick(contract.id)
-                    else if (contract.status === "in_progress" || contract.status === "completed") handlePdfClick(contract.id)
-                  }
-                }}
-                className={`w-full flex items-center justify-between bg-white rounded-xl border p-4 shadow-sm ${
-                  contract.status === "sent"
-                    ? "border-[#DC2626] ring-[3px] ring-[#DC2626]/25 cursor-pointer"
-                    : contract.status === "completed"
-                    ? "border-green-500 cursor-pointer"
-                    : "border-blue-500 cursor-pointer"
-                }`}
-              >
-                <div className="flex flex-col items-start gap-2">
-                  {contract.status === "sent" ? (
-                    <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium bg-red-50 text-red-500">
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      서명 필요
-                    </span>
-                  ) : contract.status === "in_progress" ? (
-                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 font-medium text-xs px-2 py-0.5">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mr-1">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                        <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      진행중
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 font-medium text-xs px-2 py-0.5">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mr-1">
-                        <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                      </svg>
-                      서명 완료
-                    </Badge>
-                  )}
-                  <span className="text-base font-semibold text-slate-900">
-                    {contract.title}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-slate-400">
-                  보기
-                  <ChevronRightIcon className="h-4 w-4" />
-                </div>
-              </div>
+            groups.map((g) => (
+              <section key={g.month} className="space-y-2">
+                <h3 className="text-sm font-semibold text-slate-500">{formatMonth(g.month)}</h3>
+
+                {g.contract ? (
+                  <DocRow
+                    doc={g.contract}
+                    label="근로계약서"
+                    onAction={handleAction}
+                    loading={actionLoading === g.contract.id}
+                  />
+                ) : g.delegation ? (
+                  <p className="rounded-xl border bg-white px-4 py-3 text-sm text-slate-400">계약서 없음</p>
+                ) : null}
+
+                {g.delegation && (
+                  <DocRow
+                    doc={g.delegation}
+                    label="노무비위임장"
+                    onAction={handleAction}
+                    loading={actionLoading === g.delegation.id}
+                  />
+                )}
+
+                {g.extras.map((doc) => (
+                  <DocRow
+                    key={doc.id}
+                    doc={doc}
+                    label={doc.title}
+                    onAction={handleAction}
+                    loading={actionLoading === doc.id}
+                  />
+                ))}
+              </section>
             ))
           )}
         </div>

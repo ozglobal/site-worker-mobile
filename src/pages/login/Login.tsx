@@ -66,9 +66,10 @@ export function LoginPage() {
       // category is set (a set category means the user has already started/finished
       // onboarding, so skip the flow even if onboardingCompleted is still false).
       const info = getWorkerInfo()
+      const isPassportUser = info.idType === 'passport'
       const needsOnboarding =
-        isFirstLogin ||
-        (info.onboardingCompleted === false && !info.workerCategory)
+        !isPassportUser &&
+        (isFirstLogin || (info.onboardingCompleted === false && !info.workerCategory))
       if (needsOnboarding) {
         sessionStorage.setItem('postLoginFirstLogin', '1')
         navigate('/onboarding')

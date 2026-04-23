@@ -1,6 +1,6 @@
 import { devLogApiPair, logError } from '../utils/devLog'
 import { API_BASE_URL, X_TENANT_ID } from './config'
-import { authStorage, workerStorage, clearAllStorage } from './storage'
+import { authStorage, workerStorage, workerMetaStorage, clearAllStorage } from './storage'
 import { safeJson, type ApiResult } from './api-result'
 import { reportError } from './errorReporter'
 
@@ -13,12 +13,14 @@ let inMemoryAccessToken: string | null = null
 interface InMemoryWorkerInfo {
   workerId: string
   workerName: string
+  userId?: string
   relatedSiteId?: string
   username?: string
   onboardingCompleted?: boolean
   requiredDocsCompleted?: boolean
   requiredContractsCompleted?: boolean
   workerCategory?: string | null
+  idType?: string | null
 }
 let inMemoryWorkerInfo: InMemoryWorkerInfo | null = null
 
@@ -305,10 +307,28 @@ export const getIssuedAt = () => {
   return val !== null ? String(val) : null
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const part = token.split('.')[1]
+    if (!part) return null
+    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(json) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
 // PR 1: access token stored in memory, refresh token + metadata in localStorage
 export const setTokens = (accessToken: string, refreshToken?: string, expiresIn?: number, timestamp?: number) => {
   inMemoryAccessToken = accessToken
   authStorage.setTokens(refreshToken, expiresIn, timestamp)
+  // Extract userId from JWT payload (sys_user.id)
+  const claims = decodeJwtPayload(accessToken)
+  if (claims?.userId != null && inMemoryWorkerInfo) {
+    inMemoryWorkerInfo.userId = String(claims.userId)
+  } else if (claims?.userId != null) {
+    inMemoryWorkerInfo = { workerId: '', workerName: '', userId: String(claims.userId) }
+  }
 }
 
 export const clearTokens = () => {
@@ -320,6 +340,10 @@ export const setWorkerInfo = (workerInfo: Record<string, unknown>) => {
   const info: InMemoryWorkerInfo = {
     workerId: String(workerInfo.id ?? workerInfo.workerId ?? ''),
     workerName: String(workerInfo.nameKo ?? workerInfo.workerName ?? ''),
+  }
+  const rawUserId = workerInfo.userId ?? workerInfo.sysUserId
+  if (rawUserId != null) {
+    info.userId = String(rawUserId)
   }
   if (workerInfo.relatedSiteId) {
     info.relatedSiteId = String(workerInfo.relatedSiteId)
@@ -339,6 +363,11 @@ export const setWorkerInfo = (workerInfo: Record<string, unknown>) => {
   if ('workerCategory' in workerInfo) {
     info.workerCategory = (workerInfo.workerCategory as string | null) ?? null
   }
+  if ('idType' in workerInfo) {
+    const raw = workerInfo.idType as string | null
+    // Normalize Korean API value to English storage key
+    info.idType = raw === '여권번호' ? 'passport' : (raw ?? null)
+  }
   inMemoryWorkerInfo = info
 
   // Cache to localStorage for restore on reload (skip if name is empty to avoid overwriting good cache)
@@ -354,9 +383,11 @@ export const setWorkerInfo = (workerInfo: Record<string, unknown>) => {
 export const getWorkerInfo = () => {
   const mem = inMemoryWorkerInfo
   const cached = workerStorage.get()
+  const metaIdType = workerMetaStorage.get()?.idType ?? null
   return {
     workerId: mem?.workerId || cached?.workerId || null,
     workerName: mem?.workerName || cached?.workerName || null,
+    userId: mem?.userId ?? null,
     relatedSiteId: mem?.relatedSiteId || cached?.relatedSiteId || null,
     onboardingCompleted: mem?.onboardingCompleted ?? null,
     // TODO: backend not yet providing `requiredDocsCompleted` /
@@ -366,11 +397,13 @@ export const getWorkerInfo = () => {
     requiredDocsCompleted: false,
     requiredContractsCompleted: false,
     workerCategory: mem?.workerCategory ?? null,
+    idType: mem?.idType ?? metaIdType,
   }
 }
 
 export const getWorkerId = () => inMemoryWorkerInfo?.workerId || workerStorage.get()?.workerId || null
 export const getWorkerName = () => inMemoryWorkerInfo?.workerName || workerStorage.get()?.workerName || null
+export const getUserId = () => inMemoryWorkerInfo?.userId ?? null
 
 export const clearWorkerInfo = () => {
   inMemoryWorkerInfo = null

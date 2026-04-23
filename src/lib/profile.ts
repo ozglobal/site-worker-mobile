@@ -362,6 +362,31 @@ export const submitWorkerOnboarding = async (
   }
 }
 
+export const updateDailyWage = async (dailyWage: number): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me/daily-wage'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ dailyWage }),
+    })
+
+    const json = await safeJson(response) as Record<string, unknown> | null
+
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_DAILY_WAGE_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
 export const updateBankAccount = async (data: {
   bankName: string
   bankAccount: string

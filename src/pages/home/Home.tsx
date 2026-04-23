@@ -139,34 +139,34 @@ export function Home() {
           </h1>
         </div>
 
-        {(worker?.onboardingCompleted === false || worker?.requiredContractsCompleted === false || worker?.requiredDocsCompleted === false) && (
-          <div className="px-4 shrink-0 space-y-3">
-            {worker?.onboardingCompleted === false && (
-              <AlertBanner
-                title="필수 정보 입력이 완료되지 않았어요"
-                description="내정보 메뉴에서 회원 정보 입력을 완료해주세요."
-                onClick={() => navigate("/profile")}
-              />
-            )}
-            {worker?.requiredContractsCompleted === false && (
-              <AlertBanner
-                title="서명하지 않은 근로계약서가 있어요"
-                description="월말까지 서명하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
-                onClick={() => navigate("/contract")}
-              />
-            )}
-            {worker?.requiredDocsCompleted === false && (
-              <AlertBanner
-                title="제출하지 않은 서류가 있어요."
-                description="월말까지 제출하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
-                onClick={() => navigate("/profile/documents")}
-              />
-            )}
-          </div>
-        )}
-
         {/* Main Content - Scrollable */}
         <div className="flex-1 p-4 space-y-3 overflow-y-auto">
+          {/* Notice banners */}
+          {(worker?.onboardingCompleted === false || worker?.requiredContractsCompleted === false || worker?.requiredDocsCompleted === false) && (
+            <div className="space-y-3">
+              {worker?.onboardingCompleted === false && (
+                <AlertBanner
+                  title="필수 정보 입력이 완료되지 않았어요"
+                  description="내정보 메뉴에서 회원 정보 입력을 완료해주세요."
+                  onClick={() => navigate("/profile")}
+                />
+              )}
+              {worker?.requiredContractsCompleted === false && (
+                <AlertBanner
+                  title="서명하지 않은 근로계약서가 있어요"
+                  description="월말까지 서명하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
+                  onClick={() => navigate("/contract")}
+                />
+              )}
+              {worker?.requiredDocsCompleted === false && (
+                <AlertBanner
+                  title="제출하지 않은 서류가 있어요."
+                  description="월말까지 제출하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
+                  onClick={() => navigate("/profile/documents")}
+                />
+              )}
+            </div>
+          )}
           {/* Today's Work Card */}
           <div className="bg-white rounded-lg shadow-sm">
             <div className="px-4 pt-3 flex items-center gap-2">
