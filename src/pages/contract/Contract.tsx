@@ -21,13 +21,13 @@ interface BadgeConfig {
 function stageBadge(stage: SigningStage): BadgeConfig {
   switch (stage) {
     case 'COMPLETED':
-      return { label: '서명 완료', className: 'bg-green-50 text-green-600 border-green-200' }
+      return { label: '처리 완료', className: 'bg-green-50 text-green-600 border-green-200' }
     case 'AWAITING_WORKER':
       return { label: '서명 필요', className: 'bg-red-50 text-red-500 border-red-200' }
     case 'AWAITING_MANAGER':
       return { label: '관리자 서명 대기', className: 'bg-blue-50 text-blue-600 border-blue-200' }
     case 'SENT':
-      return { label: '서명 필요', className: 'bg-red-50 text-red-500 border-red-200' }
+      return { label: '처리 대기', className: 'bg-blue-50 text-blue-600 border-blue-200' }
     case 'DRAFT':
       return { label: '미발송', className: 'bg-slate-50 text-slate-500 border-slate-200' }
     case 'REJECTED':
@@ -53,7 +53,7 @@ interface DocRowProps {
 function DocRow({ doc, label, onAction, loading }: DocRowProps) {
   const badge = stageBadge(doc.signingStage)
   const canAct = doc.signingStage === 'AWAITING_WORKER' || doc.signingStage === 'COMPLETED' || doc.signingStage === 'SENT'
-  const isUrgent = doc.signingStage === 'AWAITING_WORKER' || doc.signingStage === 'SENT'
+  const isUrgent = doc.signingStage === 'AWAITING_WORKER'
   const actionLabel = doc.signingStage === 'AWAITING_WORKER' ? '서명하기' : '보기'
 
   return (
