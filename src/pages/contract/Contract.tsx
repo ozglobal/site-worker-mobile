@@ -52,7 +52,7 @@ interface DocRowProps {
 
 function DocRow({ doc, label, onAction, loading }: DocRowProps) {
   const badge = stageBadge(doc.signingStage)
-  const canAct = doc.signingStage === 'AWAITING_WORKER' || (doc.hasPdf && doc.signingStage === 'COMPLETED')
+  const canAct = doc.signingStage === 'AWAITING_WORKER' || doc.signingStage === 'COMPLETED'
   const isUrgent = doc.signingStage === 'AWAITING_WORKER'
   const actionLabel = doc.signingStage === 'AWAITING_WORKER' ? '서명하기' : '보기'
 
@@ -137,7 +137,7 @@ export function ContractPage() {
         } else {
           showError(!result.success ? result.error : '서명 링크를 가져올 수 없습니다.')
         }
-      } else if (doc.hasPdf) {
+      } else if (doc.signingStage === 'COMPLETED') {
         const result = await fetchDocumentPdf(doc.id)
         if (result.success && result.data) {
           const blobUrl = result.data
