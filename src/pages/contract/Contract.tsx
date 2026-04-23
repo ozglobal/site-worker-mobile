@@ -5,6 +5,7 @@ import { AlertBanner } from "@/components/ui/alert-banner"
 import { Spinner } from "@/components/ui/spinner"
 import { useContracts } from "@/lib/queries/useContracts"
 import { useHomeData } from "@/lib/queries/useHomeData"
+import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type MonthGroup, type SigningStage } from "@/lib/contract"
 import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
@@ -26,8 +27,10 @@ function formatWage(wage: number | null | undefined): string {
 
 function workerTypeLabel(type: string | null | undefined): string {
   if (!type) return ''
-  if (type === 'SERVICE' || type === '용역') return '용역'
-  if (type === 'DAILY' || type === '일반') return '일반'
+  if (type === 'SERVICE' || type === 'labor_service') return '용역'
+  if (type === 'GENERAL') return '일반'
+  if (type === 'SPECIALTY') return '특수'
+  if (type === 'ENGINEER' || type === 'equipment_driver') return '기술자'
   return type
 }
 
@@ -63,9 +66,10 @@ interface MonthCardProps {
   actionLoading: string | null
   onAction: (doc: EfsDocument) => void
   dailyWageSnapshot?: number | null
+  workerCategoryLabel?: string
 }
 
-function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot }: MonthCardProps) {
+function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCategoryLabel }: MonthCardProps) {
   const allDocs: { doc: EfsDocument; label: string }[] = []
   if (group.contract)   allDocs.push({ doc: group.contract,   label: '근로계약서' })
   if (group.delegation) allDocs.push({ doc: group.delegation, label: '노무비위임장' })
@@ -86,11 +90,16 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot }: MonthC
         needsSign ? 'border-2 border-red-400' : 'border border-slate-200'
       }`}
     >
-      {dailyWageSnapshot != null && (
+      {(workerCategoryLabel || dailyWageSnapshot != null) && (
         <div className="border-b border-slate-100 px-4 py-3">
-          <p className="text-sm font-bold text-slate-900">
-            {dailyWageSnapshot.toLocaleString('ko-KR')}원
-          </p>
+          {workerCategoryLabel && (
+            <p className="text-sm font-bold text-slate-900">{workerCategoryLabel}</p>
+          )}
+          {dailyWageSnapshot != null && (
+            <p className="text-sm font-bold text-slate-900">
+              {dailyWageSnapshot.toLocaleString('ko-KR')}원
+            </p>
+          )}
         </div>
       )}
       {showHeader && (
@@ -171,7 +180,9 @@ export function ContractPage() {
 
   const { data: groups = [], isLoading, isError, refetch } = useContracts(userId, year)
   const { data: homeData } = useHomeData()
+  const { data: profile } = useWorkerProfile()
   const dailyWageSnapshot = homeData?.todayAttendance.find((a) => a.dailyWageSnapshot != null)?.dailyWageSnapshot ?? null
+  const categoryLabel = workerTypeLabel(profile?.workerCategory)
 
   const hasUnsigned = groups.some((g) =>
     [g.contract, g.delegation, ...g.extras].some((d) => d?.signingStage === 'AWAITING_WORKER')
@@ -268,6 +279,7 @@ export function ContractPage() {
                   actionLoading={actionLoading}
                   onAction={handleAction}
                   dailyWageSnapshot={dailyWageSnapshot}
+                  workerCategoryLabel={categoryLabel}
                 />
               </section>
             ))
