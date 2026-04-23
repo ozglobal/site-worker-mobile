@@ -116,9 +116,17 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot }: MonthC
             className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-slate-100' : ''}`}
           >
             <span className="w-20 shrink-0 text-sm font-semibold text-slate-900">{label}</span>
-            <span className={`flex-1 text-sm font-medium ${badgeColor(doc.signingStage)}`}>
-              {badgeText(doc.signingStage)}
-            </span>
+            <div className="flex-1">
+              {doc.signingStage === 'SENT' ? (
+                <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600">
+                  {badgeText(doc.signingStage)}
+                </span>
+              ) : (
+                <span className={`text-sm font-medium ${badgeColor(doc.signingStage)}`}>
+                  {badgeText(doc.signingStage)}
+                </span>
+              )}
+            </div>
             {canAct && (
               loading ? (
                 <Spinner size="sm" />
