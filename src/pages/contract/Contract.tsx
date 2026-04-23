@@ -115,7 +115,7 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
                 <button
                   type="button"
                   onClick={() => onAction(doc)}
-                  className="shrink-0 text-sm font-medium text-slate-500 hover:text-slate-700"
+                  className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   열람
                 </button>
