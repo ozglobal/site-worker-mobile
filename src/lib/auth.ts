@@ -344,6 +344,9 @@ export const setWorkerInfo = (workerInfo: Record<string, unknown>) => {
   const rawUserId = workerInfo.userId ?? workerInfo.sysUserId
   if (rawUserId != null) {
     info.userId = String(rawUserId)
+  } else if (inMemoryWorkerInfo?.userId) {
+    // Preserve userId extracted from JWT if the API response doesn't include it
+    info.userId = inMemoryWorkerInfo.userId
   }
   if (workerInfo.relatedSiteId) {
     info.relatedSiteId = String(workerInfo.relatedSiteId)
