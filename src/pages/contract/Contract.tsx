@@ -77,7 +77,7 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
     >
       {(headerLine || siteName) && (
         <div className="border-b border-slate-100 bg-black/[0.03] px-4 py-4">
-          {headerLine && <p className="text-base font-bold text-slate-900">{headerLine}</p>}
+          {headerLine && <p className="text-sm font-bold text-slate-900">{headerLine}</p>}
           {siteName && <p className="mt-0.5 text-sm text-slate-500">{siteName}</p>}
         </div>
       )}
