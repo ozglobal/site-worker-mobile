@@ -76,7 +76,7 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
       }`}
     >
       {(headerLine || siteName) && (
-        <div className="border-b border-slate-100 px-4 py-4">
+        <div className="border-b border-slate-100 bg-black/[0.03] px-4 py-4">
           {headerLine && <p className="text-base font-bold text-slate-900">{headerLine}</p>}
           {siteName && <p className="mt-0.5 text-sm text-slate-500">{siteName}</p>}
         </div>
@@ -92,7 +92,7 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
         return (
           <div
             key={doc.id}
-            className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-slate-100' : 'bg-black/[0.03]'}`}
+            className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-slate-100' : ''}`}
           >
             <span className="w-20 shrink-0 text-sm font-semibold text-slate-900">{label}</span>
             <div className="flex-1">
