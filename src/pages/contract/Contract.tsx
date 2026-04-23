@@ -4,94 +4,138 @@ import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { Spinner } from "@/components/ui/spinner"
 import { useContracts } from "@/lib/queries/useContracts"
-import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type SigningStage } from "@/lib/contract"
+import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type MonthGroup, type SigningStage } from "@/lib/contract"
 import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
-import { ChevronRight as ChevronRightIcon, ChevronDown as ExpandMoreIcon } from "lucide-react"
+import { ChevronDown as ExpandMoreIcon } from "lucide-react"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { useAuth } from "@/contexts/AuthContext"
 
-// ── Badge ─────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────
 
-interface BadgeConfig {
-  label: string
-  className: string
+function formatMonth(yyyyMM: string): string {
+  const [, m] = yyyyMM.split('-')
+  return `${Number(m)}월`
 }
 
-function stageBadge(stage: SigningStage): BadgeConfig {
+function formatWage(wage: number | null | undefined): string {
+  if (!wage) return ''
+  return wage.toLocaleString('ko-KR') + '원'
+}
+
+function workerTypeLabel(type: string | null | undefined): string {
+  if (!type) return ''
+  if (type === 'SERVICE' || type === '용역') return '용역'
+  if (type === 'DAILY' || type === '일반') return '일반'
+  return type
+}
+
+function badgeText(stage: SigningStage): string {
   switch (stage) {
-    case 'COMPLETED':
-      return { label: '처리 완료', className: 'bg-green-50 text-green-600 border-green-200' }
-    case 'AWAITING_WORKER':
-      return { label: '서명 필요', className: 'bg-red-50 text-red-500 border-red-200' }
-    case 'AWAITING_MANAGER':
-      return { label: '관리자 서명 대기', className: 'bg-blue-50 text-blue-600 border-blue-200' }
-    case 'SENT':
-      return { label: '승인 대기', className: 'bg-blue-50 text-blue-600 border-blue-200' }
-    case 'DRAFT':
-      return { label: '미발송', className: 'bg-slate-50 text-slate-500 border-slate-200' }
-    case 'REJECTED':
-      return { label: '반려', className: 'bg-orange-50 text-orange-500 border-orange-200' }
-    case 'CANCELLED':
-      return { label: '취소', className: 'bg-slate-50 text-slate-400 border-slate-200' }
-    case 'EXPIRED':
-      return { label: '만료', className: 'bg-slate-50 text-slate-400 border-slate-200' }
-    default:
-      return { label: stage, className: 'bg-slate-50 text-slate-500 border-slate-200' }
+    case 'AWAITING_WORKER':  return '서명 필요'
+    case 'AWAITING_MANAGER': return '관리자 승인 대기'
+    case 'COMPLETED':        return '완료'
+    case 'SENT':             return '승인 대기'
+    case 'DRAFT':            return '미발송'
+    case 'REJECTED':         return '반려'
+    case 'CANCELLED':        return '취소'
+    case 'EXPIRED':          return '만료'
+    default:                 return stage
   }
 }
 
-// ── Document Row ──────────────────────────────────────────
-
-interface DocRowProps {
-  doc: EfsDocument
-  label: string
-  onAction: (doc: EfsDocument) => void
-  loading: boolean
+function badgeColor(stage: SigningStage): string {
+  switch (stage) {
+    case 'AWAITING_WORKER':  return 'text-red-500'
+    case 'AWAITING_MANAGER': return 'text-orange-500'
+    case 'COMPLETED':        return 'text-green-600'
+    case 'SENT':             return 'text-blue-600'
+    case 'REJECTED':         return 'text-orange-500'
+    default:                 return 'text-slate-400'
+  }
 }
 
-function DocRow({ doc, label, onAction, loading }: DocRowProps) {
-  const badge = stageBadge(doc.signingStage)
-  const canAct = doc.signingStage === 'AWAITING_WORKER' || doc.signingStage === 'COMPLETED' || doc.signingStage === 'SENT'
-  const isUrgent = doc.signingStage === 'AWAITING_WORKER'
-  const actionLabel = doc.signingStage === 'AWAITING_WORKER' ? '서명하기' : '보기'
+// ── Month Card ────────────────────────────────────────────
+
+interface MonthCardProps {
+  group: MonthGroup
+  actionLoading: string | null
+  onAction: (doc: EfsDocument) => void
+}
+
+function MonthCard({ group, actionLoading, onAction }: MonthCardProps) {
+  const allDocs: { doc: EfsDocument; label: string }[] = []
+  if (group.contract)   allDocs.push({ doc: group.contract,   label: '근로계약서' })
+  if (group.delegation) allDocs.push({ doc: group.delegation, label: '노무비위임장' })
+  group.extras.forEach((doc) => allDocs.push({ doc, label: doc.title }))
+
+  const needsSign = allDocs.some((d) => d.doc.signingStage === 'AWAITING_WORKER')
+
+  // header info — prefer contract doc fields, fall back to delegation
+  const ref = group.contract ?? group.delegation ?? group.extras[0]
+  const wType = workerTypeLabel(ref?.workerType)
+  const wage  = formatWage(ref?.dailyWage)
+  const site  = ref?.siteName ?? ''
+  const showHeader = wType || wage || site
 
   return (
     <div
-      className={`flex items-center justify-between rounded-xl border bg-white p-4 shadow-sm ${
-        isUrgent ? 'border-red-300 ring-2 ring-red-200' : 'border-slate-200'
+      className={`overflow-hidden rounded-2xl bg-white shadow-sm ${
+        needsSign ? 'border-2 border-red-400' : 'border border-slate-200'
       }`}
     >
-      <div className="flex flex-col items-start gap-1.5 min-w-0 flex-1">
-        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${badge.className}`}>
-          {badge.label}
-        </span>
-        <span className="text-sm font-semibold text-slate-900">{label}</span>
-      </div>
-      {canAct && (
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => onAction(doc)}
-          className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700 disabled:opacity-50"
-        >
-          {loading ? <Spinner size="sm" /> : (
-            <>
-              {actionLabel}
-              <ChevronRightIcon className="h-4 w-4" />
-            </>
+      {showHeader && (
+        <div className="border-b border-slate-100 px-4 py-4">
+          {(wType || wage) && (
+            <p className="text-base font-bold text-slate-900">
+              {[wType, wage].filter(Boolean).join(' · ')}
+            </p>
           )}
-        </button>
+          {site && <p className="mt-0.5 text-sm text-slate-500">{site}</p>}
+        </div>
       )}
+
+      {allDocs.map(({ doc, label }, i) => {
+        const canAct = doc.signingStage === 'AWAITING_WORKER'
+          || doc.signingStage === 'COMPLETED'
+          || doc.signingStage === 'SENT'
+        const loading = actionLoading === doc.id
+
+        return (
+          <div
+            key={doc.id}
+            className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-slate-100' : ''}`}
+          >
+            <span className="w-20 shrink-0 text-sm font-medium text-slate-900">{label}</span>
+            <span className={`flex-1 text-sm font-medium ${badgeColor(doc.signingStage)}`}>
+              {badgeText(doc.signingStage)}
+            </span>
+            {canAct && (
+              loading ? (
+                <Spinner size="sm" />
+              ) : doc.signingStage === 'AWAITING_WORKER' ? (
+                <button
+                  type="button"
+                  onClick={() => onAction(doc)}
+                  className="shrink-0 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white active:opacity-80"
+                >
+                  서명하기
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onAction(doc)}
+                  className="shrink-0 text-sm text-slate-500 hover:text-slate-700"
+                >
+                  열람
+                </button>
+              )
+            )}
+          </div>
+        )
+      })}
     </div>
   )
-}
-
-// ── Month Section ─────────────────────────────────────────
-
-function formatMonth(yyyyMM: string): string {
-  const [y, m] = yyyyMM.split('-')
-  return `${y}년 ${Number(m)}월`
 }
 
 // ── Page ──────────────────────────────────────────────────
@@ -110,14 +154,14 @@ export function ContractPage() {
 
   const { data: groups = [], isLoading, isError, refetch } = useContracts(userId, year)
 
-  const hasUnsigned = groups.some((g) => g.contract?.signingStage === 'AWAITING_WORKER')
+  const hasUnsigned = groups.some((g) =>
+    [g.contract, g.delegation, ...g.extras].some((d) => d?.signingStage === 'AWAITING_WORKER')
+  )
 
   const handleAction = useCallback(async (doc: EfsDocument) => {
     if (actionLoading) return
     setActionLoading(doc.id)
 
-    // Open the window synchronously inside the user gesture so mobile browsers
-    // don't block it as a popup. We navigate it to the real URL after the fetch.
     const win = window.open('about:blank', '_blank')
 
     try {
@@ -129,7 +173,7 @@ export function ContractPage() {
           win?.close()
           showError(!result.success ? result.error : '서명 링크를 가져올 수 없습니다.')
         }
-      } else if (doc.signingStage === 'COMPLETED' || doc.signingStage === 'SENT') {
+      } else {
         const result = await fetchDocumentPdf(doc.id)
         if (result.success && result.data) {
           if (win) win.location.href = result.data
@@ -138,8 +182,6 @@ export function ContractPage() {
           win?.close()
           showError(!result.success ? result.error : 'PDF를 열 수 없습니다.')
         }
-      } else {
-        win?.close()
       }
     } finally {
       setActionLoading(null)
@@ -153,7 +195,6 @@ export function ContractPage() {
       <AppHeader showLeftAction={false} title="계약서" showRightAction={true} className="shrink-0" />
 
       <main className="flex-1 overflow-y-auto">
-        {/* Unsigned alert */}
         {!isLoading && !isError && hasUnsigned && (
           <div className="px-4 pt-4">
             <AlertBanner
@@ -167,7 +208,7 @@ export function ContractPage() {
         <div className="relative px-4 pt-4 pb-2">
           <button
             onClick={() => setYearOpen(!yearOpen)}
-            className="flex items-center gap-1 text-lg font-bold text-slate-900"
+            className="flex items-center gap-1 text-xl font-bold text-slate-900"
           >
             {year}년
             <ExpandMoreIcon className="h-5 w-5 text-slate-500" />
@@ -190,11 +231,9 @@ export function ContractPage() {
         </div>
 
         {/* Content */}
-        <div className="px-4 py-2 space-y-6 pb-8">
+        <div className="px-4 pb-8 space-y-6">
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Spinner />
-            </div>
+            <div className="flex justify-center py-12"><Spinner /></div>
           ) : isError ? (
             <QueryErrorState onRetry={() => refetch()} message="계약서를 불러오지 못했습니다." />
           ) : !userId ? (
@@ -205,36 +244,11 @@ export function ContractPage() {
             groups.map((g) => (
               <section key={g.month} className="space-y-2">
                 <h3 className="text-sm font-semibold text-slate-500">{formatMonth(g.month)}</h3>
-
-                {g.contract ? (
-                  <DocRow
-                    doc={g.contract}
-                    label="근로계약서"
-                    onAction={handleAction}
-                    loading={actionLoading === g.contract.id}
-                  />
-                ) : g.delegation ? (
-                  <p className="rounded-xl border bg-white px-4 py-3 text-sm text-slate-400">계약서 없음</p>
-                ) : null}
-
-                {g.delegation && (
-                  <DocRow
-                    doc={g.delegation}
-                    label="노무비위임장"
-                    onAction={handleAction}
-                    loading={actionLoading === g.delegation.id}
-                  />
-                )}
-
-                {g.extras.map((doc) => (
-                  <DocRow
-                    key={doc.id}
-                    doc={doc}
-                    label={doc.title}
-                    onAction={handleAction}
-                    loading={actionLoading === doc.id}
-                  />
-                ))}
+                <MonthCard
+                  group={g}
+                  actionLoading={actionLoading}
+                  onAction={handleAction}
+                />
               </section>
             ))
           )}

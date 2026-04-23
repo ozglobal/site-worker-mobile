@@ -30,6 +30,10 @@ export interface EfsDocument {
   statusUpdatedAt: string | null
   completedAt: string | null
   createTime: string
+  // contract-level context fields (may be present on list response)
+  workerType?: string | null
+  dailyWage?: number | null
+  siteName?: string | null
 }
 
 export interface MonthGroup {
