@@ -4,6 +4,7 @@ import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { Spinner } from "@/components/ui/spinner"
 import { useContracts } from "@/lib/queries/useContracts"
+import { useHomeData } from "@/lib/queries/useHomeData"
 import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type MonthGroup, type SigningStage } from "@/lib/contract"
 import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
@@ -61,9 +62,10 @@ interface MonthCardProps {
   group: MonthGroup
   actionLoading: string | null
   onAction: (doc: EfsDocument) => void
+  dailyWageSnapshot?: number | null
 }
 
-function MonthCard({ group, actionLoading, onAction }: MonthCardProps) {
+function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot }: MonthCardProps) {
   const allDocs: { doc: EfsDocument; label: string }[] = []
   if (group.contract)   allDocs.push({ doc: group.contract,   label: '근로계약서' })
   if (group.delegation) allDocs.push({ doc: group.delegation, label: '노무비위임장' })
@@ -84,6 +86,13 @@ function MonthCard({ group, actionLoading, onAction }: MonthCardProps) {
         needsSign ? 'border-2 border-red-400' : 'border border-slate-200'
       }`}
     >
+      {dailyWageSnapshot != null && (
+        <div className="border-b border-slate-100 px-4 py-3">
+          <p className="text-sm font-bold text-slate-900">
+            {dailyWageSnapshot.toLocaleString('ko-KR')}원
+          </p>
+        </div>
+      )}
       {showHeader && (
         <div className="border-b border-slate-100 px-4 py-4">
           {(wType || wage) && (
@@ -125,7 +134,7 @@ function MonthCard({ group, actionLoading, onAction }: MonthCardProps) {
                 <button
                   type="button"
                   onClick={() => onAction(doc)}
-                  className="shrink-0 text-sm text-slate-500 hover:text-slate-700"
+                  className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   열람
                 </button>
@@ -153,6 +162,8 @@ export function ContractPage() {
   const handleNavigation = useBottomNavHandler()
 
   const { data: groups = [], isLoading, isError, refetch } = useContracts(userId, year)
+  const { data: homeData } = useHomeData()
+  const dailyWageSnapshot = homeData?.todayAttendance.find((a) => a.dailyWageSnapshot != null)?.dailyWageSnapshot ?? null
 
   const hasUnsigned = groups.some((g) =>
     [g.contract, g.delegation, ...g.extras].some((d) => d?.signingStage === 'AWAITING_WORKER')
@@ -248,6 +259,7 @@ export function ContractPage() {
                   group={g}
                   actionLoading={actionLoading}
                   onAction={handleAction}
+                  dailyWageSnapshot={dailyWageSnapshot}
                 />
               </section>
             ))
