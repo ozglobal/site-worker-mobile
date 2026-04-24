@@ -140,21 +140,19 @@ export function ListPage() {
   const attendanceDays = data?.totalWorkDays || 0
   const totalWorkEffort = data?.totalEffort || 0
 
-  // Site dropdown options come from today's attendance (daily API),
-  // not the monthly records.
+  // Site dropdown options — union of today's attendance and all sites seen
+  // in monthly records so the dropdown is populated even on historical months.
   const { data: today } = useTodayAttendance()
   const siteOptions = useMemo(() => {
     const seen = new Map<string, { value: string; label: string; color: string }>()
-    ;(today?.attendances || []).forEach((a) => {
-      if (!a.siteId || seen.has(a.siteId)) return
-      seen.set(a.siteId, {
-        value: a.siteId,
-        label: a.siteName || "",
-        color: getSiteColor(a.siteId, sites),
-      })
-    })
+    const add = (siteId: string, siteName: string) => {
+      if (!siteId || seen.has(siteId)) return
+      seen.set(siteId, { value: siteId, label: siteName, color: getSiteColor(siteId, sites) })
+    }
+    ;(today?.attendances || []).forEach((a) => add(a.siteId, a.siteName || ""))
+    records.forEach((r) => add(r.siteId, r.siteName))
     return Array.from(seen.values())
-  }, [today, sites])
+  }, [today, records, sites])
 
   // Filter records by selected site
   const filteredRecords = useMemo(() => {
