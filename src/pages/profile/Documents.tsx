@@ -337,7 +337,7 @@ export function ProfileDocumentsPage() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,.pdf"
+        accept="image/*"
         className="hidden"
         onChange={handleFileChange}
       />
