@@ -12,7 +12,7 @@ import { fetchTodayAttendance, submitCorrectionRequest, type DailyAttendanceSite
 import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
 import { Spinner } from "@/components/ui/spinner"
-import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
+import { AttendanceRecordCard, type AttendanceEntryDetail } from "@/components/ui/attendance-record-card"
 
 
 function formatTime(t: string | null | undefined): string {
@@ -143,23 +143,36 @@ export function DailyDetailPage() {
             {attendances.length > 0 ? (
               attendances.map((site) =>
                 site.entries.length > 0 ? (
-                  site.entries.map((entry) => (
-                    <AttendanceRecordCard
-                      key={entry.entryId}
-                      siteName={site.siteName}
-                      timeRange={`${formatTime(site.checkInTime)}${site.checkOutTime ? ` - ${formatTime(site.checkOutTime)}` : ""}`}
-                      recordType={entry.categoryLabel}
-                      workEffort={entry.effort}
-                      dailyWageSnapshot={entry.dailyWageSnapshot}
-                      expectedWage={entry.expectedWage}
-                      statusBadge={site.checkOutTime ? "퇴근 완료" : "근무중"}
-                      statusVariant={site.checkOutTime ? "default" : "active"}
-                      showCorrection={isToday}
-                      correctionDisabled={!entry.canRequestCorrection}
-                      onCorrectionClick={() => openCorrectionDialog(site, entry)}
-                      className="shadow-sm border border-slate-100 p-5"
-                    />
-                  ))
+                  (() => {
+                    const [firstEntry, ...restEntries] = site.entries
+                    const additionalEntries: AttendanceEntryDetail[] = restEntries.map((e) => ({
+                      recordType: e.categoryLabel,
+                      workEffort: e.effort,
+                      dailyWageSnapshot: e.dailyWageSnapshot,
+                      expectedWage: e.expectedWage,
+                      showCorrection: isToday,
+                      correctionDisabled: !e.canRequestCorrection,
+                      onCorrectionClick: () => openCorrectionDialog(site, e),
+                    }))
+                    return (
+                      <AttendanceRecordCard
+                        key={firstEntry.entryId}
+                        siteName={site.siteName}
+                        timeRange={`${formatTime(site.checkInTime)}${site.checkOutTime ? ` - ${formatTime(site.checkOutTime)}` : ""}`}
+                        recordType={firstEntry.categoryLabel}
+                        workEffort={firstEntry.effort}
+                        dailyWageSnapshot={firstEntry.dailyWageSnapshot}
+                        expectedWage={firstEntry.expectedWage}
+                        statusBadge={site.checkOutTime ? "퇴근 완료" : "근무중"}
+                        statusVariant={site.checkOutTime ? "default" : "active"}
+                        showCorrection={isToday}
+                        correctionDisabled={!firstEntry.canRequestCorrection}
+                        onCorrectionClick={() => openCorrectionDialog(site, firstEntry)}
+                        additionalEntries={additionalEntries.length > 0 ? additionalEntries : undefined}
+                        className="shadow-sm border border-slate-100 p-5"
+                      />
+                    )
+                  })()
                 ) : (
                   // Site checked in but no entries yet
                   <div key={site.attendanceId} className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 space-y-2">
