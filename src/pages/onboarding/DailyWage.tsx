@@ -140,6 +140,7 @@ export function OnboardingDailyWagePage() {
               size="full"
               onClick={() => {
                 setShowDone(false)
+                sessionStorage.setItem("onboarding_exit_allowed", "1")
                 navigate("/home")
               }}
             >

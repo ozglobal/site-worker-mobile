@@ -1,6 +1,7 @@
 // App.tsx
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { OnboardingGuard } from './components/layout/OnboardingGuard';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -102,16 +103,18 @@ const AppRoutes: React.FC = () => {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
-        <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/onboarding/worker-type" element={<WorkerTypePage mode="onboarding" />} />
-        <Route path="/onboarding/my-account" element={<MyAccountPage mode="onboarding" />} />
-        <Route path="/onboarding/outsourcing" element={<OnboardingOutsourcingPage />} />
-        <Route path="/onboarding/engineer" element={<OnboardingEngineerPage />} />
-        <Route path="/onboarding/family-account" element={<FamilyAccountPage mode="onboarding" />} />
-        <Route path="/onboarding/documents" element={<OnboardingDocumentsPage />} />
-        <Route path="/onboarding/company-account" element={<OnboardingCompanyAccountPage />} />
-        <Route path="/onboarding/payroll-account" element={<PayrollAccountPage />} />
-        <Route path="/onboarding/daily-wage" element={<OnboardingDailyWagePage />} />
+        <Route element={<OnboardingGuard />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/onboarding/worker-type" element={<WorkerTypePage mode="onboarding" />} />
+          <Route path="/onboarding/my-account" element={<MyAccountPage mode="onboarding" />} />
+          <Route path="/onboarding/outsourcing" element={<OnboardingOutsourcingPage />} />
+          <Route path="/onboarding/engineer" element={<OnboardingEngineerPage />} />
+          <Route path="/onboarding/family-account" element={<FamilyAccountPage mode="onboarding" />} />
+          <Route path="/onboarding/documents" element={<OnboardingDocumentsPage />} />
+          <Route path="/onboarding/company-account" element={<OnboardingCompanyAccountPage />} />
+          <Route path="/onboarding/payroll-account" element={<PayrollAccountPage />} />
+          <Route path="/onboarding/daily-wage" element={<OnboardingDailyWagePage />} />
+        </Route>
         <Route path="/profile/my-account" element={<MyAccountPage />} />
         <Route path="/profile/family-account" element={<FamilyAccountPage />} />
         <Route path="/profile/outsourcing" element={<OutsourcingPage />} />
