@@ -307,6 +307,7 @@ export function ListPage() {
                     showCorrection={isGroupToday}
                     correctionDisabled={!correctableTodaySiteIds.has(record.siteId)}
                     onCorrectionClick={() => openCorrectionDialog(record, dailyEntry?.checkInTime, dailyEntry?.checkOutTime)}
+                    showSiteInfo={index === 0}
                     className="shadow-sm border border-slate-100 p-5"
                   />
                   )

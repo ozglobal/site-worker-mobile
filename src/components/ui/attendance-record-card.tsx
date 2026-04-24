@@ -14,6 +14,8 @@ interface AttendanceRecordCardProps {
   /** Render 정정 요청 as dimmed / non-clickable (e.g. a PENDING request already exists). */
   correctionDisabled?: boolean
   onCorrectionClick?: () => void
+  /** Hide badge, site name and time (use false for 2nd+ record on same day) */
+  showSiteInfo?: boolean
   className?: string
 }
 
@@ -29,11 +31,12 @@ export function AttendanceRecordCard({
   showCorrection,
   correctionDisabled,
   onCorrectionClick,
+  showSiteInfo = true,
   className,
 }: AttendanceRecordCardProps) {
   return (
     <div className={cn("bg-white rounded-xl p-4 shadow-sm space-y-3", className)}>
-      {statusBadge && (
+      {showSiteInfo && statusBadge && (
         <span
           className={cn(
             "inline-block text-xs font-medium px-2.5 py-1 rounded",
@@ -46,10 +49,12 @@ export function AttendanceRecordCard({
         </span>
       )}
 
-      <div>
-        <h3 className="text-base font-bold text-slate-900">{siteName}</h3>
-        <p className="text-sm text-slate-500 mt-1">{timeRange}</p>
-      </div>
+      {showSiteInfo && (
+        <div>
+          <h3 className="text-base font-bold text-slate-900">{siteName}</h3>
+          <p className="text-sm text-slate-500 mt-1">{timeRange}</p>
+        </div>
+      )}
 
       <div className="rounded-lg overflow-hidden bg-slate-50">
         <div className="px-4 py-2.5 flex items-center justify-between">
