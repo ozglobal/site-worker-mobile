@@ -50,19 +50,21 @@ export function OnboardingProtection() {
 
   // 2. Onboarding redirect: authenticated user with incomplete onboarding
   //    lands on any non-onboarding, non-public page.
+  //    Uses !== true so that null (unknown/not returned) is treated as incomplete.
   useEffect(() => {
     const isOnboarding = location.pathname.startsWith("/onboarding")
     const isAllowed = sessionStorage.getItem("onboarding_exit_allowed") === "1"
 
     if (
+      worker !== null &&
       !isOnboarding &&
       !isPublic(location.pathname) &&
       !isAllowed &&
-      worker?.onboardingCompleted === false
+      worker.onboardingCompleted !== true
     ) {
       navigate("/onboarding/worker-type", { replace: true })
     }
-  }, [location.pathname, worker?.onboardingCompleted, navigate])
+  }, [location.pathname, worker, navigate])
 
   const handleStay = () => {
     setShowDialog(false)
