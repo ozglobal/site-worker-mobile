@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { useLocation, useNavigate, useNavigationType } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -13,40 +13,45 @@ function isPublic(path: string) {
  * Always-mounted component (lives in AppRoutes above <Routes>).
  *
  * Two responsibilities:
- * 1. Back-button guard — detects POP navigations leaving /onboarding/*,
- *    navigates back, and shows an exit confirmation dialog.
- * 2. Onboarding redirect — if the backend reports onboardingCompleted===false
+ * 1. Back-button guard — injects a sentinel history entry while the user is on
+ *    any /onboarding/* page and intercepts the raw popstate event so that the
+ *    device back button, browser back button, and navigate(-1) all show the
+ *    exit confirmation dialog instead of leaving the flow.
+ * 2. Onboarding redirect — if the backend reports onboardingCompleted !== true
  *    and the user somehow lands on a non-onboarding, non-public page (e.g.
  *    /home), redirect them to /onboarding/worker-type.
  */
 export function OnboardingProtection() {
   const location = useLocation()
-  const navigationType = useNavigationType()
   const navigate = useNavigate()
   const { worker, logout } = useAuth()
   const [showDialog, setShowDialog] = useState(false)
+  const exitingRef = useRef(false)
 
-  const lastOnboardingPath = useRef<string | null>(null)
-
-  // Track the last visited onboarding path
+  // 1. Back-button guard: inject a sentinel history entry on every onboarding
+  //    page so that any back gesture pops to the same URL, keeping React Router
+  //    in sync while our popstate handler intercepts the event.
   useEffect(() => {
-    if (location.pathname.startsWith("/onboarding")) {
-      lastOnboardingPath.current = location.pathname
-    }
-  }, [location.pathname])
-
-  // 1. Back-button guard: POP navigation that leaves /onboarding/*
-  useEffect(() => {
-    const wasInOnboarding = lastOnboardingPath.current !== null
-    const nowOutside = !location.pathname.startsWith("/onboarding")
-    const isPop = navigationType === "POP"
+    const isOnboarding = location.pathname.startsWith("/onboarding")
     const isAllowed = sessionStorage.getItem("onboarding_exit_allowed") === "1"
+    if (!isOnboarding || isAllowed) return
 
-    if (wasInOnboarding && nowOutside && isPop && !isAllowed) {
-      navigate(lastOnboardingPath.current!, { replace: true })
+    // Sentinel entry at the same URL — back button pops it without changing
+    // the visible URL, so React Router doesn't navigate away.
+    window.history.pushState({ onboardingGuard: true }, document.title)
+
+    const handlePopState = () => {
+      if (exitingRef.current) return
+      const stillAllowed = sessionStorage.getItem("onboarding_exit_allowed") === "1"
+      if (stillAllowed) return
+      // Re-push sentinel so consecutive back presses are also caught.
+      window.history.pushState({ onboardingGuard: true }, document.title)
       setShowDialog(true)
     }
-  }, [location.pathname, navigationType, navigate])
+
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
+  }, [location.pathname])
 
   // 2. Onboarding redirect: authenticated user with incomplete onboarding
   //    lands on any non-onboarding, non-public page.
@@ -66,13 +71,11 @@ export function OnboardingProtection() {
     }
   }, [location.pathname, worker, navigate])
 
-  const handleStay = () => {
-    setShowDialog(false)
-  }
+  const handleStay = () => setShowDialog(false)
 
   const handleExit = () => {
     setShowDialog(false)
-    lastOnboardingPath.current = null
+    exitingRef.current = true
     logout()
     navigate("/login", { replace: true })
   }
