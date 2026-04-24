@@ -19,7 +19,6 @@ export function LoginPage() {
   const { login } = useAuth()
   const { honeypotProps, isBotDetected } = useHoneypot()
   const [autoLogin, setAutoLogin] = useState(() => autoLoginStorage.isEnabled())
-  const [isFirstLogin, setIsFirstLogin] = useState(false)
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
@@ -69,7 +68,7 @@ export function LoginPage() {
       const isPassportUser = info.idType === 'passport'
       const needsOnboarding =
         !isPassportUser &&
-        (isFirstLogin || (info.onboardingCompleted === false && !info.workerCategory))
+        (info.onboardingCompleted === false && !info.workerCategory)
       if (needsOnboarding) {
         sessionStorage.setItem('postLoginFirstLogin', '1')
         navigate('/onboarding')
@@ -145,15 +144,6 @@ export function LoginPage() {
             }}
           />
           <span className="text-sm text-slate-500">자동 로그인</span>
-        </label>
-
-        {/* First Login Checkbox */}
-        <label className="flex items-center gap-2 mt-1 cursor-pointer">
-          <Checkbox
-            checked={isFirstLogin}
-            onCheckedChange={(checked) => setIsFirstLogin(checked === true)}
-          />
-          <span className="text-sm text-slate-500">첫 로그인</span>
         </label>
 
         {/* Honeypot */}
