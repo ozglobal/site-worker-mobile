@@ -1,21 +1,24 @@
 import { useState, useMemo, useCallback } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
-import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
-import { formatTimestamp } from "@/utils/format"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/ui/correction-dialog"
-import { submitCorrectionRequest } from "@/lib/attendance"
+import { fetchTodayAttendance, submitCorrectionRequest, type DailyAttendanceSite, type DailyAttendanceEntry } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
 import { Spinner } from "@/components/ui/spinner"
 import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
+
+
+function formatTime(t: string | null | undefined): string {
+  if (!t) return ""
+  return new Date(t).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })
+}
 
 export function DailyDetailPage() {
   const navigate = useNavigate()
@@ -23,28 +26,41 @@ export function DailyDetailPage() {
   const { showSuccess, showError } = useToast()
   const { date } = useParams<{ date: string }>()
 
+  const { data, isLoading } = useQuery({
+    queryKey: ["todayAttendance", date],
+    queryFn: async () => {
+      const result = await fetchTodayAttendance(date!)
+      if (!result.success) throw new Error(result.error)
+      return result.data
+    },
+    enabled: !!date,
+    staleTime: 30_000,
+  })
+
   // Correction dialog state
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
+  const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
+  const [correctionEntryId, setCorrectionEntryId] = useState<string | null>(null)
   const [correctionSiteName, setCorrectionSiteName] = useState("")
   const [correctionTimeRange, setCorrectionTimeRange] = useState("")
   const [correctionWorkEffort, setCorrectionWorkEffort] = useState("")
   const [correctionDailyWage, setCorrectionDailyWage] = useState("")
-  const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
 
-  const openCorrectionDialog = (record: { id: string; siteName: string; checkInTime: number; checkOutTime?: number; workEffort?: number; dailyWageSnapshot?: number }) => {
-    setCorrectionSiteName(record.siteName)
-    setCorrectionTimeRange(`${formatTimestamp(record.checkInTime)} - ${formatTimestamp(record.checkOutTime)}`)
-    setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "")
-    setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "")
-    setCorrectionAttendanceId(record.id)
+  const openCorrectionDialog = (site: DailyAttendanceSite, entry: DailyAttendanceEntry) => {
+    setCorrectionSiteName(site.siteName)
+    setCorrectionTimeRange(`${formatTime(site.checkInTime)} - ${formatTime(site.checkOutTime)}`)
+    setCorrectionWorkEffort(entry.effort != null ? String(entry.effort) : "")
+    setCorrectionDailyWage(entry.dailyWageSnapshot != null ? entry.dailyWageSnapshot.toLocaleString("ko-KR") : "")
+    setCorrectionAttendanceId(site.attendanceId)
+    setCorrectionEntryId(entry.entryId)
     setShowCorrectionDialog(true)
   }
 
   const handleCorrectionSubmit = async (data: CorrectionDialogSubmitData) => {
-    if (!correctionAttendanceId) return
+    if (!correctionAttendanceId || !correctionEntryId) return
     const result = await submitCorrectionRequest({
       attendanceId: correctionAttendanceId,
-      workEntryId: correctionAttendanceId,
+      workEntryId: correctionEntryId,
       requestType: data.requestType,
       requestedValue: data.requestedValue,
       requestedEffort: data.requestedEffort,
@@ -60,18 +76,8 @@ export function DailyDetailPage() {
     if (date) queryClient.invalidateQueries({ queryKey: ["todayAttendance", date] })
     setShowCorrectionDialog(false)
     setCorrectionAttendanceId(null)
+    setCorrectionEntryId(null)
   }
-
-  const [yearStr, monthStr] = (date || "").split("-")
-  const year = parseInt(yearStr, 10)
-  const month = parseInt(monthStr, 10)
-
-  const { data, isLoading } = useMonthlyAttendance(year, month)
-
-  const records = useMemo(() => {
-    if (!data) return []
-    return data.records.filter((r) => r.effectiveDate === date)
-  }, [data, date])
 
   const today = useMemo(() => {
     const d = new Date()
@@ -84,20 +90,8 @@ export function DailyDetailPage() {
   const isToday = date === today
   const nextDisabled = !date || date >= today
 
-  // Site ids that STILL accept correction requests today. Backend flips
-  // canRequestCorrection to false once a PENDING request exists.
-  const { data: todayDaily } = useTodayAttendance()
-  const correctableTodaySiteIds = useMemo(() => {
-    const ids = new Set<string>()
-    ;(todayDaily?.attendances || []).forEach((a) => {
-      if (a.siteId && a.canRequestCorrection) ids.add(a.siteId)
-    })
-    return ids
-  }, [todayDaily])
-
   const handleNavigation = useBottomNavHandler()
 
-  // Format date for display: "2025년 12월 24일"
   const displayDate = useMemo(() => {
     if (!date) return ""
     const [y, m, d] = date.split("-")
@@ -114,11 +108,13 @@ export function DailyDetailPage() {
     navigate(`/attendance/detail/${y}-${m}-${day}`, { replace: true })
   }, [date, navigate])
 
+  const attendances = data?.attendances ?? []
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
       <AppTopBar title="상세내역" onBack={() => navigate(-1)} className="shrink-0" />
 
-      {/* Date Picker */}
+      {/* Date navigator */}
       <div className="flex items-center justify-between px-4 h-12 bg-white shrink-0 mt-2">
         <button onClick={() => navigateDay(-1)} className="p-1">
           <ChevronLeftIcon className="h-6 w-6 text-slate-900" />
@@ -144,25 +140,35 @@ export function DailyDetailPage() {
           </div>
         ) : (
           <div className="px-4 py-4 space-y-4">
-            {/* Attendance Records */}
-            {records.length > 0 ? (
-              records.map((record) => (
-                <AttendanceRecordCard
-                  key={record.id}
-                  siteName={record.siteName}
-                  timeRange={`${formatTimestamp(record.checkInTime)} - ${record.checkOutTime ? formatTimestamp(record.checkOutTime) : ""}`}
-                  recordType={record.recordType || ""}
-                  workEffort={record.workEffort}
-                  dailyWageSnapshot={record.dailyWageSnapshot}
-                  expectedWage={record.expectedWage}
-                  statusBadge={record.hasCheckedOut ? "퇴근 완료" : "근무중"}
-                  statusVariant={record.hasCheckedOut ? "default" : "active"}
-                  showCorrection={isToday}
-                  correctionDisabled={!correctableTodaySiteIds.has(record.siteId)}
-                  onCorrectionClick={() => openCorrectionDialog(record)}
-                  className="shadow-sm border border-slate-100 p-5"
-                />
-              ))
+            {attendances.length > 0 ? (
+              attendances.map((site) =>
+                site.entries.length > 0 ? (
+                  site.entries.map((entry) => (
+                    <AttendanceRecordCard
+                      key={entry.entryId}
+                      siteName={site.siteName}
+                      timeRange={`${formatTime(site.checkInTime)}${site.checkOutTime ? ` - ${formatTime(site.checkOutTime)}` : ""}`}
+                      recordType={entry.categoryLabel}
+                      workEffort={entry.effort}
+                      dailyWageSnapshot={entry.dailyWageSnapshot}
+                      expectedWage={entry.expectedWage}
+                      statusBadge={site.checkOutTime ? "퇴근 완료" : "근무중"}
+                      statusVariant={site.checkOutTime ? "default" : "active"}
+                      showCorrection={isToday}
+                      correctionDisabled={!entry.canRequestCorrection}
+                      onCorrectionClick={() => openCorrectionDialog(site, entry)}
+                      className="shadow-sm border border-slate-100 p-5"
+                    />
+                  ))
+                ) : (
+                  // Site checked in but no entries yet
+                  <div key={site.attendanceId} className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 space-y-2">
+                    <span className="inline-block text-xs font-medium px-2.5 py-1 rounded text-green-700 bg-green-100">근무중</span>
+                    <p className="text-base font-bold text-slate-900">{site.siteName}</p>
+                    <p className="text-sm text-slate-500">{formatTime(site.checkInTime)} -</p>
+                  </div>
+                )
+              )
             ) : (
               <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-center border border-slate-200">
                 <p className="text-sm text-slate-500 text-center">해당 날짜에 출근 기록이 없습니다.</p>
@@ -180,7 +186,7 @@ export function DailyDetailPage() {
           timeRange={correctionTimeRange}
           initialWorkEffort={correctionWorkEffort}
           initialDailyWage={correctionDailyWage}
-          onClose={() => { setShowCorrectionDialog(false); setCorrectionAttendanceId(null) }}
+          onClose={() => { setShowCorrectionDialog(false); setCorrectionAttendanceId(null); setCorrectionEntryId(null) }}
           onSubmit={handleCorrectionSubmit}
         />
       )}
