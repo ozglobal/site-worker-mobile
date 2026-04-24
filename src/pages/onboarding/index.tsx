@@ -34,7 +34,10 @@ export function OnboardingPage() {
     navigate("/onboarding/worker-type")
   }
 
-  const handleStay = () => setShowDialog(false)
+  const handleStay = () => {
+    setShowDialog(false)
+    navigate("/onboarding/worker-type")
+  }
 
   const handleExit = () => {
     setShowDialog(false)
