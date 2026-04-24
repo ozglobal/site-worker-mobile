@@ -3,31 +3,39 @@ import { useLocation, useNavigate, useNavigationType } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 
+const PUBLIC_PREFIXES = ["/login", "/signup"]
+
+function isPublic(path: string) {
+  return PUBLIC_PREFIXES.some((p) => path.startsWith(p))
+}
+
 /**
  * Always-mounted component (lives in AppRoutes above <Routes>).
- * Detects POP navigations (device back button / browser back) that leave
- * the /onboarding/* zone, navigates the user back, and shows a dialog.
  *
- * Works with BrowserRouter (no data router required).
+ * Two responsibilities:
+ * 1. Back-button guard — detects POP navigations leaving /onboarding/*,
+ *    navigates back, and shows an exit confirmation dialog.
+ * 2. Onboarding redirect — if the backend reports onboardingCompleted===false
+ *    and the user somehow lands on a non-onboarding, non-public page (e.g.
+ *    /home), redirect them to /onboarding/worker-type.
  */
 export function OnboardingProtection() {
   const location = useLocation()
   const navigationType = useNavigationType()
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { worker, logout } = useAuth()
   const [showDialog, setShowDialog] = useState(false)
 
-  // Track the last onboarding path the user was on
   const lastOnboardingPath = useRef<string | null>(null)
 
-  // Keep lastOnboardingPath updated while inside the onboarding zone
+  // Track the last visited onboarding path
   useEffect(() => {
     if (location.pathname.startsWith("/onboarding")) {
       lastOnboardingPath.current = location.pathname
     }
   }, [location.pathname])
 
-  // Detect POP navigations that leave the onboarding zone
+  // 1. Back-button guard: POP navigation that leaves /onboarding/*
   useEffect(() => {
     const wasInOnboarding = lastOnboardingPath.current !== null
     const nowOutside = !location.pathname.startsWith("/onboarding")
@@ -35,11 +43,26 @@ export function OnboardingProtection() {
     const isAllowed = sessionStorage.getItem("onboarding_exit_allowed") === "1"
 
     if (wasInOnboarding && nowOutside && isPop && !isAllowed) {
-      // Navigate back to the last onboarding page (replace so it doesn't add history)
       navigate(lastOnboardingPath.current!, { replace: true })
       setShowDialog(true)
     }
   }, [location.pathname, navigationType, navigate])
+
+  // 2. Onboarding redirect: authenticated user with incomplete onboarding
+  //    lands on any non-onboarding, non-public page.
+  useEffect(() => {
+    const isOnboarding = location.pathname.startsWith("/onboarding")
+    const isAllowed = sessionStorage.getItem("onboarding_exit_allowed") === "1"
+
+    if (
+      !isOnboarding &&
+      !isPublic(location.pathname) &&
+      !isAllowed &&
+      worker?.onboardingCompleted === false
+    ) {
+      navigate("/onboarding/worker-type", { replace: true })
+    }
+  }, [location.pathname, worker?.onboardingCompleted, navigate])
 
   const handleStay = () => {
     setShowDialog(false)
