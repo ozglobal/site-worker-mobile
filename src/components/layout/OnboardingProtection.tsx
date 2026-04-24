@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect, useRef } from "react"
+import { useState, useLayoutEffect, useEffect, useRef } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
@@ -6,12 +6,21 @@ import { useAuth } from "@/contexts/AuthContext"
 /**
  * Always-mounted component (lives in AppRoutes above <Routes>).
  *
- * Guards /onboarding (the entry page only). Pushes a sentinel history entry
- * via useLayoutEffect — which fires synchronously before paint — so the
- * popstate listener is active before any user interaction can occur, even
- * when the user arrives here via a rapid device back press from worker-type.
+ * Guards /onboarding (the entry page only). Two independent concerns:
  *
- * worker-type and daily-wage do NOT trigger the dialog; back is free there.
+ * 1. Sentinel management (useLayoutEffect, before paint):
+ *    - Push a sentinel entry at the same URL when landing on /onboarding
+ *      so back-presses pop to the same page.
+ *    - replaceState if already at a sentinel to avoid stacking multiples.
+ *
+ * 2. Persistent popstate listener (useEffect [], never removed):
+ *    - Ignores events that land ON a sentinel entry (arrived at /onboarding
+ *      via back from worker-type — free navigation).
+ *    - Intercepts events that land on the ORIGINAL /onboarding entry
+ *      (back was pressed while on /onboarding — show dialog).
+ *
+ * Result: back from worker-type → /onboarding is always free.
+ *         back while on /onboarding always shows the exit dialog.
  */
 export function OnboardingProtection() {
   const location = useLocation()
@@ -20,20 +29,34 @@ export function OnboardingProtection() {
   const [showDialog, setShowDialog] = useState(false)
   const exitingRef = useRef(false)
 
+  // 1. Ensure exactly one sentinel entry exists while on /onboarding.
+  //    Runs before paint so the sentinel is ready before any user input.
   useLayoutEffect(() => {
     if (location.pathname !== "/onboarding") return
+    if (window.history.state?.onboardingGuard) {
+      // Already at a sentinel — refresh in place, don't stack a new one.
+      window.history.replaceState({ onboardingGuard: true }, document.title)
+    } else {
+      // Original /onboarding entry — push sentinel above it.
+      window.history.pushState({ onboardingGuard: true }, document.title)
+    }
+  }, [location.pathname])
 
-    window.history.pushState({ onboardingGuard: true }, document.title)
-
+  // 2. Single permanent listener — checks live browser state, not React state.
+  useEffect(() => {
     const handlePopState = () => {
       if (exitingRef.current) return
+      if (window.location.pathname !== "/onboarding") return
+      // Arrived AT a sentinel → free navigation (back from worker-type etc.)
+      if (window.history.state?.onboardingGuard) return
+      // Arrived AT the original entry → user tried to leave /onboarding.
       window.history.pushState({ onboardingGuard: true }, document.title)
       setShowDialog(true)
     }
 
     window.addEventListener("popstate", handlePopState)
     return () => window.removeEventListener("popstate", handlePopState)
-  }, [location.pathname])
+  }, [])
 
   const handleStay = () => {
     setShowDialog(false)
