@@ -12,7 +12,7 @@ import { QueryErrorState } from "@/components/ui/query-error-state"
 import { daysToSiteLegend, groupRecordsByDate, getSiteColor } from "@/utils/attendance"
 import { formatCurrency } from "@/utils/format"
 import { formatKstTime } from "@/utils/time"
-import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
+import { AttendanceRecordCard, type AttendanceEntryDetail } from "@/components/ui/attendance-record-card"
 import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/ui/correction-dialog"
 import { submitCorrectionRequest, type WeeklyAttendanceRecord } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
@@ -285,34 +285,48 @@ export function ListPage() {
                 </h4>
               </div>
 
-              {/* Records */}
-              <div className="space-y-3">
-                {group.records.map((record, index) => {
-                  const dailyEntry = isGroupToday
-                    ? (todayDaily?.attendances || []).find((a) => a.siteId === record.siteId)
+              {/* Records — all entries for the day merged into one card */}
+              {(() => {
+                const [first, ...rest] = group.records
+                if (!first) return null
+                const firstDailyEntry = isGroupToday
+                  ? (todayDaily?.attendances || []).find((a) => a.siteId === first.siteId)
+                  : null
+                const checkIn = firstDailyEntry?.checkInTime ?? first.checkInTime
+                const checkOut = firstDailyEntry?.checkOutTime ?? first.checkOutTime
+                const additionalEntries: AttendanceEntryDetail[] = rest.map((r) => {
+                  const rEntry = isGroupToday
+                    ? (todayDaily?.attendances || []).find((a) => a.siteId === r.siteId)
                     : null
-                  const checkIn = dailyEntry?.checkInTime ?? record.checkInTime
-                  const checkOut = dailyEntry?.checkOutTime ?? record.checkOutTime
-                  return (
+                  return {
+                    recordType: r.recordType || "",
+                    workEffort: r.workEffort,
+                    dailyWageSnapshot: r.dailyWageSnapshot,
+                    expectedWage: r.expectedWage,
+                    showCorrection: isGroupToday,
+                    correctionDisabled: !correctableTodaySiteIds.has(r.siteId),
+                    onCorrectionClick: () => openCorrectionDialog(r, rEntry?.checkInTime, rEntry?.checkOutTime),
+                  }
+                })
+                return (
                   <AttendanceRecordCard
-                    key={record.id || `${group.date}-${index}`}
-                    siteName={record.siteName}
+                    key={first.id || group.date}
+                    siteName={first.siteName}
                     timeRange={`${formatKstTime(checkIn as never)} - ${formatKstTime(checkOut as never)}`}
-                    recordType={record.recordType || ""}
-                    workEffort={record.workEffort}
-                    dailyWageSnapshot={record.dailyWageSnapshot}
-                    expectedWage={record.expectedWage}
-                    statusBadge={record.hasCheckedOut ? "퇴근 완료" : "근무중"}
-                    statusVariant={record.hasCheckedOut ? "default" : "active"}
+                    recordType={first.recordType || ""}
+                    workEffort={first.workEffort}
+                    dailyWageSnapshot={first.dailyWageSnapshot}
+                    expectedWage={first.expectedWage}
+                    statusBadge={first.hasCheckedOut ? "퇴근 완료" : "근무중"}
+                    statusVariant={first.hasCheckedOut ? "default" : "active"}
                     showCorrection={isGroupToday}
-                    correctionDisabled={!correctableTodaySiteIds.has(record.siteId)}
-                    onCorrectionClick={() => openCorrectionDialog(record, dailyEntry?.checkInTime, dailyEntry?.checkOutTime)}
-                    showSiteInfo={index === 0}
+                    correctionDisabled={!correctableTodaySiteIds.has(first.siteId)}
+                    onCorrectionClick={() => openCorrectionDialog(first, firstDailyEntry?.checkInTime, firstDailyEntry?.checkOutTime)}
+                    additionalEntries={additionalEntries.length > 0 ? additionalEntries : undefined}
                     className="shadow-sm border border-slate-100 p-5"
                   />
-                  )
-                })}
-              </div>
+                )
+              })()}
             </div>
           )
         })}
