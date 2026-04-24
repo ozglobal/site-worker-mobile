@@ -60,9 +60,15 @@ export function LoginPage() {
         autoLoginStorage.disable()
         autoLoginStorage.clearCredentials()
       }
+      // Route to onboarding if the user explicitly marked this as first login,
+      // OR if the backend reports onboarding is not yet complete AND no worker
+      // category is set (a set category means the user has already started/finished
+      // onboarding, so skip the flow even if onboardingCompleted is still false).
       const info = getWorkerInfo()
       const isPassportUser = info.idType === 'passport'
-      const needsOnboarding = !isPassportUser && info.onboardingCompleted === false
+      const needsOnboarding =
+        !isPassportUser &&
+        (info.onboardingCompleted === false && !info.workerCategory)
       if (needsOnboarding) {
         sessionStorage.setItem('postLoginFirstLogin', '1')
         navigate('/onboarding')

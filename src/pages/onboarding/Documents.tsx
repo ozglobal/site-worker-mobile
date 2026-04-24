@@ -172,12 +172,10 @@ export function OnboardingDocumentsPage() {
   }
 
   const handleRegisterLater = () => {
-    sessionStorage.setItem("onboarding_exit_allowed", "1")
     navigate("/home")
   }
 
   const handleComplete = () => {
-    sessionStorage.setItem("onboarding_exit_allowed", "1")
     navigate("/home")
   }
 
