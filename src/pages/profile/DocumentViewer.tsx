@@ -19,6 +19,7 @@ import {
   fetchSafetyCertDoc,
   reuploadEquipmentLicense,
   uploadBankbookDoc,
+  uploadFamilyRelationDoc,
   uploadIdCardDoc,
   uploadPassportDoc,
   uploadSafetyCertDoc,
@@ -38,7 +39,7 @@ const LOADERS: Record<string, { title: string; load: DocLoader }> = {
 }
 
 // Slugs whose viewer page supports in-place re-upload via 사진 촬영 / 파일 선택.
-const UPLOAD_SUPPORTED = new Set(["id-card", "bankbook", "safety-cert", "equipment-license", "passport"])
+const UPLOAD_SUPPORTED = new Set(["id-card", "bankbook", "family-relation", "safety-cert", "equipment-license", "passport"])
 
 export function DocumentViewerPage() {
   const navigate = useNavigate()
@@ -131,6 +132,9 @@ export function DocumentViewerPage() {
         bankName: profile?.bankName || undefined,
         bankAccount: profile?.bankAccount || undefined,
       })
+    }
+    if (slug === "family-relation") {
+      return uploadFamilyRelationDoc(file)
     }
     if (slug === "safety-cert") {
       return uploadSafetyCertDoc(file)
