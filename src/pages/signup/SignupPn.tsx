@@ -15,6 +15,7 @@ export function SignupPnPage() {
     englishName: "",
     gender: "",
     passport: "",
+    nationality: "",
     birthdate: "",
     phone: savedPhone,
     address: "",
@@ -22,8 +23,8 @@ export function SignupPnPage() {
   const allFieldsFilled =
     formData.name.trim() !== "" &&
     formData.phone.trim() !== "" &&
-    formData.gender.trim() !== "" &&
     formData.passport.trim() !== "" &&
+    formData.nationality.trim() !== "" &&
     formData.birthdate.trim() !== "" &&
     formData.address.trim() !== ""
 
@@ -38,6 +39,7 @@ export function SignupPnPage() {
       nameKo: formData.name,
       nameEn: formData.englishName.trim() || undefined,
       nationalityType: 'foreigner_unregistered',
+      nationality: formData.nationality.trim() || undefined,
       idType: 'passport',
       idNumber: formData.passport,
       address: formData.address,

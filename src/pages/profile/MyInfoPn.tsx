@@ -24,6 +24,7 @@ export function MyInfoPnPage() {
     englishName: "",
     gender: "",
     passport: "",
+    nationality: "",
     birthdate: "",
     phone: "",
     address: "",
@@ -52,8 +53,8 @@ export function MyInfoPnPage() {
         name: profile.workerName || getWorkerName() || "",
         englishName: profile.workerNameEn || "",
         gender: genderValue,
-        // Passport number is a single masked string (no dash).
         passport: profile.idNumberMasked || profile.ssnFirst || "",
+        nationality: profile.nationality || "",
         birthdate: birthDate,
         phone: profile.phone,
         address: profile.address,

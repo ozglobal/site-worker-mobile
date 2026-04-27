@@ -271,6 +271,7 @@ export interface SignupData {
   nameKo?: string
   nameEn?: string
   nationalityType?: string
+  nationality?: string   // country name, e.g. "베트남"
   idType?: string
   idNumber?: string
   address?: string

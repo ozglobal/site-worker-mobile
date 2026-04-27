@@ -8,6 +8,7 @@ import { DocumentCapture } from "@/components/ui/document-capture/document-captu
 import { CaptureGuideBankbook } from "@/components/ui/id-card-capture/CaptureGuideBankbook"
 import { useToast } from "@/contexts/ToastContext"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
 import {
   fetchAlienRegDoc,
   fetchBankbookDoc,
@@ -41,6 +42,14 @@ const LOADERS: Record<string, { title: string; load: DocLoader }> = {
 // Slugs whose viewer page supports in-place re-upload via 사진 촬영 / 파일 선택.
 const UPLOAD_SUPPORTED = new Set(["id-card", "bankbook", "family-relation", "safety-cert", "equipment-license", "passport"])
 
+const SLUG_TO_CODE: Record<string, string> = {
+  "id-card": "id_card",
+  "bankbook": "bankbook",
+  "family-relation": "family_relation",
+  "safety-cert": "safety_cert",
+  "passport": "passport",
+}
+
 export function DocumentViewerPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -56,6 +65,10 @@ export function DocumentViewerPage() {
   }, [slug, docId, searchParams])
   const { showSuccess, showError } = useToast()
   const { data: profile } = useWorkerProfile()
+  const { data: docSummary } = useDocumentSummary()
+  const docCode = SLUG_TO_CODE[slug]
+  const docStatus = docSummary?.find((d) => d.code === docCode)?.status
+  const isApproved = docStatus === "approved"
 
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -158,7 +171,6 @@ export function DocumentViewerPage() {
     }
     showSuccess(`${entry?.title ?? "서류"}이(가) 업데이트되었습니다.`)
     queryClient.invalidateQueries({ queryKey: ["documentSummary"] })
-    queryClient.invalidateQueries({ queryKey: ["workerProfile"] })
     if (slug === "equipment-license") {
       queryClient.invalidateQueries({ queryKey: ["workerEquipments"] })
     }
@@ -206,15 +218,7 @@ export function DocumentViewerPage() {
         {supportsUpload ? (
           <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
             <div className="flex items-center justify-end gap-2">
-              {!showUploadButtons ? (
-                <button
-                  type="button"
-                  onClick={() => setShowUploadButtons(true)}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  재등록
-                </button>
-              ) : (
+              {showUploadButtons ? (
                 <>
                   <button
                     type="button"
@@ -233,7 +237,15 @@ export function DocumentViewerPage() {
                     파일 선택
                   </button>
                 </>
-              )}
+              ) : !isApproved ? (
+                <button
+                  type="button"
+                  onClick={() => setShowUploadButtons(true)}
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  재등록
+                </button>
+              ) : null}
               <input
                 ref={fileInputRef}
                 type="file"

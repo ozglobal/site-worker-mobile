@@ -1,6 +1,9 @@
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
+
+const HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/
+const LATIN  = /[A-Za-z]/
 
 export interface FrnFormValues {
   name: string
@@ -25,6 +28,8 @@ export function IdFormFrn({ mode, values, onChange }: IdFormFrnProps) {
 
   const ssnSecondRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLInputElement>(null)
+  const [nameHint, setNameHint]   = useState(false)  // English typed in 한글 field
+  const [enHint,   setEnHint]     = useState(false)  // Korean typed in 영문 field
 
   const handle = (field: keyof FrnFormValues) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -61,14 +66,23 @@ export function IdFormFrn({ mode, values, onChange }: IdFormFrnProps) {
         <Input
           inputMode="text"
           lang="ko"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
           maxLength={6}
           value={values.name}
-          onChange={(e) => onChange("name", e.target.value)}
+          onChange={(e) => {
+            setNameHint(LATIN.test(e.target.value))
+            onChange("name", e.target.value.replace(/[A-Za-z0-9]/g, ""))
+          }}
           placeholder={isSignup ? "한글 이름" : undefined}
           readOnly={!isSignup}
           className={isSignup ? "bg-white" : readOnlyClass}
         />
-        {isSignup && values.name.length >= 6 && (
+        {isSignup && nameHint && (
+          <p className="text-sm text-amber-500">한글로 입력해 주세요</p>
+        )}
+        {isSignup && !nameHint && values.name.length >= 6 && (
           <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다</p>
         )}
       </div>
@@ -78,20 +92,21 @@ export function IdFormFrn({ mode, values, onChange }: IdFormFrnProps) {
         <label className="text-sm font-medium text-slate-700">영문 이름</label>
         <Input
           inputMode="text"
-          lang="en"
           autoComplete="off"
-          autoCapitalize="words"
+          autoCapitalize="characters"
           spellCheck={false}
           value={values.englishName}
           onChange={(e) => {
-            // Strip anything that isn't a Latin letter / space / hyphen /
-            // apostrophe — enforces English input regardless of IME.
-            onChange("englishName", e.target.value.replace(/[^A-Za-z\s'-]/g, ""))
+            setEnHint(HANGUL.test(e.target.value))
+            onChange("englishName", e.target.value.replace(/[^A-Za-z\s'-]/g, "").toUpperCase())
           }}
           placeholder={isSignup ? "영문 이름" : undefined}
           readOnly={!isSignup}
           className={isSignup ? "bg-white" : readOnlyClass}
         />
+        {isSignup && enHint && (
+          <p className="text-sm text-amber-500">영문으로 입력해 주세요</p>
+        )}
       </div>
 
       {/* 외국인등록번호 */}

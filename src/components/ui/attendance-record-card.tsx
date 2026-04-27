@@ -1,6 +1,16 @@
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/utils/format"
 
+export interface PendingCorrection {
+  requestType: string
+  originalValue: string
+  requestedValue: string
+  originalEffort: string
+  requestedEffort: string
+  originalWage: string
+  requestedWage: string
+}
+
 export interface AttendanceEntryDetail {
   recordType?: string
   workEffort?: number
@@ -8,6 +18,7 @@ export interface AttendanceEntryDetail {
   expectedWage?: number
   showCorrection?: boolean
   correctionDisabled?: boolean
+  pendingCorrection?: PendingCorrection
   onCorrectionClick?: () => void
 }
 
@@ -21,12 +32,21 @@ interface AttendanceRecordCardProps {
   statusBadge?: string
   statusVariant?: "default" | "active"
   showCorrection?: boolean
-  /** Render 정정 요청 as dimmed / non-clickable (e.g. a PENDING request already exists). */
   correctionDisabled?: boolean
+  pendingCorrection?: PendingCorrection
   onCorrectionClick?: () => void
   /** Additional work entries to render inside the same card (2nd+ records on the same day). */
   additionalEntries?: AttendanceEntryDetail[]
   className?: string
+}
+
+function CorrectionValue({ original, requested }: { original: string; requested: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="text-sm text-slate-400 line-through">{original}</span>
+      <span className="text-sm font-medium text-[#007DCA]">{requested}</span>
+    </span>
+  )
 }
 
 function EntrySection({
@@ -36,8 +56,21 @@ function EntrySection({
   expectedWage,
   showCorrection,
   correctionDisabled,
+  pendingCorrection,
   onCorrectionClick,
 }: AttendanceEntryDetail) {
+  const pc = pendingCorrection
+  const affectsEffort = pc && (pc.requestType === "work_effort" || pc.requestType === "work_effort_and_wage")
+  const affectsWage = pc && (pc.requestType === "daily_wage" || pc.requestType === "work_effort_and_wage")
+
+  const origEffort = pc ? parseFloat(pc.originalEffort || pc.originalValue || "0") : null
+  const reqEffort  = pc ? parseFloat(pc.requestedEffort || pc.requestedValue || "0") : null
+  const origWage   = pc ? parseFloat(pc.originalWage || pc.originalValue || "0") : null
+  const reqWage    = pc ? parseFloat(pc.requestedWage || pc.requestedValue || "0") : null
+
+  const origExpected = origEffort != null && origWage != null ? origEffort * origWage : null
+  const reqExpected  = reqEffort  != null && reqWage  != null ? reqEffort  * reqWage  : null
+
   return (
     <div className="rounded-lg overflow-hidden bg-slate-50">
       <div className="px-4 py-2.5 flex items-center justify-between">
@@ -45,13 +78,11 @@ function EntrySection({
         {showCorrection && onCorrectionClick && (
           <button
             type="button"
-            onClick={correctionDisabled ? undefined : onCorrectionClick}
+            onClick={correctionDisabled && !pc ? undefined : pc ? undefined : onCorrectionClick}
             disabled={correctionDisabled}
             className={cn(
-              "text-sm font-medium flex items-center gap-0.5",
-              correctionDisabled
-                ? "text-slate-300 cursor-not-allowed"
-                : "text-[#007DCA]"
+              "text-sm font-medium flex items-center gap-0.5 text-[#007DCA]",
+              correctionDisabled && !pc && "text-slate-300 cursor-not-allowed"
             )}
           >
             정정 요청 <span>→</span>
@@ -61,21 +92,42 @@ function EntrySection({
       <div>
         <div className="flex items-center justify-between px-4 py-2.5">
           <span className="text-sm text-slate-600">공수</span>
-          <span className="text-sm font-medium text-slate-900">
-            {workEffort != null ? `${workEffort}공수` : "no data"}
-          </span>
+          {affectsEffort && origEffort != null && reqEffort != null ? (
+            <CorrectionValue
+              original={`${origEffort}공수`}
+              requested={`${reqEffort}공수`}
+            />
+          ) : (
+            <span className="text-sm font-medium text-slate-900">
+              {workEffort != null ? `${workEffort}공수` : "no data"}
+            </span>
+          )}
         </div>
         <div className="flex items-center justify-between px-4 py-2.5">
           <span className="text-sm text-slate-600">적용 단가</span>
-          <span className="text-sm font-medium text-slate-900">
-            {formatCurrency(dailyWageSnapshot)}
-          </span>
+          {affectsWage && origWage != null && reqWage != null ? (
+            <CorrectionValue
+              original={formatCurrency(origWage)}
+              requested={formatCurrency(reqWage)}
+            />
+          ) : (
+            <span className="text-sm font-medium text-slate-900">
+              {formatCurrency(dailyWageSnapshot)}
+            </span>
+          )}
         </div>
         <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
           <span className="text-sm text-slate-600">예상 임금(세전)</span>
-          <span className="text-sm font-medium text-slate-900">
-            {formatCurrency(expectedWage)}
-          </span>
+          {pc && origExpected != null && reqExpected != null ? (
+            <CorrectionValue
+              original={formatCurrency(origExpected)}
+              requested={formatCurrency(reqExpected)}
+            />
+          ) : (
+            <span className="text-sm font-medium text-slate-900">
+              {formatCurrency(expectedWage)}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -93,6 +145,7 @@ export function AttendanceRecordCard({
   statusVariant = "default",
   showCorrection,
   correctionDisabled,
+  pendingCorrection,
   onCorrectionClick,
   additionalEntries,
   className,
@@ -124,6 +177,7 @@ export function AttendanceRecordCard({
         expectedWage={expectedWage}
         showCorrection={showCorrection}
         correctionDisabled={correctionDisabled}
+        pendingCorrection={pendingCorrection}
         onCorrectionClick={onCorrectionClick}
       />
 

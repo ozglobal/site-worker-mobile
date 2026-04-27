@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { handleLogout } from "@/lib/auth"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useDictItems } from "@/lib/queries/useDictItems"
+import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
@@ -34,7 +35,8 @@ export function MyInfoPage() {
       : "",
   ].filter(Boolean).join(" · ") || "예금주 · 계좌"
 
-  const docsIncomplete = (profile?.missingRequiredDocs?.length ?? 0) > 0
+  const { requiredDocsCompleted: docsCompleted } = useDocumentSummary()
+  const docsIncomplete = docsCompleted === false
 
   const handleNavigation = useBottomNavHandler()
 

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import {
   login as loginApi,
   getRefreshToken,
@@ -82,9 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTokens()
       clearWorkerInfo()
     }
-    setIsAuthenticated(false)
-    setWorker(null)
-    window.location.href = '/login'
+    // flushSync so isAuthenticated is false before the caller navigates,
+    // preventing PublicRoute from briefly redirecting back to /onboarding.
+    flushSync(() => {
+      setIsAuthenticated(false)
+      setWorker(null)
+    })
   }, [])
 
   const refreshAuth = useCallback(async () => {

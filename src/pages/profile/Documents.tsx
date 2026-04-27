@@ -30,19 +30,20 @@ import type { ApiResult } from "@/lib/api-result"
 
 const ALIEN_REG_CODES = new Set(["alien_reg", "alien_reg_front", "alien_reg_back"])
 
-function mapStatus(status: string | undefined): { status: StatusType; label: string } {
-  switch ((status || "").toUpperCase()) {
-    case "APPROVED":
-    case "COMPLETED":
-      return { status: "complete", label: "제출 완료" }
-    case "PENDING":
-    case "UNDER_REVIEW":
-      return { status: "pending", label: "승인 대기" }
-    case "REJECTED":
-    case "ERROR":
+function mapStatus(status: string | undefined): { status: StatusType; label: string } | null {
+  switch (status) {
+    case "uploaded":
+      return { status: "pending", label: "제출 완료 (심사 대기)" }
+    case "approved":
+      return { status: "complete", label: "승인" }
+    case "rejected":
       return { status: "error", label: "반려" }
+    case "resubmission_requested":
+      return { status: "error", label: "재제출 요청" }
+    case "expired":
+      return { status: "incomplete", label: "만료" }
     default:
-      return { status: "incomplete", label: "미제출" }
+      return null
   }
 }
 
@@ -55,7 +56,7 @@ const badgeClassFor = (status: StatusType): string => {
     case "error":
       return "bg-red-50 text-red-600"
     default:
-      return "bg-slate-50 text-slate-500"
+      return "bg-slate-100 text-slate-500"
   }
 }
 
@@ -134,7 +135,6 @@ export function ProfileDocumentsPage() {
     const label = docs.find((d) => d.code === code)?.label || code
     showSuccess(`[${label}] 제출되었습니다.`)
     queryClient.invalidateQueries({ queryKey: ["documentSummary"] })
-    queryClient.invalidateQueries({ queryKey: ["workerProfile"] })
   }
 
   const handleView = (code: string) => {
@@ -235,10 +235,9 @@ export function ProfileDocumentsPage() {
         ) : (
           <div className="mt-6 mx-4 bg-white rounded-xl border border-gray-300 shadow-sm">
             {docs.map((doc, idx) => {
-              const { status, label } = mapStatus(doc.status)
+              const mapped = mapStatus(doc.status)
               const isUploading = uploadingCode === doc.code
               const isCompleted = doc.state === "completed"
-              const showBadge = isUploading || status !== "incomplete"
               const isLast = idx === docs.length - 1
 
               // 외국인등록증 keeps the legacy status-list-item style.
@@ -270,8 +269,8 @@ export function ProfileDocumentsPage() {
                     key={doc.code}
                     title={doc.label}
                     subtitle=""
-                    status={showBadge ? (isUploading ? "pending" : status) : undefined}
-                    statusLabel={showBadge ? (isUploading ? "업로드 중..." : label) : undefined}
+                    status={isUploading ? "pending" : (mapped?.status ?? undefined)}
+                    statusLabel={isUploading ? "업로드 중..." : (mapped?.label ?? undefined)}
                     hideChevron
                     trailing={trailing}
                     className={isLast ? "border-b-0" : ""}
@@ -287,15 +286,15 @@ export function ProfileDocumentsPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-bold text-slate-900">{doc.label}</p>
-                    {showBadge && (
-                      <span
-                        className={`mt-1 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${badgeClassFor(isUploading ? "pending" : status)}`}
-                      >
-                        {isUploading ? "업로드 중..." : label}
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {isUploading ? (
+                      <span className="text-xs text-slate-400">업로드 중...</span>
+                    ) : mapped ? (
+                      <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${badgeClassFor(mapped.status)}`}>
+                        {mapped.label}
+                      </span>
+                    ) : null}
                     {isCompleted ? (
                       <button
                         type="button"

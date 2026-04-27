@@ -1,5 +1,7 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
+
+const LATIN = /[A-Za-z]/
 
 export interface RrnFormValues {
   name: string
@@ -18,6 +20,7 @@ interface IdFormRrnProps {
 
 export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
   const isSignup = mode === "signup"
+  const [nameHint, setNameHint] = useState(false)
 
   const nameRef = useRef<HTMLInputElement>(null)
   const ssnSecondRef = useRef<HTMLInputElement>(null)
@@ -49,11 +52,24 @@ export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
           ref={nameRef}
           inputMode="text"
           lang="ko"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          maxLength={6}
           value={values.name}
-          onChange={handle("name")}
+          onChange={(e) => {
+            setNameHint(LATIN.test(e.target.value))
+            onChange("name", e.target.value.replace(/[A-Za-z0-9]/g, ""))
+          }}
           placeholder="이름 입력"
           className="bg-white"
         />
+        {nameHint && (
+          <p className="text-sm text-amber-500">한글로 입력해 주세요</p>
+        )}
+        {!nameHint && values.name.length >= 6 && (
+          <p className="text-sm text-red-500">이름은 최대 6글자까지 입력할 수 있습니다</p>
+        )}
       </div>
 
       {/* 주민등록번호 */}

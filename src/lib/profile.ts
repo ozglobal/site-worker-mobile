@@ -28,6 +28,7 @@ export interface WorkerMeData {
   workerCategory?: 'GENERAL' | 'SPECIALTY' | 'SERVICE' | 'ENGINEER' | string
   equipmentCompanyName?: string | null
   equipmentCompanyOwner?: string | null
+  nationality?: string
   missingRequiredDocs?: string[]
   relatedSiteId?: string
 }
@@ -704,7 +705,12 @@ export interface DocumentSummaryItem {
  * short `{ code, label, method, status }` and Spring-style alternatives
  * (`value`, `name`, `submissionMethod`, etc.).
  */
-export const fetchDocumentSummary = async (): Promise<ApiResult<DocumentSummaryItem[]>> => {
+export interface DocumentSummaryResult {
+  items: DocumentSummaryItem[]
+  requiredDocsCompleted: boolean | null
+}
+
+export const fetchDocumentSummary = async (): Promise<ApiResult<DocumentSummaryResult>> => {
   const endpoint = '/system/worker/me/document/summary'
   try {
     const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
@@ -731,12 +737,12 @@ export const fetchDocumentSummary = async (): Promise<ApiResult<DocumentSummaryI
     }
     const missingList = flattenGroups(payload.missingGroups)
     const completedList = flattenGroups(payload.completedGroups)
-    const legacyList =
-      missingList.length === 0 && completedList.length === 0
-        ? flattenGroups(payload.requiredGroups).length > 0
-          ? flattenGroups(payload.requiredGroups)
-          : Array.isArray(payload) ? (payload as unknown[]) : []
-        : []
+
+    const stateFromStatus = (status: string | undefined): 'missing' | 'completed' | undefined => {
+      if (!status) return undefined
+      if (status === 'expired') return 'missing'
+      return 'completed'
+    }
 
     const toItem = (entry: unknown, state?: 'missing' | 'completed'): DocumentSummaryItem | null => {
       if (typeof entry === 'string') {
@@ -750,16 +756,36 @@ export const fetchDocumentSummary = async (): Promise<ApiResult<DocumentSummaryI
       const status = (e.status ?? undefined) as string | undefined
       const perSite = (e.perSite ?? e.siteSpecific ?? undefined) as boolean | undefined
       const submittedAt = (e.submittedAt ?? e.submitDate ?? null) as string | null
-      return { code: String(code), label, method, status, perSite, submittedAt, state }
+      const resolvedState = state ?? stateFromStatus(status)
+      return { code: String(code), label, method, status, perSite, submittedAt, state: resolvedState }
     }
 
-    const items: DocumentSummaryItem[] = [
+    const documentsList = Array.isArray(payload.documents) ? payload.documents as unknown[] : []
+    const legacyList =
+      missingList.length === 0 && completedList.length === 0 && documentsList.length === 0
+        ? flattenGroups(payload.requiredGroups).length > 0
+          ? flattenGroups(payload.requiredGroups)
+          : Array.isArray(payload) ? (payload as unknown[]) : []
+        : []
+
+    const rawItems: DocumentSummaryItem[] = [
       ...missingList.map((e) => toItem(e, 'missing')),
       ...completedList.map((e) => toItem(e, 'completed')),
+      ...documentsList.map((e) => toItem(e)),
       ...legacyList.map((e) => toItem(e)),
     ].filter((it): it is DocumentSummaryItem => !!it)
 
-    return { success: true, data: items }
+    const seen = new Set<string>()
+    const items = rawItems.filter((it) => {
+      if (seen.has(it.code)) return false
+      seen.add(it.code)
+      return true
+    })
+
+    const requiredDocsCompleted =
+      typeof payload.requiredDocsCompleted === 'boolean' ? payload.requiredDocsCompleted : null
+
+    return { success: true, data: { items, requiredDocsCompleted } }
   } catch {
     reportError('DOCS_SUMMARY_FAIL', 'Network error', { endpoint })
     return { success: false, error: 'Network error' }
@@ -835,11 +861,7 @@ const postDocumentMultipart = async (
 export const uploadIdCardDoc = async (file: File) => {
   const form = new FormData()
   form.append('file', file)
-  // eslint-disable-next-line no-console
-  console.log('[ID_CARD] upload start', { fileName: file.name, size: file.size, type: file.type })
   const result = await postDocumentMultipart('id-card', form)
-  // eslint-disable-next-line no-console
-  console.log('[ID_CARD] upload result', result)
   return result
 }
 

@@ -81,7 +81,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
       // refetch the new payment info on the next render.
       queryClient.invalidateQueries({ queryKey: ['workerProfile'] })
       showSuccess("저장되었습니다.")
-      navigate("/profile/payroll-account")
+      navigate("/profile")
     } finally {
       setIsSubmitting(false)
     }

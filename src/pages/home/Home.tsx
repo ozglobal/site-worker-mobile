@@ -7,7 +7,7 @@ import QRCodeScanner from "@/components/ui/qr-scanner"
 import { LocationPermissionPopup } from "@/components/ui/location-permission-popup"
 import { formatKstTime } from "@/utils/time"
 import { formatCurrency } from "@/utils/format"
-import { AttendanceRecordCard } from "@/components/ui/attendance-record-card"
+import { AttendanceRecordCard, type PendingCorrection } from "@/components/ui/attendance-record-card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { AlertBanner } from "@/components/ui/alert-banner"
@@ -19,6 +19,7 @@ import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
 import { useHomeData } from "@/lib/queries/useHomeData"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { useContracts } from "@/lib/queries/useContracts"
+import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
 
 export function Home() {
   const navigate = useNavigate()
@@ -27,8 +28,9 @@ export function Home() {
   // Fire GET /system/worker/me/home first — aggregates today's attendance,
   // monthly stats, unread notices, and onboarding/documents flags in one call.
   const { data: homeData } = useHomeData()
+  const { requiredDocsCompleted: docsCompleted } = useDocumentSummary()
   const onboardingIncomplete = homeData?.onboardingCompleted === false
-  const hasPendingDocs = worker?.requiredDocsCompleted === false
+  const hasPendingDocs = docsCompleted === false
   const { data: contractGroups = [] } = useContracts(worker?.userId ?? null, new Date().getFullYear())
   const unsignedCount = useMemo(
     () => contractGroups.flatMap((g) => [g.contract, g.delegation, ...g.extras])
@@ -97,6 +99,7 @@ export function Home() {
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false)
   const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
   const [correctionWorkEntryId, setCorrectionWorkEntryId] = useState<string | null>(null)
+  const [pendingCorrections, setPendingCorrections] = useState<Record<string, PendingCorrection>>({})
 
   const closeAll = () => {
     setShowCorrectionDialog(false)
@@ -125,6 +128,24 @@ export function Home() {
     }
 
     showSuccess("정정 요청이 제출되었습니다.")
+    if (result.data) {
+      const r = result.data
+      const key = correctionWorkEntryId || correctionAttendanceId
+      if (key) {
+        setPendingCorrections(prev => ({
+          ...prev,
+          [key]: {
+            requestType: r.requestType,
+            originalValue: r.originalValue,
+            requestedValue: r.requestedValue,
+            originalEffort: r.originalEffort,
+            requestedEffort: r.requestedEffort,
+            originalWage: r.originalWage,
+            requestedWage: r.requestedWage,
+          },
+        }))
+      }
+    }
     setCorrectionAttendanceId(null)
     setCorrectionWorkEntryId(null)
     setShowCorrectionDialog(false)
@@ -303,6 +324,7 @@ export function Home() {
                       expectedWage={record.expectedWage}
                       showCorrection
                       correctionDisabled={!record.canRequestCorrection}
+                      pendingCorrection={pendingCorrections[record.workEntryId || record.id] ?? undefined}
                       onCorrectionClick={() => {
                         setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "")
                         setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "")

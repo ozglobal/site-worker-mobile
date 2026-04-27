@@ -1,11 +1,18 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
+import { Select } from "@/components/ui/select"
+import { useNationalities } from "@/lib/queries/useNationalities"
+
+const HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/
+const LATIN  = /[A-Za-z]/
 
 export interface PnFormValues {
   name: string
   englishName: string
   gender: "" | "male" | "female"
   passport: string
+  nationality: string
   birthdate: string
   phone: string
   address: string
@@ -22,6 +29,9 @@ const readOnlyClass = "bg-gray-100 text-slate-500 pointer-events-none"
 export function IdFormPn({ mode, values, onChange }: IdFormPnProps) {
   const isSignup = mode === "signup"
   const navigate = useNavigate()
+  const [nameHint, setNameHint] = useState(false)
+  const [enHint,   setEnHint]   = useState(false)
+  const { data: nationalities = [] } = useNationalities()
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -49,14 +59,25 @@ export function IdFormPn({ mode, values, onChange }: IdFormPnProps) {
           <p className="text-sm text-slate-500">현장에서 사용할 짧은 한글 이름을 입력해 주세요.</p>
         )}
         <Input
+          inputMode="text"
+          lang="ko"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
           maxLength={6}
           value={values.name}
-          onChange={(e) => onChange("name", e.target.value)}
+          onChange={(e) => {
+            setNameHint(LATIN.test(e.target.value))
+            onChange("name", e.target.value.replace(/[A-Za-z0-9]/g, ""))
+          }}
           placeholder={isSignup ? "한글 이름" : undefined}
           readOnly={!isSignup}
           className={isSignup ? "bg-white" : readOnlyClass}
         />
-        {isSignup && values.name.length >= 6 && (
+        {isSignup && nameHint && (
+          <p className="text-sm text-amber-500">한글로 입력해 주세요</p>
+        )}
+        {isSignup && !nameHint && values.name.length >= 6 && (
           <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다</p>
         )}
       </div>
@@ -65,12 +86,22 @@ export function IdFormPn({ mode, values, onChange }: IdFormPnProps) {
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">영문 이름</label>
         <Input
+          inputMode="text"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
           value={values.englishName}
-          onChange={(e) => onChange("englishName", e.target.value)}
+          onChange={(e) => {
+            setEnHint(HANGUL.test(e.target.value))
+            onChange("englishName", e.target.value.replace(/[^A-Za-z\s'-]/g, "").toUpperCase())
+          }}
           placeholder={isSignup ? "영문 이름" : undefined}
           readOnly={!isSignup}
           className={isSignup ? "bg-white" : readOnlyClass}
         />
+        {isSignup && enHint && (
+          <p className="text-sm text-amber-500">영문으로 입력해 주세요</p>
+        )}
       </div>
 
       {/* 성별 */}
@@ -133,6 +164,25 @@ export function IdFormPn({ mode, values, onChange }: IdFormPnProps) {
               </button>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* 국적 */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-700">국적</label>
+        {isSignup ? (
+          <Select
+            value={values.nationality}
+            onChange={(v) => onChange("nationality", v)}
+            options={nationalities.map((n) => ({ value: n.code, label: n.name }))}
+            placeholder="국적 선택"
+          />
+        ) : (
+          <Input
+            value={nationalities.find((n) => n.code === values.nationality)?.name ?? values.nationality}
+            readOnly
+            className={readOnlyClass}
+          />
         )}
       </div>
 
