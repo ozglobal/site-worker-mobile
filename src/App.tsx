@@ -1,7 +1,6 @@
 // App.tsx
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { OnboardingProtection } from './components/layout/OnboardingProtection';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -102,7 +101,6 @@ const RouteFallback: React.FC = () => (
 const AppRoutes: React.FC = () => {
   return (
     <Suspense fallback={<RouteFallback />}>
-      <OnboardingProtection />
       <Routes>
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/onboarding/worker-type" element={<WorkerTypePage mode="onboarding" />} />
