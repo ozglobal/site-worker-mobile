@@ -2,7 +2,6 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { onboardingStorage } from "@/lib/storage"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function OnboardingPage() {
@@ -32,7 +31,6 @@ export function OnboardingPage() {
   }, [])
 
   const handleRegisterNow = () => {
-    onboardingStorage.markCompleted()
     navigate("/onboarding/worker-type")
   }
 
