@@ -15,25 +15,15 @@ export function OnboardingPage() {
     sessionStorage.removeItem('postLoginFirstLogin')
   }, [])
 
-  // Device back guard.
-  // On first mount the history state is React Router's (no onboardingGuard),
-  // so we push a sentinel entry at the same URL. On remount after backing in
-  // from worker-type the state is already { onboardingGuard:true } — we skip
-  // the push so there is never more than one sentinel between the user and the
-  // original /onboarding entry.
-  // The popstate handler checks live state: arriving AT a sentinel means free
-  // navigation (back from worker-type); arriving at the original entry means
-  // the user tried to leave /onboarding → intercept and show the dialog.
+  // Push a duplicate history entry (same URL) so device back stays on this
+  // page. The popstate listener re-pushes and shows the dialog.
+  // useLayoutEffect fires before paint — listener is ready before any input.
   useLayoutEffect(() => {
-    if (!window.history.state?.onboardingGuard) {
-      window.history.pushState({ onboardingGuard: true }, document.title)
-    }
+    window.history.pushState(null, document.title)
 
     const handlePopState = () => {
       if (exitingRef.current) return
-      if (window.history.state?.onboardingGuard) return   // arrived at sentinel — free
-      // arrived at original entry — intercept
-      window.history.pushState({ onboardingGuard: true }, document.title)
+      window.history.pushState(null, document.title)
       setShowDialog(true)
     }
 
