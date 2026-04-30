@@ -55,7 +55,7 @@ test.describe("Attendance — List", () => {
   })
 
   test("navigating to previous month updates summary", async ({ page }) => {
-    const prevBtn = page.getByRole("button", { name: /이전|prev|←|‹|</ }).first()
+    const prevBtn = page.getByRole("button", { name: "이전 달" })
     await prevBtn.click()
     await page.waitForLoadState("networkidle")
     const today = new Date()

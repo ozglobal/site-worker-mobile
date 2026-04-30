@@ -51,6 +51,7 @@ export function SetPasswordPage() {
       ...(data.nameEn ? { nameEn: data.nameEn } : {}),
       mobilePhone: phone,
       nationalityType: data.nationalityType || '',
+      ...(data.nationality ? { nationality: data.nationality } : {}),
       idType: data.idType || '',
       idNumber: data.idNumber || '',
       address: data.address || '',

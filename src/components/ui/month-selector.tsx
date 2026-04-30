@@ -33,13 +33,14 @@ export function MonthSelector({
     <div className={cn("flex items-center justify-between px-4 py-3", className)}>
       {/* Year/Month navigation */}
       <div className="flex items-center gap-1">
-        <button onClick={onPrevMonth} className="flex items-center justify-center w-8 h-8 rounded-md text-slate-500 active:bg-slate-100">
+        <button aria-label="이전 달" onClick={onPrevMonth} className="flex items-center justify-center w-8 h-8 rounded-md text-slate-500 active:bg-slate-100">
           <ChevronLeftIcon size={20} />
         </button>
         <span className="text-lg font-bold text-slate-900 min-w-[100px] text-center">
           {year}년 {month}월
         </span>
         <button
+          aria-label="다음 달"
           onClick={nextDisabled ? undefined : onNextMonth}
           className={cn(
             "flex items-center justify-center w-8 h-8 rounded-md text-slate-500 active:bg-slate-100",
@@ -53,6 +54,7 @@ export function MonthSelector({
       {/* View mode toggle */}
       <div className="inline-flex items-center rounded-lg bg-slate-100 p-1">
         <button
+          aria-label="캘린더 보기"
           onClick={() => onViewModeChange?.("calendar")}
           className={cn(
             "inline-flex items-center justify-center w-9 h-9 rounded-md text-sm font-medium transition-all",
@@ -64,6 +66,7 @@ export function MonthSelector({
           <IconCalendarMonth size={18} />
         </button>
         <button
+          aria-label="목록 보기"
           onClick={() => onViewModeChange?.("list")}
           className={cn(
             "inline-flex items-center justify-center w-9 h-9 rounded-md text-sm font-medium transition-all",

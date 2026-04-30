@@ -39,7 +39,7 @@ export function Home() {
   )
   // /attendance/daily carries per-site `attendanceId` which /home omits — we
   // need it to open the correction dialog against a specific record.
-  const { data: todayDaily } = useTodayAttendance()
+  const { data: todayDaily, refetch: refetchTodayAttendance, isFetching: isFetchingToday } = useTodayAttendance()
   const {
     userName,
     currentDate,
@@ -95,11 +95,18 @@ export function Home() {
   const [correctionSiteName, setCorrectionSiteName] = useState("")
   const [correctionTimeRange, setCorrectionTimeRange] = useState("")
   const [showOvertimeDialog, setShowOvertimeDialog] = useState(false)
+  const activeOvertimeFromServer = !!(activeAttendance?.entries || []).some((e) => e.overtime)
   const [overtimeApplied, setOvertimeApplied] = useState(false)
+  const [isOvertimeConfirmed, setIsOvertimeConfirmed] = useState(false)
+  const effectiveOvertimeApplied = overtimeApplied || activeOvertimeFromServer
+  const isOvertime = isOvertimeConfirmed || activeOvertimeFromServer
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false)
   const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
   const [correctionWorkEntryId, setCorrectionWorkEntryId] = useState<string | null>(null)
   const [pendingCorrections, setPendingCorrections] = useState<Record<string, PendingCorrection>>({})
+  // Locally tracks workEntryIds whose correction response came back "pending" so
+  // the button is immediately dimmed without waiting for a refetch.
+  const [localPendingIds, setLocalPendingIds] = useState<Set<string>>(new Set())
 
   const closeAll = () => {
     setShowCorrectionDialog(false)
@@ -144,6 +151,9 @@ export function Home() {
             requestedWage: r.requestedWage,
           },
         }))
+        if (r.status === "pending") {
+          setLocalPendingIds(prev => new Set(prev).add(key))
+        }
       }
     }
     setCorrectionAttendanceId(null)
@@ -176,8 +186,8 @@ export function Home() {
             <div className="space-y-3">
               {onboardingIncomplete && (
                 <AlertBanner
-                  title="필수 정보 입력이 완료되지 않았어요"
-                  description="내정보 메뉴에서 회원 정보 입력을 완료해주세요."
+                  title="계좌 정보 입력이 완료되지 않았어요"
+                  description="내정보 메뉴에서 계좌 정보 입력을 완료해주세요."
                   onClick={() => navigate("/profile")}
                 />
               )}
@@ -208,7 +218,7 @@ export function Home() {
                     : "text-slate-500 bg-slate-100"
                 }`}
               >
-                {attendance.status}
+                {attendance.status === "근무 중" && isOvertime ? "야근 중" : attendance.status}
               </span>
             </div>
 
@@ -265,14 +275,14 @@ export function Home() {
                 {/* Action Button */}
                 {attendance.isCheckedIn ? (
                   <div className="flex gap-3">
-                    {!overtimeApplied && (
+                    {!effectiveOvertimeApplied && (
                       <Button variant="outline" size="full" onClick={() => setShowOvertimeDialog(true)} disabled={attendance.isProcessing}
                         className="basis-1/3 bg-white border-gray-300 text-slate-900 hover:bg-gray-50">
                         야근 신청
                       </Button>
                     )}
-                    <Button variant={attendance.isProcessing ? "primaryDisabled" : "primary"} size="full" onClick={() => setShowCheckoutDialog(true)} disabled={attendance.isProcessing}
-                      className={overtimeApplied ? "flex-1" : "basis-2/3"}>
+                    <Button variant={attendance.isProcessing ? "primaryDisabled" : "primary"} size="full" onClick={() => { refetchTodayAttendance(); setShowCheckoutDialog(true) }} disabled={attendance.isProcessing}
+                      className={effectiveOvertimeApplied ? "flex-1" : "basis-2/3"}>
                       {attendance.isProcessing ? "처리 중..." : "퇴근하기"}
                     </Button>
                   </div>
@@ -323,7 +333,7 @@ export function Home() {
                       dailyWageSnapshot={record.dailyWageSnapshot}
                       expectedWage={record.expectedWage}
                       showCorrection
-                      correctionDisabled={!record.canRequestCorrection}
+                      correctionDisabled={!record.canRequestCorrection || localPendingIds.has(record.workEntryId || record.id)}
                       pendingCorrection={pendingCorrections[record.workEntryId || record.id] ?? undefined}
                       onCorrectionClick={() => {
                         setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "")
@@ -484,6 +494,7 @@ export function Home() {
                   const result = await actions.requestOvertime(id)
                   if (result.success) {
                     setOvertimeApplied(true)
+                    if (result.data?.isOvertime) setIsOvertimeConfirmed(true)
                     showSuccess("야근 상태가 정상적으로 기록되었습니다.")
                   } else {
                     showError(result.error)
@@ -521,29 +532,41 @@ export function Home() {
                   {attendance.checkInTime ? formatKstTime(attendance.checkInTime) : ""} - {formatKstTime(new Date().toISOString())}
                 </p>
               </div>
-              <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                <div className="px-4 py-2.5">
-                  <span className="text-sm font-bold text-slate-900">용역</span>
+              {isFetchingToday ? (
+                <div className="flex items-center justify-center py-6">
+                  <Spinner size="md" />
                 </div>
-                <div>
-                  <div className="flex items-center justify-between px-4 py-2.5">
-                    <span className="text-sm text-slate-600">공수</span>
-                    <span className="text-sm font-medium text-slate-900">{attendance.workEffort != null ? `${attendance.workEffort}공수` : "—"}</span>
+              ) : (
+                <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                  <div className="px-4 py-2.5">
+                    <span className="text-sm font-bold text-slate-900">용역</span>
                   </div>
-                  <div className="flex items-center justify-between px-4 py-2.5">
-                    <span className="text-sm text-slate-600">적용 단가</span>
-                    <span className="text-sm font-medium text-slate-900">
-                      {attendance.dailyWageSnapshot != null ? formatCurrency(attendance.dailyWageSnapshot) : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
-                    <span className="text-sm text-slate-600">예상 임금(세전)</span>
-                    <span className="text-sm font-medium text-slate-900">
-                      {attendance.dailyWageSnapshot != null && attendance.workEffort != null ? formatCurrency(attendance.dailyWageSnapshot * attendance.workEffort) : "—"}
-                    </span>
+                  <div>
+                    {(() => {
+                      const entry = activeAttendance?.entries?.[0]
+                      const effort = entry?.effort ?? null
+                      const wage = entry?.dailyWageSnapshot ?? null
+                      const expected = entry?.expectedWage ?? null
+                      return (
+                        <>
+                          <div className="flex items-center justify-between px-4 py-2.5">
+                            <span className="text-sm text-slate-600">공수</span>
+                            <span className="text-sm font-medium text-slate-900">{effort != null ? `${effort}공수` : "—"}</span>
+                          </div>
+                          <div className="flex items-center justify-between px-4 py-2.5">
+                            <span className="text-sm text-slate-600">적용 단가</span>
+                            <span className="text-sm font-medium text-slate-900">{wage != null ? formatCurrency(wage) : "—"}</span>
+                          </div>
+                          <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
+                            <span className="text-sm text-slate-600">예상 임금(세전)</span>
+                            <span className="text-sm font-medium text-slate-900">{expected != null ? formatCurrency(expected) : "—"}</span>
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Info Message */}
               <div className="bg-slate-50 rounded-lg p-4 flex gap-3">
@@ -614,6 +637,7 @@ export function Home() {
           timeRange={correctionTimeRange || `직영 · ${attendance.checkInTime ? formatKstTime(attendance.checkInTime) : ""} - ${formatKstTime(new Date().toISOString())}`}
           initialWorkEffort={correctionWorkEffort}
           initialDailyWage={correctionDailyWage}
+          initialIsOvertime={isOvertime}
           onBack={() => { setShowCorrectionDialog(false); setShowCheckoutDialog(true) }}
           onClose={closeAll}
           onSubmit={handleCorrectionSubmit}

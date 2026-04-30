@@ -7,15 +7,19 @@ import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
+import { PhoneChangeModal } from "@/components/ui/PhoneChangeModal"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { useGenderDict } from "@/lib/queries/useGenderDict"
 import { useToast } from "@/contexts/ToastContext"
 import { updateWorkerAddress } from "@/lib/profile"
 import { getWorkerName } from "@/lib/auth"
+import { usePhoneChange } from "@/hooks/usePhoneChange"
 import { IdFormPn, type PnFormValues } from "@/components/profile/IdFormPn"
 
 export function MyInfoPnPage() {
   const navigate = useNavigate()
-  const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
+  const { isSuccess: genderDictReady } = useGenderDict()
+  const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile({ enabled: genderDictReady })
   const { showSuccess, showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -33,17 +37,6 @@ export function MyInfoPnPage() {
 
   useEffect(() => {
     if (profile) {
-      // Normalize gender to canonical "male"/"female" regardless of backend
-      // shape (M/F, MALE/FEMALE, male/female, 남/여, 남자/여자).
-      const rawGender = (profile.gender || "").toString().trim().toUpperCase()
-      const genderValue: PnFormValues["gender"] =
-        rawGender === "M" || rawGender === "MALE" || rawGender === "남" || rawGender === "남자"
-          ? "male"
-          : rawGender === "F" || rawGender === "FEMALE" || rawGender === "여" || rawGender === "여자"
-          ? "female"
-          : ""
-
-      // Normalize birthDate to yyyy-MM-dd in case backend sends yyyymmdd.
       const rawBirth = (profile.birthDate || "").toString().trim()
       const birthDate = /^\d{8}$/.test(rawBirth)
         ? `${rawBirth.slice(0, 4)}-${rawBirth.slice(4, 6)}-${rawBirth.slice(6, 8)}`
@@ -52,7 +45,7 @@ export function MyInfoPnPage() {
       const loaded: PnFormValues = {
         name: profile.workerName || getWorkerName() || "",
         englishName: profile.workerNameEn || "",
-        gender: genderValue,
+        gender: profile.gender || "",
         passport: profile.idNumberMasked || profile.ssnFirst || "",
         nationality: profile.nationality || "",
         birthdate: birthDate,
@@ -90,6 +83,8 @@ export function MyInfoPnPage() {
     }
   }
 
+  const phoneChange = usePhoneChange()
+
   const handleNavigation = useBottomNavHandler()
 
   return (
@@ -105,7 +100,12 @@ export function MyInfoPnPage() {
           <QueryErrorState onRetry={() => refetch()} message="내 정보를 불러오지 못했습니다." />
         ) : (
         <div className="flex flex-col min-h-full">
-          <IdFormPn mode="edit" values={formData} onChange={handleFieldChange} />
+          <IdFormPn
+            mode="edit"
+            values={formData}
+            onChange={handleFieldChange}
+            onPhoneChangeClick={phoneChange.openModal}
+          />
 
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
@@ -125,6 +125,15 @@ export function MyInfoPnPage() {
         active="profile"
         onNavigate={handleNavigation}
         className="shrink-0"
+      />
+
+      <PhoneChangeModal
+        {...phoneChange}
+        onPhoneInput={phoneChange.handlePhoneInput}
+        onSendCode={phoneChange.handleSendCode}
+        onChangePhone={phoneChange.handleChangePhone}
+        onClose={phoneChange.closeModal}
+        onVerificationCodeChange={phoneChange.setVerificationCode}
       />
     </div>
   )

@@ -1,16 +1,17 @@
-import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { useNationalities } from "@/lib/queries/useNationalities"
-
-const HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/
-const LATIN  = /[A-Za-z]/
+import { useGenderDict } from "@/lib/queries/useGenderDict"
+import { PhoneField } from "@/components/ui/PhoneField"
+import { KoreanNameField } from "@/components/ui/KoreanNameField"
+import { EnglishNameField } from "@/components/ui/EnglishNameField"
+import { AddressField } from "@/components/ui/AddressField"
 
 export interface PnFormValues {
   name: string
   englishName: string
-  gender: "" | "male" | "female"
+  gender: string
   passport: string
   nationality: string
   birthdate: string
@@ -22,16 +23,17 @@ interface IdFormPnProps {
   mode: "signup" | "edit"
   values: PnFormValues
   onChange: (field: keyof PnFormValues, value: string) => void
+  onPhoneChangeClick?: () => void
 }
 
 const readOnlyClass = "bg-gray-100 text-slate-500 pointer-events-none"
 
-export function IdFormPn({ mode, values, onChange }: IdFormPnProps) {
+export function IdFormPn({ mode, values, onChange, onPhoneChangeClick }: IdFormPnProps) {
   const isSignup = mode === "signup"
   const navigate = useNavigate()
-  const [nameHint, setNameHint] = useState(false)
-  const [enHint,   setEnHint]   = useState(false)
   const { data: nationalities = [] } = useNationalities()
+  const { data: rawGenderDict = [] } = useGenderDict()
+  const genderDict = rawGenderDict.filter((g) => g.name.trim() !== '알 수 없음')
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -44,102 +46,42 @@ export function IdFormPn({ mode, values, onChange }: IdFormPnProps) {
       {/* 휴대폰 번호 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">휴대폰 번호</label>
-        <Input
-          type="tel"
-          value={values.phone}
-          readOnly
-          className={isSignup ? "bg-gray-100" : readOnlyClass}
-        />
+        <PhoneField value={values.phone} isSignup={isSignup} onChangeClick={onPhoneChangeClick} />
       </div>
 
-      {/* 한글 이름 */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">한글 이름</label>
-        {isSignup && (
-          <p className="text-sm text-slate-500">현장에서 사용할 짧은 한글 이름을 입력해 주세요.</p>
-        )}
-        <Input
-          inputMode="text"
-          lang="ko"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          maxLength={6}
-          value={values.name}
-          onChange={(e) => {
-            setNameHint(LATIN.test(e.target.value))
-            onChange("name", e.target.value.replace(/[A-Za-z0-9]/g, ""))
-          }}
-          placeholder={isSignup ? "한글 이름" : undefined}
-          readOnly={!isSignup}
-          className={isSignup ? "bg-white" : readOnlyClass}
-        />
-        {isSignup && nameHint && (
-          <p className="text-sm text-amber-500">한글로 입력해 주세요</p>
-        )}
-        {isSignup && !nameHint && values.name.length >= 6 && (
-          <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다</p>
-        )}
-      </div>
+      <KoreanNameField value={values.name} isSignup={isSignup} onChange={(v) => onChange("name", v)} />
 
-      {/* 영문 이름 */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">영문 이름</label>
-        <Input
-          inputMode="text"
-          autoComplete="off"
-          autoCapitalize="characters"
-          spellCheck={false}
-          value={values.englishName}
-          onChange={(e) => {
-            setEnHint(HANGUL.test(e.target.value))
-            onChange("englishName", e.target.value.replace(/[^A-Za-z\s'-]/g, "").toUpperCase())
-          }}
-          placeholder={isSignup ? "영문 이름" : undefined}
-          readOnly={!isSignup}
-          className={isSignup ? "bg-white" : readOnlyClass}
-        />
-        {isSignup && enHint && (
-          <p className="text-sm text-amber-500">영문으로 입력해 주세요</p>
-        )}
-      </div>
+      <EnglishNameField value={values.englishName} isSignup={isSignup} onChange={(v) => onChange("englishName", v)} />
 
       {/* 성별 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">성별</label>
         <div className="flex gap-4">
-          <label className={`flex items-center gap-2 w-[150px] ${isSignup ? "cursor-pointer" : ""}`}>
-            <input
-              type="radio"
-              name="gender"
-              value="male"
-              checked={values.gender === "male"}
-              onChange={(e) => onChange("gender", e.target.value)}
-              disabled={!isSignup}
-              className="w-4 h-4 text-primary"
-            />
-            <span className="text-sm text-slate-700">남자</span>
-          </label>
-          <label className={`flex items-center gap-2 w-[150px] ${isSignup ? "cursor-pointer" : ""}`}>
-            <input
-              type="radio"
-              name="gender"
-              value="female"
-              checked={values.gender === "female"}
-              onChange={(e) => onChange("gender", e.target.value)}
-              disabled={!isSignup}
-              className="w-4 h-4 text-primary"
-            />
-            <span className="text-sm text-slate-700">여자</span>
-          </label>
+          {genderDict.map((g) => (
+            <label key={g.code} className={`flex items-center gap-2 w-[150px] ${isSignup ? "cursor-pointer" : ""}`}>
+              <input
+                type="radio"
+                name="gender"
+                value={g.code}
+                checked={String(values.gender ?? '').toUpperCase() === g.code.toUpperCase()}
+                onChange={(e) => onChange("gender", e.target.value)}
+                disabled={!isSignup}
+                className="w-4 h-4 text-primary"
+              />
+              <span className="text-sm text-slate-700">{g.name}</span>
+            </label>
+          ))}
         </div>
       </div>
 
       {/* 여권번호 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">여권번호</label>
+        {/* hidden dummy — absorbs Chrome's credential-manager popup */}
+        <input type="password" autoComplete="new-password" style={{ display: "none" }} aria-hidden="true" tabIndex={-1} readOnly />
         <Input
           maxLength={12}
+          autoComplete="new-password"
           value={values.passport}
           onChange={(e) => {
             const v = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase()
@@ -209,12 +151,7 @@ export function IdFormPn({ mode, values, onChange }: IdFormPnProps) {
       {/* 주소 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">주소</label>
-        <Input
-          value={values.address}
-          onChange={(e) => onChange("address", e.target.value)}
-          placeholder={isSignup ? "주소" : "주소 입력"}
-          className="bg-white"
-        />
+        <AddressField value={values.address} onChange={(v) => onChange("address", v)} />
       </div>
     </div>
   )

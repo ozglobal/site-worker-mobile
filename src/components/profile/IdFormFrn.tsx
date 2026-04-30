@@ -1,9 +1,10 @@
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
-
-const HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/
-const LATIN  = /[A-Za-z]/
+import { PhoneField } from "@/components/ui/PhoneField"
+import { KoreanNameField } from "@/components/ui/KoreanNameField"
+import { EnglishNameField } from "@/components/ui/EnglishNameField"
+import { AddressField } from "@/components/ui/AddressField"
 
 export interface FrnFormValues {
   name: string
@@ -18,24 +19,21 @@ interface IdFormFrnProps {
   mode: "signup" | "edit"
   values: FrnFormValues
   onChange: (field: keyof FrnFormValues, value: string) => void
+  onPhoneChangeClick?: () => void
 }
 
 const readOnlyClass = "bg-gray-100 text-slate-500 pointer-events-none"
 
-export function IdFormFrn({ mode, values, onChange }: IdFormFrnProps) {
+export function IdFormFrn({ mode, values, onChange, onPhoneChangeClick }: IdFormFrnProps) {
   const isSignup = mode === "signup"
   const navigate = useNavigate()
 
   const ssnSecondRef = useRef<HTMLInputElement>(null)
-  const addressRef = useRef<HTMLInputElement>(null)
-  const [nameHint, setNameHint]   = useState(false)  // English typed in 한글 field
-  const [enHint,   setEnHint]     = useState(false)  // Korean typed in 영문 field
 
   const handle = (field: keyof FrnFormValues) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     onChange(field, value)
     if (field === "ssnFirst" && value.length === 6) ssnSecondRef.current?.focus()
-    if (field === "ssnSecond" && value.length === 7) addressRef.current?.focus()
   }
 
   return (
@@ -49,65 +47,12 @@ export function IdFormFrn({ mode, values, onChange }: IdFormFrnProps) {
       {/* 휴대폰 번호 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">휴대폰 번호</label>
-        <Input
-          type="tel"
-          value={values.phone}
-          readOnly
-          className={isSignup ? "bg-gray-100" : readOnlyClass}
-        />
+        <PhoneField value={values.phone} isSignup={isSignup} onChangeClick={onPhoneChangeClick} />
       </div>
 
-      {/* 한글 이름 */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">한글 이름</label>
-        {isSignup && (
-          <p className="text-sm text-slate-500">현장에서 사용할 짧은 한글 이름을 입력해 주세요.</p>
-        )}
-        <Input
-          inputMode="text"
-          lang="ko"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          maxLength={6}
-          value={values.name}
-          onChange={(e) => {
-            setNameHint(LATIN.test(e.target.value))
-            onChange("name", e.target.value.replace(/[A-Za-z0-9]/g, ""))
-          }}
-          placeholder={isSignup ? "한글 이름" : undefined}
-          readOnly={!isSignup}
-          className={isSignup ? "bg-white" : readOnlyClass}
-        />
-        {isSignup && nameHint && (
-          <p className="text-sm text-amber-500">한글로 입력해 주세요</p>
-        )}
-        {isSignup && !nameHint && values.name.length >= 6 && (
-          <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다</p>
-        )}
-      </div>
+      <KoreanNameField value={values.name} isSignup={isSignup} onChange={(v) => onChange("name", v)} />
 
-      {/* 영문 이름 */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">영문 이름</label>
-        <Input
-          inputMode="text"
-          autoComplete="off"
-          autoCapitalize="characters"
-          spellCheck={false}
-          value={values.englishName}
-          onChange={(e) => {
-            setEnHint(HANGUL.test(e.target.value))
-            onChange("englishName", e.target.value.replace(/[^A-Za-z\s'-]/g, "").toUpperCase())
-          }}
-          placeholder={isSignup ? "영문 이름" : undefined}
-          readOnly={!isSignup}
-          className={isSignup ? "bg-white" : readOnlyClass}
-        />
-        {isSignup && enHint && (
-          <p className="text-sm text-amber-500">영문으로 입력해 주세요</p>
-        )}
-      </div>
+      <EnglishNameField value={values.englishName} isSignup={isSignup} onChange={(v) => onChange("englishName", v)} />
 
       {/* 외국인등록번호 */}
       <div className="space-y-2">
@@ -174,13 +119,7 @@ export function IdFormFrn({ mode, values, onChange }: IdFormFrnProps) {
       {/* 주소 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">주소</label>
-        <Input
-          ref={addressRef}
-          value={values.address}
-          onChange={(e) => onChange("address", e.target.value)}
-          placeholder={isSignup ? "주소" : "주소 입력"}
-          className="bg-white"
-        />
+        <AddressField value={values.address} onChange={(v) => onChange("address", v)} />
       </div>
     </div>
   )

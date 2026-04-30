@@ -25,6 +25,7 @@ export function useDictItems(codeName: string, options?: UseDictItemsOptions) {
       return result.data
     },
     staleTime: Infinity,
+    gcTime: Infinity,
     enabled: !!codeName,
   })
 }

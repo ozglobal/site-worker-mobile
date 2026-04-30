@@ -26,14 +26,15 @@ test.describe("Attendance — Daily Detail", () => {
   })
 
   test("shows previous day navigation", async ({ page }) => {
-    const prevBtn = page.locator("button").filter({ has: page.locator("svg") }).first()
-    await expect(prevBtn).toBeVisible()
+    await expect(page.getByRole("button", { name: "이전 날" })).toBeVisible()
   })
 
   test("next day button is hidden or invisible for today", async ({ page }) => {
-    // Next button should be invisible (class="invisible") when on today
-    const nextBtn = page.locator("button.invisible")
-    await expect(nextBtn).toBeVisible() // invisible class is rendered but visually hidden
+    // Next button has class "invisible" (visibility:hidden) when on today
+    // getByRole skips visibility:hidden elements — use CSS attribute selector
+    const nextBtn = page.locator('button[aria-label="다음 날"]')
+    await expect(nextBtn).toBeAttached()
+    await expect(nextBtn).toHaveClass(/invisible/)
   })
 
   test("shows info banner about correction policy", async ({ page }) => {
@@ -50,14 +51,16 @@ test.describe("Attendance — Daily Detail", () => {
     const card = page.locator(".rounded-xl").filter({ hasText: /공수/ }).first()
     if (await card.isVisible({ timeout: 3_000 }).catch(() => false)) {
       await expect(card.getByText("공수")).toBeVisible()
-      await expect(card.getByText("적용 단가")).toBeVisible()
-      await expect(card.getByText("예상 임금(세전)")).toBeVisible()
+      // 적용 단가 and 예상 임금 only appear for completed (checked-out) entries
+      const rateRow = card.getByText("적용 단가")
+      if (await rateRow.isVisible({ timeout: 1_000 }).catch(() => false)) {
+        await expect(card.getByText("예상 임금(세전)")).toBeVisible()
+      }
     }
   })
 
   test("navigating to previous day changes URL", async ({ page }) => {
-    const prevBtn = page.locator("button").filter({ has: page.locator("svg") }).first()
-    await prevBtn.click()
+    await page.getByRole("button", { name: "이전 날" }).click()
     const d = new Date()
     d.setDate(d.getDate() - 1)
     const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
@@ -68,7 +71,6 @@ test.describe("Attendance — Daily Detail", () => {
     const corrBtn = page.getByRole("button", { name: /정정 요청/ }).first()
     if (await corrBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
       await corrBtn.click()
-      // Dialog should appear
       await expect(page.getByRole("dialog").or(page.getByText(/정정 요청/))).toBeVisible({ timeout: 3_000 })
     }
   })
@@ -86,11 +88,9 @@ test.describe("Correction dialog", () => {
     }
     await corrBtn.click()
 
-    // Dialog has site name, time range pre-filled
     const dialog = page.locator("[role=dialog]").or(page.locator(".fixed.inset-0").last())
     await expect(dialog).toBeVisible({ timeout: 3_000 })
 
-    // Close dialog
     const closeBtn = dialog.getByRole("button", { name: /닫기|취소|×|X/ })
     if (await closeBtn.isVisible()) {
       await closeBtn.click()

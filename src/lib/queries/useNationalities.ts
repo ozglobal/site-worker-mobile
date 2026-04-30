@@ -1,15 +1,17 @@
-import { type DictItem } from '@/lib/dict'
+import { useQuery } from '@tanstack/react-query'
+import { fetchDictByPath, type DictItem } from '@/lib/dict'
 
-const HARDCODED_NATIONALITIES: DictItem[] = [
-  { code: 'VN', name: '베트남' },
-  { code: 'CN', name: '중국' },
-  { code: 'TH', name: '태국' },
-]
+const NATIONALITY_PATH = '/common/dict/nationality'
 
 export function useNationalities() {
-  return {
-    data: HARDCODED_NATIONALITIES,
-    isLoading: false,
-    isError: false,
-  }
+  return useQuery<DictItem[]>({
+    queryKey: ['dict', NATIONALITY_PATH],
+    queryFn: async () => {
+      const result = await fetchDictByPath(NATIONALITY_PATH)
+      if (!result.success) throw new Error(result.error)
+      return result.data
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+  })
 }

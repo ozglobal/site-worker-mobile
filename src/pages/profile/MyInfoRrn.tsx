@@ -11,6 +11,8 @@ import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
 import { updateWorkerAddress, updateWorkerProfile } from "@/lib/profile"
 import { getWorkerName } from "@/lib/auth"
+import { usePhoneChange } from "@/hooks/usePhoneChange"
+import { PhoneChangeModal } from "@/components/ui/PhoneChangeModal"
 import { IdFormRrn, type RrnFormValues } from "@/components/profile/IdFormRrn"
 
 export function MyInfoRrnPage() {
@@ -87,6 +89,7 @@ export function MyInfoRrnPage() {
     }
   }
 
+  const phoneChange = usePhoneChange()
   const handleNavigation = useBottomNavHandler()
 
   return (
@@ -102,7 +105,7 @@ export function MyInfoRrnPage() {
           <QueryErrorState onRetry={() => refetch()} message="내 정보를 불러오지 못했습니다." />
         ) : (
         <div className="flex flex-col min-h-full">
-          <IdFormRrn mode="edit" values={formData} onChange={handleFieldChange} />
+          <IdFormRrn mode="edit" values={formData} onChange={handleFieldChange} onPhoneChangeClick={phoneChange.openModal} />
 
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
             <Button
@@ -122,6 +125,15 @@ export function MyInfoRrnPage() {
         active="profile"
         onNavigate={handleNavigation}
         className="shrink-0"
+      />
+
+      <PhoneChangeModal
+        {...phoneChange}
+        onPhoneInput={phoneChange.handlePhoneInput}
+        onSendCode={phoneChange.handleSendCode}
+        onChangePhone={phoneChange.handleChangePhone}
+        onClose={phoneChange.closeModal}
+        onVerificationCodeChange={phoneChange.setVerificationCode}
       />
     </div>
   )

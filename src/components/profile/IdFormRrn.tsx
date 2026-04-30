@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
+import { PhoneField } from "@/components/ui/PhoneField"
+import { AddressField } from "@/components/ui/AddressField"
 
 const LATIN = /[A-Za-z]/
 
@@ -15,16 +17,15 @@ interface IdFormRrnProps {
   mode: "signup" | "edit"
   values: RrnFormValues
   onChange: (field: keyof RrnFormValues, value: string) => void
+  onPhoneChangeClick?: () => void
 }
 
-
-export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
+export function IdFormRrn({ mode, values, onChange, onPhoneChangeClick }: IdFormRrnProps) {
   const isSignup = mode === "signup"
   const [nameHint, setNameHint] = useState(false)
 
   const nameRef = useRef<HTMLInputElement>(null)
   const ssnSecondRef = useRef<HTMLInputElement>(null)
-  const addressRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isSignup) nameRef.current?.focus()
@@ -34,7 +35,6 @@ export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
     const value = e.target.value
     onChange(field, value)
     if (field === "ssnFirst" && value.length === 6) ssnSecondRef.current?.focus()
-    if (field === "ssnSecond" && value.length === 7) addressRef.current?.focus()
   }
 
   return (
@@ -100,24 +100,13 @@ export function IdFormRrn({ mode, values, onChange }: IdFormRrnProps) {
       {/* 휴대폰 번호 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">휴대폰 번호</label>
-        <Input
-          type="tel"
-          value={values.phone}
-          readOnly
-          className="bg-gray-100 text-slate-500 pointer-events-none"
-        />
+        <PhoneField value={values.phone} isSignup={isSignup} onChangeClick={onPhoneChangeClick} />
       </div>
 
       {/* 주소 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">주소</label>
-        <Input
-          ref={addressRef}
-          value={values.address}
-          onChange={handle("address")}
-          placeholder={isSignup ? "주소" : "주소 입력"}
-          className="bg-white"
-        />
+        <AddressField value={values.address} onChange={(v) => onChange("address", v)} />
       </div>
     </div>
   )

@@ -116,11 +116,11 @@ export function DailyDetailPage() {
 
       {/* Date navigator */}
       <div className="flex items-center justify-between px-4 h-12 bg-white shrink-0 mt-2">
-        <button onClick={() => navigateDay(-1)} className="p-1">
+        <button aria-label="이전 날" onClick={() => navigateDay(-1)} className="p-1">
           <ChevronLeftIcon className="h-6 w-6 text-slate-900" />
         </button>
         <span className="text-base font-bold text-slate-900">{displayDate}</span>
-        <button onClick={nextDisabled ? undefined : () => navigateDay(1)} className={cn("p-1", nextDisabled && "invisible")}>
+        <button aria-label="다음 날" onClick={nextDisabled ? undefined : () => navigateDay(1)} className={cn("p-1", nextDisabled && "invisible")}>
           <ChevronRightIcon className="h-6 w-6 text-slate-900" />
         </button>
       </div>

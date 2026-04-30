@@ -82,7 +82,7 @@ function EntrySection({
             disabled={correctionDisabled}
             className={cn(
               "text-sm font-medium flex items-center gap-0.5 text-[#007DCA]",
-              correctionDisabled && !pc && "text-slate-300 cursor-not-allowed"
+              correctionDisabled && "opacity-40 cursor-not-allowed"
             )}
           >
             정정 요청 <span>→</span>

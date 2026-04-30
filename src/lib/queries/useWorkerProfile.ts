@@ -5,7 +5,7 @@ import { fetchWorkerMe, type WorkerMeData } from '@/lib/profile'
  * PR 7: React Query hook for worker profile data
  * Fetches from /system/worker/me — staleTime: Infinity (fetch once per session)
  */
-export function useWorkerProfile() {
+export function useWorkerProfile({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery<WorkerMeData>({
     queryKey: ['workerProfile'],
     queryFn: async () => {
@@ -16,5 +16,6 @@ export function useWorkerProfile() {
       return result.data
     },
     staleTime: Infinity,
+    enabled,
   })
 }

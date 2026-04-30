@@ -72,7 +72,7 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
       ssnFirst: (payload.ssnFirst as string) || (payload.residentFirst as string) || '',
       ssnSecond: (payload.ssnSecond as string) || (payload.residentSecond as string) || '',
       idNumberMasked: (payload.idNumberMasked as string) || undefined,
-      gender: (payload.gender as string) || undefined,
+      gender: (payload.gender as string) || "",
       birthDate:
         (payload.birthDate as string) ||
         (payload.birthdate as string) ||
@@ -93,6 +93,7 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
       workerCategory: (payload.workerCategory as string) || undefined,
       equipmentCompanyName: (payload.equipmentCompanyName as string) || null,
       equipmentCompanyOwner: (payload.equipmentCompanyOwner as string) || null,
+      nationality: (payload.nationality as string) || undefined,
       missingRequiredDocs: Array.isArray(payload.missingRequiredDocs)
         ? (payload.missingRequiredDocs as string[])
         : [],
@@ -684,6 +685,44 @@ export const updatePaymentTarget = async (
     return { success: true, data: undefined }
   } catch {
     reportError('PROFILE_PAYMENT_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export const sendPhoneChangeCode = async (newPhone: string): Promise<ApiResult<void>> => {
+  const endpoint = '/user/profile/phone/send-code'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newPhone }),
+    })
+    const json = await safeJson(response) as Record<string, unknown> | null
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_PHONE_SEND_CODE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+export const changePhone = async (newPhone: string, code: string): Promise<ApiResult<void>> => {
+  const endpoint = '/user/profile/phone/change'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newPhone, code }),
+    })
+    const json = await safeJson(response) as Record<string, unknown> | null
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_PHONE_CHANGE_FAIL', 'Network error', { endpoint })
     return { success: false, error: 'Network error' }
   }
 }

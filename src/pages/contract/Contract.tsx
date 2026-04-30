@@ -71,8 +71,10 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
 
   return (
     <div
-      className={`overflow-hidden rounded-2xl bg-white shadow-sm ${
-        needsSign ? 'border-2 border-red-400' : 'border border-slate-200'
+      className={`overflow-hidden rounded-2xl bg-white ${
+        needsSign
+          ? 'border-2 border-red-400 shadow-[0_0_0_4px_rgba(248,113,113,0.25)]'
+          : 'border border-slate-200 shadow-sm'
       }`}
     >
       {(headerLine || siteName) && (

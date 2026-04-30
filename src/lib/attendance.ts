@@ -686,18 +686,20 @@ export const submitCorrectionRequest = async (
  * Flags the attendance as overtime (isOvertime=true) and suppresses the
  * missed-checkout alert for the worker. No request body.
  */
-export const requestOvertime = async (attendanceId: string): Promise<ApiResult<void>> => {
+export const requestOvertime = async (attendanceId: string): Promise<ApiResult<{ isOvertime: boolean }>> => {
   const endpoint = `/system/attendance/${attendanceId}/overtime-request`
   try {
     const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: { 'accept': '*/*' },
     })
+    const json = await safeJson(response) as Record<string, unknown> | null
     if (!response.ok) {
-      const data = await safeJson(response) as Record<string, unknown> | null
-      return { success: false, error: (data?.message as string) || `API error: ${response.status}` }
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
     }
-    return { success: true, data: undefined }
+    const payload = (json?.data ?? json ?? {}) as Record<string, unknown>
+    const isOvertime = payload.isOvertime === true
+    return { success: true, data: { isOvertime } }
   } catch (error) {
     reportError('OVERTIME_REQUEST_FAIL', error instanceof Error ? error.message : 'Network error', { endpoint })
     return { success: false, error: 'Network error' }

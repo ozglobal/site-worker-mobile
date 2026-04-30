@@ -58,11 +58,13 @@ export function MyInfoPage() {
                 navigate(path)
               }}
             />
-            <StatusListItem
-              title="회원유형"
-              subtitle={workerCategoryLabel || "근로자 유형"}
-              onClick={() => navigate("/profile/worker-type")}
-            />
+            {profile?.idType !== "passport" && (
+              <StatusListItem
+                title="회원유형"
+                subtitle={workerCategoryLabel || "근로자 유형"}
+                onClick={() => navigate("/profile/worker-type")}
+              />
+            )}
             <StatusListItem
               title="계좌정보"
               subtitle={accountSubtitle}

@@ -187,6 +187,7 @@ export interface RegisterWorkerParams {
   nameEn?: string
   mobilePhone: string
   nationalityType: string
+  nationality?: string
   idType: string
   idNumber: string
   address: string

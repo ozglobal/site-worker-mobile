@@ -18,6 +18,7 @@ interface CorrectionDialogProps {
   timeRange: string
   initialWorkEffort: string
   initialDailyWage: string
+  initialIsOvertime?: boolean
   onSubmit: (data: CorrectionDialogSubmitData) => Promise<void>
   onBack?: () => void
   onClose: () => void
@@ -28,6 +29,7 @@ export function CorrectionDialog({
   timeRange,
   initialWorkEffort,
   initialDailyWage,
+  initialIsOvertime = false,
   onSubmit,
   onBack,
   onClose,
@@ -35,7 +37,7 @@ export function CorrectionDialog({
   const [workEffort, setWorkEffort] = useState(initialWorkEffort)
   const [dailyWage, setDailyWage] = useState(initialDailyWage)
   const [reason, setReason] = useState("")
-  const [isOvertime, setIsOvertime] = useState(false)
+  const [isOvertime, setIsOvertime] = useState(initialIsOvertime)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const expectedWage = useMemo(() => {
@@ -135,20 +137,19 @@ export function CorrectionDialog({
           </div>
 
           {/* 야근했어요 */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          <label className={`flex items-center gap-2 select-none ${initialIsOvertime ? "cursor-not-allowed" : "cursor-pointer"}`}>
             <input
               type="checkbox"
               checked={isOvertime}
+              disabled={initialIsOvertime}
               onChange={(e) => {
                 const checked = e.target.checked
                 setIsOvertime(checked)
-                // Unchecking should restore the 공수 to its original so the
-                // form stays submittable without the user having to re-type.
                 if (!checked) setWorkEffort(initialWorkEffort)
               }}
-              className="w-5 h-5 rounded-full border-slate-300 text-[#007DCA] focus:ring-[#007DCA]"
+              className="w-5 h-5 rounded-full border-slate-300 text-[#007DCA] focus:ring-[#007DCA] disabled:opacity-50"
             />
-            <span className="text-sm text-slate-900">야근했어요</span>
+            <span className={`text-sm ${initialIsOvertime ? "text-slate-400" : "text-slate-900"}`}>야근했어요</span>
           </label>
 
           {/* 공수 — only editable when 야근 is acknowledged */}
