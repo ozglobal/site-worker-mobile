@@ -1,4 +1,4 @@
-import { MapPin as MapPinIcon } from "lucide-react"
+import { Search as SearchIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface AddressFieldProps {
@@ -39,8 +39,8 @@ export function AddressField({ value, onChange }: AddressFieldProps) {
         !value && "text-slate-400"
       )}
     >
-      <MapPinIcon size={16} className="shrink-0 text-slate-400" />
-      <span className="flex-1 truncate">{value || "주소 검색"}</span>
+      <span className="flex-1 truncate">{value || "주소를 검색하세요"}</span>
+      <SearchIcon size={16} className="shrink-0 text-slate-400" />
     </button>
   )
 }

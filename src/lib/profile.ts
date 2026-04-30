@@ -83,7 +83,7 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
         (payload.phone as string) ||
         (payload.phoneNumber as string) ||
         '',
-      address: (payload.address as string) || '',
+      address: ['주소', '주소 입력'].includes((payload.address as string) || '') ? '' : ((payload.address as string) || ''),
       accountHolder: (payload.accountHolder as string) || '',
       accountHolderRelation: (payload.accountHolderRelation as string) || null,
       bankName: (payload.bankName as string) || '',

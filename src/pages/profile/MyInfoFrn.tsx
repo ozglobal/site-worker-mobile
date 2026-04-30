@@ -66,7 +66,6 @@ export function MyInfoFrnPage() {
       if (result.success) {
         await refetch()
         showSuccess("저장되었습니다.")
-        navigate("/profile")
       } else {
         showError(result.error)
       }
