@@ -135,11 +135,13 @@ export function WorkerTypePage({ mode = "profile" }: WorkerTypePageProps) {
             {(workerTypes ?? []).filter((t) => t.code.toLowerCase() !== "trainee").map((type) => {
               const meta = lookupMeta(type.code)
               const isActive = selected === type.code
+              const isDisabled = mode === "profile" && !isActive
               return (
                 <button
                   key={type.code}
-                  onClick={() => handleSelect(type.code)}
-                  className="w-full text-left"
+                  onClick={() => !isDisabled && handleSelect(type.code)}
+                  disabled={isDisabled}
+                  className="w-full text-left disabled:cursor-not-allowed"
                 >
                   <WorkerTypeCard
                     icon={meta.icon}

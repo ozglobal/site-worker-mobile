@@ -39,6 +39,7 @@ const SignupSmsVerificationPage = lazyNamed(() => import('./pages/signup/SmsVeri
 const SignUpStep3Page = lazyNamed(() => import('./pages/signup/step3'), 'SignUpStep3Page');
 const SignUpCompletePage = lazyNamed(() => import('./pages/signup/SignupComplete'), 'SignUpCompletePage');
 const NiceApiPage = lazyNamed(() => import('./pages/signup/NiceApiPage'), 'NiceApiPage');
+const NiceReturnPage = lazyNamed(() => import('./pages/signup/NiceReturnPage'), 'NiceReturnPage');
 
 const Home = lazyNamed(() => import('./pages/home'), 'Home');
 
@@ -125,6 +126,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
         <Route path="/signup/sms-verification" element={<PublicRoute><SignupSmsVerificationPage /></PublicRoute>} />
         <Route path="/signup/nice-api" element={<PublicRoute><NiceApiPage /></PublicRoute>} />
+        <Route path="/signup/nice-return" element={<PublicRoute><NiceReturnPage /></PublicRoute>} />
         <Route path="/signup/agreement" element={<PublicRoute><AgreementPage /></PublicRoute>} />
         <Route path="/signup/domestic-foreign" element={<PublicRoute><DomesticForeignPage /></PublicRoute>} />
         <Route path="/signup/signup-rrn" element={<PublicRoute><SignupRrnPage /></PublicRoute>} />

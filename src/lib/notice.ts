@@ -2,6 +2,7 @@ import { authFetch, getWorkerId } from './auth'
 import { API_BASE_URL } from './config'
 import { safeJson, type ApiResult } from './api-result'
 import { reportError } from './errorReporter'
+import { logDebug } from '@/utils/devLog'
 
 export interface NoticeItem {
   id: string
@@ -44,6 +45,7 @@ export async function fetchNotices(page = 1, size = 20): Promise<ApiResult<Notic
     }
 
     const payload = json.data || (json as unknown as NoticeListResponse)
+    logDebug('[notices/inbox]', payload)
     return { success: true, data: payload }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
