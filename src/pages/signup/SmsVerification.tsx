@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledInput } from "@/components/ui/labeled-input"
@@ -24,6 +24,28 @@ export function SmsVerificationPage() {
   const [verificationCode, setVerificationCode] = useState("")
   const [isSending, setIsSending] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
+  const webOtpAbortRef = useRef<AbortController | null>(null)
+
+  // WebOTP API (Android Chrome): auto-fill when SMS arrives
+  useEffect(() => {
+    if (!showVerificationInput) return
+    if (!("OTPCredential" in window)) return
+
+    const ac = new AbortController()
+    webOtpAbortRef.current = ac
+
+    navigator.credentials
+      .get({ otp: { transport: ["sms"] }, signal: ac.signal } as CredentialRequestOptions)
+      .then((cred) => {
+        if (cred && "code" in cred) {
+          const code = (cred as { code: string }).code.replace(/\D/g, "").slice(0, 6)
+          setVerificationCode(code)
+        }
+      })
+      .catch(() => {/* aborted or unsupported — silent */})
+
+    return () => ac.abort()
+  }, [showVerificationInput])
 
   const handleBack = () => {
     navigate(-1)
@@ -98,6 +120,8 @@ export function SmsVerificationPage() {
               <LabeledInput
                 label="인증번호"
                 type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
                 placeholder="인증번호 입력"
                 value={verificationCode}
                 maxLength={6}
@@ -106,6 +130,7 @@ export function SmsVerificationPage() {
                   setVerificationCode(value)
                   if (value.length === 6) {
                     e.target.blur()
+                    webOtpAbortRef.current?.abort()
                   }
                 }}
               />
