@@ -9,7 +9,6 @@ import { useToast } from "@/contexts/ToastContext"
 export function SignUpPage() {
   const navigate = useNavigate()
   const { showError } = useToast()
-
   const handleBack = () => navigate(-1)
 
   const handleNiceAuth = async () => {

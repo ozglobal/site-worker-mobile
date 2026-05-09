@@ -10,14 +10,14 @@ import { Select } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
-import { updatePayment } from "@/lib/profile"
+import { updatePayment, completeWorkerOnboarding } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 import { workerMetaStorage } from "@/lib/storage"
 import { getWorkerName } from "@/lib/auth"
 import { useQueryClient } from "@tanstack/react-query"
 import { useBankNames } from "@/lib/queries/useBankNames"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
-import { codeOfNameOrCode, labelOf } from "@/utils/dict"
+import { codeOfNameOrCode } from "@/utils/dict"
 
 interface MyAccountPageProps {
   mode?: "onboarding" | "profile"
@@ -64,10 +64,9 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
     if (isSubmitting) return
     setIsSubmitting(true)
     try {
-      const bankLabel = labelOf(banks, selectedBank, selectedBank)
       const result = await updatePayment({
         wagePaymentTarget: "SELF",
-        bankName: bankLabel,
+        bankName: selectedBank,
         bankAccount: accountNumber,
         accountHolder,
         accountHolderRelation: null,
@@ -77,9 +76,11 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
         return
       }
       workerMetaStorage.patch({ wagePaymentTarget: 'SELF' })
-      // Invalidate cached /system/worker/me so the card + form fields
-      // refetch the new payment info on the next render.
+      // Mark onboarding complete so the home account banner clears.
+      // Workers who set up their account via profile (bypassing onboarding) need this.
+      await completeWorkerOnboarding()
       queryClient.invalidateQueries({ queryKey: ['workerProfile'] })
+      queryClient.invalidateQueries({ queryKey: ['homeData'] })
       showSuccess("저장되었습니다.")
       navigate("/profile")
     } finally {
@@ -122,19 +123,21 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
           </div>
         </div>
 
-        {/* Info Box */}
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <div className="flex gap-3">
-            <ErrorOutlineIcon className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-slate-700">본인 명의 계좌가 아닌가요?</p>
-              <p className="text-sm text-slate-500 mt-1">가족 명의 계좌로 대리 수령이 가능합니다.</p>
-              <button onClick={handleFamilyProxy} className="text-sm text-primary font-medium mt-2">
-                가족 대리수령 신청하기
-              </button>
+        {/* Info Box — only shown before a payment target is configured */}
+        {!profile?.wagePaymentTarget && (
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex gap-3">
+              <ErrorOutlineIcon className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-slate-700">본인 명의 계좌가 아닌가요?</p>
+                <p className="text-sm text-slate-500 mt-1">가족 명의 계좌로 대리 수령이 가능합니다.</p>
+                <button onClick={handleFamilyProxy} className="text-sm text-primary font-medium mt-2">
+                  가족 대리수령 신청하기
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Bank Select */}
         <div>

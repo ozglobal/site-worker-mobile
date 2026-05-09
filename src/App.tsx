@@ -36,7 +36,6 @@ const SignupFrnPage = lazyNamed(() => import('./pages/signup'), 'SignupFrnPage')
 const SignupPnPage = lazyNamed(() => import('./pages/signup'), 'SignupPnPage');
 const SetPasswordPage = lazyNamed(() => import('./pages/signup'), 'SetPasswordPage');
 const SignupSmsVerificationPage = lazyNamed(() => import('./pages/signup/SmsVerification'), 'SmsVerificationPage');
-const SignUpStep3Page = lazyNamed(() => import('./pages/signup/step3'), 'SignUpStep3Page');
 const SignUpCompletePage = lazyNamed(() => import('./pages/signup/SignupComplete'), 'SignUpCompletePage');
 const NiceApiPage = lazyNamed(() => import('./pages/signup/NiceApiPage'), 'NiceApiPage');
 const NiceReturnPage = lazyNamed(() => import('./pages/signup/NiceReturnPage'), 'NiceReturnPage');
@@ -133,7 +132,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/signup/signup-frn" element={<PublicRoute><SignupFrnPage /></PublicRoute>} />
         <Route path="/signup/signup-pn" element={<PublicRoute><SignupPnPage /></PublicRoute>} />
         <Route path="/signup/set-password" element={<PublicRoute><SetPasswordPage /></PublicRoute>} />
-        <Route path="/signup/step3" element={<PublicRoute><SignUpStep3Page /></PublicRoute>} />
         <Route path="/signup/complete" element={<PublicRoute><SignUpCompletePage /></PublicRoute>} />
         <Route path="/home" element={<Home />} />
         <Route path="/attendance" element={<CalendarPage />} />

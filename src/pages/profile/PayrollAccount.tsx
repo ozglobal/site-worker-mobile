@@ -48,7 +48,6 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
   }
 
   const cardClass = (t: 'SELF' | 'PROXY' | 'COMPANY') => {
-    // No target set yet — show all 3 cards with a white, neutral look.
     if (!target) return "border-gray-200 bg-white"
     return target === t
       ? "border-primary bg-white"
@@ -104,27 +103,31 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
         </div>
 
         <div className="space-y-3">
-          <OptionCard
-            title="본인 계좌"
-            description={
-              target === 'SELF' && profile?.accountHolder
-                ? profile.accountHolder
-                : "본인 명의 계좌로 급여 지급"
-            }
-            onClick={() => selectTarget('SELF')}
-            className={cardClass('SELF')}
-          />
-          <OptionCard
-            title="가족 계좌"
-            description={
-              target === 'PROXY' && profile?.accountHolder
-                ? profile.accountHolder
-                : "가족 명의 계좌로 급여 지급"
-            }
-            onClick={() => selectTarget('PROXY')}
-            className={cardClass('PROXY')}
-          />
-          {showCompanyOption && (
+          {(!target || target === 'SELF') && (
+            <OptionCard
+              title="본인 계좌"
+              description={
+                target === 'SELF' && profile?.accountHolder
+                  ? profile.accountHolder
+                  : "본인 명의 계좌로 급여 지급"
+              }
+              onClick={() => selectTarget('SELF')}
+              className={cardClass('SELF')}
+            />
+          )}
+          {(!target || target === 'PROXY') && (
+            <OptionCard
+              title="가족 계좌"
+              description={
+                target === 'PROXY' && profile?.accountHolder
+                  ? profile.accountHolder
+                  : "가족 명의 계좌로 급여 지급"
+              }
+              onClick={() => selectTarget('PROXY')}
+              className={cardClass('PROXY')}
+            />
+          )}
+          {showCompanyOption && (!target || target === 'COMPANY') && (
             <OptionCard
               title="소속 회사"
               description="소속된 용역 업체로 급여 지급"

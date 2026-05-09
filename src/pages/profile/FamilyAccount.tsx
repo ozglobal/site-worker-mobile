@@ -10,13 +10,13 @@ import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
 import { workerMetaStorage } from "@/lib/storage"
-import { updatePayment } from "@/lib/profile"
+import { updatePayment, completeWorkerOnboarding } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 import { useQueryClient } from "@tanstack/react-query"
 import { useDictItems } from "@/lib/queries/useDictItems"
 import { useBankNames } from "@/lib/queries/useBankNames"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
-import { codeOfNameOrCode, labelOf } from "@/utils/dict"
+import { codeOfNameOrCode } from "@/utils/dict"
 
 interface FamilyAccountPageProps {
   mode?: "onboarding" | "profile"
@@ -70,7 +70,6 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
         rawRel
       setRelationship(relCode)
 
-      // Backend returns bank label (e.g. "국민은행"); Select expects id (e.g. "kb").
       setSelectedBank(codeOfNameOrCode(banks, profile.bankName || ""))
       setAccountNumber(profile.bankAccount || "")
     } else {
@@ -81,16 +80,12 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
     }
   }, [profile, mode, relationOptions, banks])
 
-  const resolveBankLabel = (code: string) => labelOf(banks, code, code)
-
   const handleSubmit = async () => {
-    const bankLabel = resolveBankLabel(selectedBank)
-    // Dict already supplies backend codes — no local translation needed.
     const relationCode = relationship
 
     if (mode === "onboarding") {
       patchDraft({
-        bankName: bankLabel,
+        bankName: selectedBank,
         bankAccount: accountNumber,
         accountHolder: familyName,
         accountHolderRelation: relationCode,
@@ -105,7 +100,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
     try {
       const result = await updatePayment({
         wagePaymentTarget: 'PROXY',
-        bankName: bankLabel,
+        bankName: selectedBank,
         bankAccount: accountNumber,
         accountHolder: familyName,
         accountHolderRelation: relationCode,
@@ -115,9 +110,9 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
         return
       }
       workerMetaStorage.patch({ wagePaymentTarget: 'PROXY' })
-      // Invalidate cached /system/worker/me so the card + form fields
-      // refetch the new payment info on the next render.
+      await completeWorkerOnboarding()
       queryClient.invalidateQueries({ queryKey: ['workerProfile'] })
+      queryClient.invalidateQueries({ queryKey: ['homeData'] })
       showSuccess("저장되었습니다.")
       navigate("/profile")
     } finally {

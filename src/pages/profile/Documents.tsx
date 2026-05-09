@@ -29,6 +29,7 @@ import {
 import type { ApiResult } from "@/lib/api-result"
 
 const ALIEN_REG_CODES = new Set(["alien_reg", "alien_reg_front", "alien_reg_back"])
+const ALIEN_REG_SUB_CODES = new Set(["alien_reg_front", "alien_reg_back"])
 
 function mapStatus(status: string | undefined): { status: StatusType; label: string } | null {
   switch (status) {
@@ -78,7 +79,7 @@ export function ProfileDocumentsPage() {
 
   const handleNavigation = useBottomNavHandler()
 
-  const docs = (summary || []).map((item) => {
+  const docs = (summary || []).filter((item) => !ALIEN_REG_SUB_CODES.has(item.code)).map((item) => {
     const catalogue: RequiredDocMeta | undefined = requiredDocsCatalogue[item.code]
     return {
       code: item.code,

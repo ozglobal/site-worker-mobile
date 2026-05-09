@@ -5,17 +5,13 @@ import { Button } from "@/components/ui/button"
 export function DomesticForeignPage() {
   const navigate = useNavigate()
 
-  const handleBack = () => {
-    navigate(-1)
-  }
-
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-white">
       <AppHeader
         showLeftAction={true}
         title=""
         showRightAction={false}
-        onLeftActionClick={handleBack}
+        onLeftActionClick={() => navigate(-1)}
         className="shrink-0"
       />
 
@@ -27,12 +23,18 @@ export function DomesticForeignPage() {
             </p>
 
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 py-4 font-bold shadow-sm text-slate-700 border-gray-200"
-                onClick={() => navigate("/signup/signup-rrn")}>
+              <Button
+                variant="outline"
+                className="flex-1 py-4 font-bold shadow-sm border-gray-200 transition-colors text-slate-700"
+                onClick={() => navigate("/signup/signup-rrn")}
+              >
                 내국인
               </Button>
-              <Button variant="outline" className="flex-1 py-4 font-bold shadow-sm text-slate-700 border-gray-200"
-                onClick={() => navigate("/signup/signup-frn")}>
+              <Button
+                variant="outline"
+                className="flex-1 py-4 font-bold shadow-sm border-gray-200 transition-colors text-slate-700"
+                onClick={() => navigate("/signup/signup-frn")}
+              >
                 외국인
               </Button>
             </div>

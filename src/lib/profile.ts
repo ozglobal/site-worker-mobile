@@ -102,6 +102,11 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
 
     return { success: true, data }
   } catch (error) {
+    // "Failed to fetch" means the request was cancelled mid-flight (e.g. page navigation).
+    // Not a real error — don't log or report.
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      return { success: false, error: 'Network error' }
+    }
     console.error('[PROFILE] fetchWorkerMe error:', error)
     reportError('PROFILE_FETCH_FAIL', 'Network error', { endpoint: '/system/worker/me' })
     return { success: false, error: 'Network error' }

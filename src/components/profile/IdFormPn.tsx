@@ -1,6 +1,8 @@
+import { format, parse, isValid } from "date-fns"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
+import { DateInput } from "@/components/ui/date-input"
 import { useNationalities } from "@/lib/queries/useNationalities"
 import { useGenderDict } from "@/lib/queries/useGenderDict"
 import { PhoneField } from "@/components/ui/PhoneField"
@@ -131,21 +133,14 @@ export function IdFormPn({ mode, values, onChange, onPhoneChangeClick }: IdFormP
       {/* 생년월일 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">생년월일</label>
-        <Input
-          inputMode="numeric"
-          maxLength={10}
-          value={values.birthdate}
-          onChange={(e) => {
-            const digits = e.target.value.replace(/\D/g, "").slice(0, 8)
-            let formatted = digits
-            if (digits.length > 4) formatted = digits.slice(0, 4) + "-" + digits.slice(4)
-            if (digits.length > 6) formatted = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6)
-            onChange("birthdate", formatted)
-          }}
-          placeholder={isSignup ? "yyyy-mm-dd" : undefined}
-          readOnly={!isSignup}
-          className={isSignup ? "bg-white" : readOnlyClass}
-        />
+        {isSignup ? (
+          <DateInput
+            value={(() => { const d = parse(values.birthdate, "yyyy-MM-dd", new Date()); return isValid(d) ? d : undefined })()}
+            onChange={(d) => onChange("birthdate", d ? format(d, "yyyy-MM-dd") : "")}
+          />
+        ) : (
+          <Input value={values.birthdate} readOnly className={readOnlyClass} />
+        )}
       </div>
 
       {/* 주소 */}

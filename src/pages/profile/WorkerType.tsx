@@ -136,24 +136,18 @@ export function WorkerTypePage({ mode = "profile" }: WorkerTypePageProps) {
               const meta = lookupMeta(type.code)
               const isActive = selected === type.code
               const isDisabled = mode === "profile" && !isActive
+              if (isDisabled) return null
               return (
                 <button
                   key={type.code}
-                  onClick={() => !isDisabled && handleSelect(type.code)}
-                  disabled={isDisabled}
-                  className="w-full text-left disabled:cursor-not-allowed"
+                  onClick={() => handleSelect(type.code)}
+                  className="w-full text-left"
                 >
                   <WorkerTypeCard
                     icon={meta.icon}
                     title={type.name}
                     subtitle={meta.subtitle}
-                    className={
-                      isActive
-                        ? "border-primary bg-white"
-                        : mode === "onboarding"
-                          ? "border-gray-200 bg-white"
-                          : "border-gray-200 bg-gray-100 text-slate-500"
-                    }
+                    className={isActive ? "border-primary bg-white" : "border-gray-200 bg-white"}
                   />
                 </button>
               )

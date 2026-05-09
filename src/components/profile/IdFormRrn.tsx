@@ -23,6 +23,7 @@ interface IdFormRrnProps {
 export function IdFormRrn({ mode, values, onChange, onPhoneChangeClick }: IdFormRrnProps) {
   const isSignup = mode === "signup"
   const [nameHint, setNameHint] = useState(false)
+  const [nameMaxHint, setNameMaxHint] = useState(false)
 
   const nameRef = useRef<HTMLInputElement>(null)
   const ssnSecondRef = useRef<HTMLInputElement>(null)
@@ -55,11 +56,17 @@ export function IdFormRrn({ mode, values, onChange, onPhoneChangeClick }: IdForm
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
-          maxLength={6}
           value={values.name}
           onChange={(e) => {
+            const raw = e.target.value.replace(/[A-Za-z0-9]/g, "")
             setNameHint(LATIN.test(e.target.value))
-            onChange("name", e.target.value.replace(/[A-Za-z0-9]/g, ""))
+            if (raw.length > 4) {
+              setNameMaxHint(true)
+              onChange("name", raw.slice(0, 4))
+            } else {
+              setNameMaxHint(false)
+              onChange("name", raw)
+            }
           }}
           placeholder="이름 입력"
           className="bg-white"
@@ -67,8 +74,8 @@ export function IdFormRrn({ mode, values, onChange, onPhoneChangeClick }: IdForm
         {nameHint && (
           <p className="text-sm text-amber-500">한글로 입력해 주세요</p>
         )}
-        {!nameHint && values.name.length >= 6 && (
-          <p className="text-sm text-red-500">이름은 최대 6글자까지 입력할 수 있습니다</p>
+        {!nameHint && nameMaxHint && (
+          <p className="text-sm text-red-500">이름은 최대 4글자까지 입력할 수 있습니다</p>
         )}
       </div>
 

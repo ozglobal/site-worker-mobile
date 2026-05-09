@@ -48,6 +48,7 @@ function Calendar({
   modifiers,
   modifiersClassNames,
   events = [],
+  components: externalComponents,
   ...props
 }: CalendarProps) {
   const getEventsForDate = (date: Date) =>
@@ -95,6 +96,7 @@ function Calendar({
         ...modifiersClassNames,
       }}
       components={{
+        ...externalComponents,
         Weekday: ({ className: weekdayClassName, children, ...rest }) => {
           const text = String(children ?? "")
           let colorClass = ""

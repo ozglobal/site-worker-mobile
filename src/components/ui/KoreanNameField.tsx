@@ -12,6 +12,7 @@ interface KoreanNameFieldProps {
 
 export function KoreanNameField({ value, isSignup, onChange }: KoreanNameFieldProps) {
   const [hint, setHint] = useState(false)
+  const [maxHint, setMaxHint] = useState(false)
 
   return (
     <div className="space-y-2">
@@ -25,11 +26,17 @@ export function KoreanNameField({ value, isSignup, onChange }: KoreanNameFieldPr
         autoComplete="off"
         autoCapitalize="off"
         autoCorrect="off"
-        maxLength={6}
         value={value}
         onChange={(e) => {
+          const raw = e.target.value.replace(/[A-Za-z0-9]/g, "")
           setHint(LATIN.test(e.target.value))
-          onChange(e.target.value.replace(/[A-Za-z0-9]/g, ""))
+          if (raw.length > 4) {
+            setMaxHint(true)
+            onChange(raw.slice(0, 4))
+          } else {
+            setMaxHint(false)
+            onChange(raw)
+          }
         }}
         placeholder={isSignup ? "한글 이름" : undefined}
         readOnly={!isSignup}
@@ -38,8 +45,8 @@ export function KoreanNameField({ value, isSignup, onChange }: KoreanNameFieldPr
       {isSignup && hint && (
         <p className="text-sm text-amber-500">한글로 입력해 주세요</p>
       )}
-      {isSignup && !hint && value.length >= 6 && (
-        <p className="text-sm text-red-500">한글 이름은 최대 6글자까지 입력할 수 있습니다</p>
+      {isSignup && !hint && maxHint && (
+        <p className="text-sm text-red-500">한글 이름은 최대 4글자까지 입력할 수 있습니다</p>
       )}
     </div>
   )

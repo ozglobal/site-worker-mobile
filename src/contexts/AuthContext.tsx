@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   login as loginApi,
   getRefreshToken,
@@ -12,6 +13,7 @@ import {
   type LoginParams,
 } from '@/lib/auth'
 import { autoLoginStorage, workerStorage, checkinSiteStorage } from '@/lib/storage'
+import { prefetchSessionDicts } from '@/lib/queries/prefetchSessionDicts'
 
 interface WorkerInfo {
   workerId: string | null
@@ -39,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [worker, setWorker] = useState<WorkerInfo | null>(null)
+  const queryClient = useQueryClient()
 
   // PR 1: In-memory token is lost on reload. Restore via /refresh endpoint.
   useEffect(() => {
@@ -53,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await fetchUserInfo()
           setIsAuthenticated(true)
           setWorker(getWorkerInfo())
+          prefetchSessionDicts(queryClient)
         }
       }
 
@@ -60,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     restoreAuth()
-  }, [])
+  }, [queryClient])
 
   const login = useCallback(async (params: LoginParams) => {
     const result = await loginApi(params)
@@ -68,10 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (result.success) {
       setIsAuthenticated(true)
       setWorker(getWorkerInfo())
+      prefetchSessionDicts(queryClient)
     }
 
     return result
-  }, [])
+  }, [queryClient])
 
   const logout = useCallback(() => {
     if (autoLoginStorage.isEnabled()) {

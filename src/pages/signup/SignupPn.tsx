@@ -10,15 +10,16 @@ export function SignupPnPage() {
   const navigate = useNavigate()
 
   const savedPhone = signupStorage.getPhone()
+  const savedData = signupStorage.getData()
   const [formData, setFormData] = useState<PnFormValues>({
-    name: "",
-    englishName: "",
-    gender: "",
-    passport: "",
-    nationality: "",
-    birthdate: "",
+    name: savedData.nameKo || "",
+    englishName: savedData.nameEn || "",
+    gender: savedData.gender || "",
+    passport: savedData.idNumber || "",
+    nationality: savedData.nationality || "",
+    birthdate: savedData.birthDate || "",
     phone: savedPhone,
-    address: "",
+    address: savedData.address || "",
   })
   const allFieldsFilled =
     formData.name.trim() !== "" &&

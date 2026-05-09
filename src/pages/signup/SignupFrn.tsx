@@ -10,13 +10,15 @@ export function SignupFrnPage() {
   const navigate = useNavigate()
 
   const savedPhone = signupStorage.getPhone()
+  const savedData = signupStorage.getData()
+  const [savedFrnFirst = "", savedFrnSecond = ""] = (savedData.idNumber || "").split("-")
   const [formData, setFormData] = useState<FrnFormValues>({
-    name: "",
-    englishName: "",
-    ssnFirst: "",
-    ssnSecond: "",
+    name: savedData.nameKo || "",
+    englishName: savedData.nameEn || "",
+    ssnFirst: savedFrnFirst,
+    ssnSecond: savedFrnSecond,
     phone: savedPhone,
-    address: "",
+    address: savedData.address || "",
   })
   const allFieldsFilled =
     formData.name.trim() !== "" &&

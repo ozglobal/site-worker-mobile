@@ -18,8 +18,8 @@ import { IdFormPn, type PnFormValues } from "@/components/profile/IdFormPn"
 
 export function MyInfoPnPage() {
   const navigate = useNavigate()
-  const { isSuccess: genderDictReady } = useGenderDict()
-  const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile({ enabled: genderDictReady })
+  useGenderDict()
+  const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
   const { showSuccess, showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
 

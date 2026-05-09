@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from "react"
+import { format, parse, isValid } from "date-fns"
 import { useNavigate } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Select } from "@/components/ui/select"
+import { DateInput } from "@/components/ui/date-input"
 import { IdCardCamera } from "@/components/ui/id-card-capture/id-card-camera"
 import { CaptureGuideIdcard } from "@/components/ui/document-capture/CaptureGuideIdcard"
 import { useToast } from "@/contexts/ToastContext"
 import { fetchAlienRegDoc, fetchFileAsObjectUrl, uploadAlienRegDoc } from "@/lib/profile"
 import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
+import { useNationalities } from "@/lib/queries/useNationalities"
+import { useResidenceStatus } from "@/lib/queries/useResidenceStatus"
 import { useBlobUrl } from "@/hooks/useBlobUrl"
 
 export function AlienRegistrationPage() {
@@ -26,6 +30,8 @@ export function AlienRegistrationPage() {
   const alreadyUploaded = (summary || []).some(
     (d) => d.code === "alien_reg" && d.state === "completed",
   )
+  const { data: nationalities = [] } = useNationalities()
+  const { data: residenceStatuses = [] } = useResidenceStatus()
 
   const [frontFile, setFrontFile] = useState<File | null>(null)
   const [backFile, setBackFile] = useState<File | null>(null)
@@ -33,8 +39,8 @@ export function AlienRegistrationPage() {
   const [guideSide, setGuideSide] = useState<"front" | "back" | null>(null)
   const [nationality, setNationality] = useState("")
   const [residenceStatus, setResidenceStatus] = useState("")
-  const [residencePeriodStart, setResidencePeriodStart] = useState("")
-  const [residencePeriodEnd, setResidencePeriodEnd] = useState("")
+  const [residencePeriodStart, setResidencePeriodStart] = useState<Date | undefined>()
+  const [residencePeriodEnd, setResidencePeriodEnd] = useState<Date | undefined>()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hydrated, setHydrated] = useState(false)
   const [frontImageUrl, setFrontImageUrl] = useState<string | null>(null)
@@ -70,8 +76,14 @@ export function AlienRegistrationPage() {
       const e = (d.residencePeriodEnd as string) || ""
       if (n) setNationality(n)
       if (r) setResidenceStatus(r)
-      if (s) setResidencePeriodStart(s)
-      if (e) setResidencePeriodEnd(e)
+      if (s) {
+        const d = parse(s, "yyyy-MM-dd", new Date())
+        if (isValid(d)) setResidencePeriodStart(d)
+      }
+      if (e) {
+        const d = parse(e, "yyyy-MM-dd", new Date())
+        if (isValid(d)) setResidencePeriodEnd(d)
+      }
 
       // Front / back images
       const frontDoc = d.frontDocument as Record<string, unknown> | null | undefined
@@ -117,8 +129,8 @@ export function AlienRegistrationPage() {
     !!backFile ||
     nationality.trim().length > 0 ||
     residenceStatus.trim().length > 0 ||
-    residencePeriodStart.length > 0 ||
-    residencePeriodEnd.length > 0
+    !!residencePeriodStart ||
+    !!residencePeriodEnd
 
   const handleSubmit = async () => {
     if (!isFormValid || isSubmitting) return
@@ -128,8 +140,8 @@ export function AlienRegistrationPage() {
       ...(backFile ? { backFile } : {}),
       ...(nationality.trim() ? { nationality: nationality.trim() } : {}),
       ...(residenceStatus.trim() ? { residenceStatus: residenceStatus.trim() } : {}),
-      ...(residencePeriodStart ? { residencePeriodStart } : {}),
-      ...(residencePeriodEnd ? { residencePeriodEnd } : {}),
+      ...(residencePeriodStart ? { residencePeriodStart: format(residencePeriodStart, "yyyy-MM-dd") } : {}),
+      ...(residencePeriodEnd ? { residencePeriodEnd: format(residencePeriodEnd, "yyyy-MM-dd") } : {}),
     }
     const result = await uploadAlienRegDoc(payload)
     setIsSubmitting(false)
@@ -236,59 +248,32 @@ export function AlienRegistrationPage() {
         {/* Metadata fields */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">국적</label>
-          <Input
-            type="text"
+          <Select
             value={nationality}
-            onChange={(e) => setNationality(e.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase())}
-            placeholder="VN, CN 등 (ISO 3166-1 alpha-2)"
-            maxLength={2}
+            onChange={setNationality}
+            options={nationalities.map((n) => ({ value: n.code, label: n.name }))}
+            placeholder="국적 선택"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">체류자격</label>
-          <Input
-            type="text"
+          <Select
             value={residenceStatus}
-            onChange={(e) => setResidenceStatus(e.target.value.replace(/[^a-zA-Z0-9-]/g, "").toUpperCase())}
-            placeholder="E-9, H-2, F-4 등"
+            onChange={setResidenceStatus}
+            options={residenceStatuses.map((s) => ({ value: s.code, label: s.name }))}
+            placeholder="체류자격 선택"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">체류기간 시작일</label>
-          <input
-            type="text"
-            value={residencePeriodStart}
-            onChange={(e) => setResidencePeriodStart(e.target.value)}
-            onFocus={(e) => { e.target.type = "date" }}
-            onClick={(e) => {
-              const el = e.currentTarget
-              el.type = "date"
-              try { el.showPicker?.() } catch { /* ignore */ }
-            }}
-            onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
-            placeholder="시작일 입력"
-            className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
-          />
+          <DateInput value={residencePeriodStart} onChange={setResidencePeriodStart} />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">체류기간 종료일</label>
-          <input
-            type="text"
-            value={residencePeriodEnd}
-            onChange={(e) => setResidencePeriodEnd(e.target.value)}
-            onFocus={(e) => { e.target.type = "date" }}
-            onClick={(e) => {
-              const el = e.currentTarget
-              el.type = "date"
-              try { el.showPicker?.() } catch { /* ignore */ }
-            }}
-            onBlur={(e) => { if (!e.target.value) e.target.type = "text" }}
-            placeholder="종료일 입력"
-            className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-sm text-slate-900 placeholder:text-gray-400"
-          />
+          <DateInput value={residencePeriodEnd} onChange={setResidencePeriodEnd} />
         </div>
       </main>
 
