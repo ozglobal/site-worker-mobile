@@ -1,0 +1,357 @@
+[2026-05-07T11:09:56.152Z] [debug] [vite] connecting...
+[2026-05-07T11:09:56.189Z] [debug] [vite] connected.
+[2026-05-07T11:09:56.447Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:09:58.968Z] [startGroupCollapsed] [api] POST /auth/register/send-code  200  166ms
+[2026-05-07T11:09:58.968Z] [log] [request] {phone: 010-6369-6595}
+[2026-05-07T11:09:58.968Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:09:58.969Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:19.698Z] [startGroupCollapsed] [api] POST /auth/register/verify-code  200  67ms
+[2026-05-07T11:10:19.698Z] [log] [request] {phone: 010-6369-6595, verificationCode: 328062}
+[2026-05-07T11:10:19.698Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:19.699Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:21.091Z] [debug] [vite] connecting...
+[2026-05-07T11:10:21.105Z] [debug] [vite] connected.
+[2026-05-07T11:10:21.161Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:22.063Z] [startGroupCollapsed] [api] POST /auth/register/worker  200  163ms
+[2026-05-07T11:10:22.065Z] [log] [request] {password: ***, nameKo: 외국인, nameEn: FOREIGNER, mobilePhone: 010-6369-6595, nationalityType: foreigner_registered}
+[2026-05-07T11:10:22.065Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:22.065Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:22.987Z] [startGroupCollapsed] [api] POST /auth/login  200  153ms
+[2026-05-07T11:10:22.987Z] [log] [request] {username: 010-6369-6595, password: Test123!, clientId: mobile}
+[2026-05-07T11:10:22.987Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:22.987Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:23.057Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  68ms
+[2026-05-07T11:10:23.059Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:23.059Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:23.059Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  67ms
+[2026-05-07T11:10:23.060Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:23.060Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:23.434Z] [startGroupCollapsed] [api] GET /system/dict/item/code/worker_category  200  71ms
+[2026-05-07T11:10:23.437Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:23.437Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:23.459Z] [log] [notices/inbox]: {list: Array(0), total: 0, page: 1, size: 50, pages: 0}
+[2026-05-07T11:10:23.460Z] [startGroupCollapsed] [api] GET /system/worker/me  200  97ms
+[2026-05-07T11:10:23.460Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:23.460Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:23.571Z] [startGroupCollapsed] [api] PUT /system/worker/me/category  200  60ms
+[2026-05-07T11:10:23.571Z] [log] [request] {workerCategory: general}
+[2026-05-07T11:10:23.572Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:23.572Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:23.660Z] [startGroupCollapsed] [api] GET /system/worker/me  200  86ms
+[2026-05-07T11:10:23.660Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:23.660Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:23.858Z] [startGroupCollapsed] [api] PUT /system/worker/me  200  90ms
+[2026-05-07T11:10:23.858Z] [log] [request] {bankName: null, bankAccount: null, accountHolder: null, accountHolderRelation: null, equipmentCompanyName: null}
+[2026-05-07T11:10:23.859Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:23.859Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:23.941Z] [startGroupCollapsed] [api] PUT /system/worker/me/daily-wage  200  83ms
+[2026-05-07T11:10:23.941Z] [log] [request] {dailyWage: 100000}
+[2026-05-07T11:10:23.942Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:23.942Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:24.014Z] [startGroupCollapsed] [api] POST /system/worker/me/complete  200  70ms
+[2026-05-07T11:10:24.015Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:24.015Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:24.492Z] [startGroupCollapsed] [api] GET /efs/api/documents/user/1575?page=1&size=200&sortField=createTime&sortOrder=desc&year=2026  200  100ms
+[2026-05-07T11:10:24.492Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:24.492Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:24.504Z] [startGroupCollapsed] [api] GET /system/worker/me/attendance/daily/2026-05-07  200  110ms
+[2026-05-07T11:10:24.504Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:24.504Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:24.504Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  114ms
+[2026-05-07T11:10:24.505Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:24.505Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:24.505Z] [startGroupCollapsed] [api] GET /system/worker/me/home  200  115ms
+[2026-05-07T11:10:24.505Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:24.505Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:25.483Z] [debug] [vite] connecting...
+[2026-05-07T11:10:25.483Z] [debug] [vite] connected.
+[2026-05-07T11:10:25.489Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:25.568Z] [startGroupCollapsed] [api] POST /auth/refresh  200  118ms
+[2026-05-07T11:10:25.568Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:25.568Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:25.568Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:25.698Z] [startGroupCollapsed] [api] GET /auth/user/info  200  139ms
+[2026-05-07T11:10:25.699Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:25.699Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:25.848Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  147ms
+[2026-05-07T11:10:25.848Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:25.848Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:25.858Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  158ms
+[2026-05-07T11:10:25.858Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:25.858Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:26.190Z] [log] [notices/inbox]: {list: Array(0), total: 0, page: 1, size: 50, pages: 0}
+[2026-05-07T11:10:26.211Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  108ms
+[2026-05-07T11:10:26.212Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:26.212Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:26.224Z] [startGroupCollapsed] [api] GET /efs/api/documents/user/1575?page=1&size=200&sortField=createTime&sortOrder=desc&year=2026  200  119ms
+[2026-05-07T11:10:26.226Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:26.226Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:26.233Z] [startGroupCollapsed] [api] GET /system/worker/me/attendance/daily/2026-05-07  200  127ms
+[2026-05-07T11:10:26.233Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:26.233Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:26.234Z] [startGroupCollapsed] [api] GET /system/worker/me/home  200  132ms
+[2026-05-07T11:10:26.234Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:26.235Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:26.862Z] [debug] [vite] connecting...
+[2026-05-07T11:10:26.875Z] [debug] [vite] connected.
+[2026-05-07T11:10:27.066Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:27.185Z] [startGroupCollapsed] [api] POST /auth/refresh  200  89ms
+[2026-05-07T11:10:27.185Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:27.186Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:27.187Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:27.272Z] [startGroupCollapsed] [api] GET /auth/user/info  200  85ms
+[2026-05-07T11:10:27.273Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:27.273Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:27.349Z] [log] [notices/inbox]: {list: Array(0), total: 0, page: 1, size: 50, pages: 0}
+[2026-05-07T11:10:27.368Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  85ms
+[2026-05-07T11:10:27.369Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:27.371Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:27.372Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  90ms
+[2026-05-07T11:10:27.374Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:27.374Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:27.374Z] [startGroupCollapsed] [api] GET /system/dict/item/code/worker_category  200  92ms
+[2026-05-07T11:10:27.374Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:27.374Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:27.375Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  92ms
+[2026-05-07T11:10:27.376Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:27.376Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:27.380Z] [startGroupCollapsed] [api] GET /system/worker/me  200  102ms
+[2026-05-07T11:10:27.381Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:27.381Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:29.024Z] [startGroupCollapsed] [api] GET /system/worker/me  200  77ms
+[2026-05-07T11:10:29.024Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:29.024Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:29.032Z] [startGroupCollapsed] [api] GET /system/worker/me  200  84ms
+[2026-05-07T11:10:29.032Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:29.032Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:29.101Z] [startGroupCollapsed] [api] GET /system/common/dict/bank_name  200  152ms
+[2026-05-07T11:10:29.101Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:29.101Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:29.786Z] [startGroupCollapsed] [api] PUT /system/worker/me/payment  200  68ms
+[2026-05-07T11:10:29.793Z] [log] [request] {wagePaymentTarget: SELF, bankName: 004, bankAccount: 12345678901, accountHolder: 외국인, accountHolderRelation: null}
+[2026-05-07T11:10:29.794Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:29.794Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:29.865Z] [startGroupCollapsed] [api] POST /system/worker/me/complete  200  77ms
+[2026-05-07T11:10:29.866Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:29.866Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:29.948Z] [startGroupCollapsed] [api] GET /system/worker/me  200  82ms
+[2026-05-07T11:10:29.948Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:29.948Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:30.517Z] [debug] [vite] connecting...
+[2026-05-07T11:10:30.544Z] [debug] [vite] connected.
+[2026-05-07T11:10:30.668Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:30.816Z] [startGroupCollapsed] [api] POST /auth/refresh  200  78ms
+[2026-05-07T11:10:30.817Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:30.817Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:30.817Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:30.910Z] [startGroupCollapsed] [api] GET /auth/user/info  200  92ms
+[2026-05-07T11:10:30.910Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:30.910Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:30.963Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  52ms
+[2026-05-07T11:10:30.964Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:30.964Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:30.966Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  55ms
+[2026-05-07T11:10:30.967Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:30.967Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:31.289Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  82ms
+[2026-05-07T11:10:31.291Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:31.291Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:31.304Z] [startGroupCollapsed] [api] GET /system/worker/me/home  200  100ms
+[2026-05-07T11:10:31.306Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:31.306Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:31.307Z] [startGroupCollapsed] [api] GET /efs/api/documents/user/1575?page=1&size=200&sortField=createTime&sortOrder=desc&year=2026  200  97ms
+[2026-05-07T11:10:31.307Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:31.307Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:31.585Z] [log] [notices/inbox]: {list: Array(0), total: 0, page: 1, size: 50, pages: 0}
+[2026-05-07T11:10:31.595Z] [startGroupCollapsed] [api] GET /system/worker/me/attendance/daily/2026-05-07  200  384ms
+[2026-05-07T11:10:31.598Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:31.598Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:32.330Z] [startGroupCollapsed] [api] GET /system/worker/me  200  67ms
+[2026-05-07T11:10:32.330Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:32.330Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:32.664Z] [startGroupCollapsed] [api] POST /system/worker/me/document/safety-cert  200  221ms
+[2026-05-07T11:10:32.664Z] [log] [request] FormData
+[2026-05-07T11:10:32.664Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:32.664Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:32.724Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  61ms
+[2026-05-07T11:10:32.725Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:32.725Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:39.056Z] [startGroupCollapsed] [api] POST /system/worker/me/document/bankbook  200  240ms
+[2026-05-07T11:10:39.057Z] [log] [request] FormData
+[2026-05-07T11:10:39.057Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:39.057Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:39.122Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  65ms
+[2026-05-07T11:10:39.123Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:39.123Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:45.876Z] [debug] [vite] connecting...
+[2026-05-07T11:10:45.883Z] [debug] [vite] connected.
+[2026-05-07T11:10:45.883Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:46.133Z] [startGroupCollapsed] [api] POST /auth/refresh  200  207ms
+[2026-05-07T11:10:46.134Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:46.135Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:46.135Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:46.211Z] [startGroupCollapsed] [api] GET /auth/user/info  200  76ms
+[2026-05-07T11:10:46.211Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:46.211Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:46.309Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  71ms
+[2026-05-07T11:10:46.309Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:46.309Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:46.320Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  82ms
+[2026-05-07T11:10:46.320Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:46.321Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:46.325Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  68ms
+[2026-05-07T11:10:46.326Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:46.326Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:46.337Z] [startGroupCollapsed] [api] GET /system/worker/me  200  78ms
+[2026-05-07T11:10:46.337Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:46.337Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:47.238Z] [startGroupCollapsed] [api] GET /system/common/dict/residence_status  200  68ms
+[2026-05-07T11:10:47.239Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:47.239Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:48.034Z] [startGroupCollapsed] [api] POST /system/worker/me/document/alien-reg  200  304ms
+[2026-05-07T11:10:48.034Z] [log] [request] FormData
+[2026-05-07T11:10:48.035Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:48.035Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:48.124Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  89ms
+[2026-05-07T11:10:48.126Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:48.126Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:48.760Z] [debug] [vite] connecting...
+[2026-05-07T11:10:48.827Z] [debug] [vite] connected.
+[2026-05-07T11:10:48.958Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:49.073Z] [debug] [vite] connecting...
+[2026-05-07T11:10:49.925Z] [debug] [vite] connected.
+[2026-05-07T11:10:49.925Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:49.958Z] [startGroupCollapsed] [api] POST /auth/refresh  200  179ms
+[2026-05-07T11:10:49.958Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:49.958Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:49.958Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:50.057Z] [startGroupCollapsed] [api] GET /auth/user/info  200  106ms
+[2026-05-07T11:10:50.057Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:50.057Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:50.075Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  105ms
+[2026-05-07T11:10:50.075Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:50.076Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:50.105Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  112ms
+[2026-05-07T11:10:50.106Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:50.107Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:50.108Z] [startGroupCollapsed] [api] GET /system/worker/me  200  137ms
+[2026-05-07T11:10:50.108Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:50.109Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:50.110Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  115ms
+[2026-05-07T11:10:50.110Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:50.110Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:50.763Z] [warning] [ErrorReporter] DOCUMENT_FETCH_FAIL: Network error {endpoint: /system/worker/me/document/safety-cert}
+[2026-05-07T11:10:51.591Z] [debug] [vite] connecting...
+[2026-05-07T11:10:51.692Z] [debug] [vite] connected.
+[2026-05-07T11:10:51.693Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:51.729Z] [startGroupCollapsed] [api] POST /auth/refresh  200  144ms
+[2026-05-07T11:10:51.729Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:51.730Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:51.730Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:51.743Z] [startGroupCollapsed] [api] GET /auth/user/info  200  134ms
+[2026-05-07T11:10:51.744Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:51.744Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:51.796Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  92ms
+[2026-05-07T11:10:51.799Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:51.799Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:51.817Z] [startGroupCollapsed] [api] GET /system/worker/me  200  110ms
+[2026-05-07T11:10:51.819Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:51.819Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:51.819Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  72ms
+[2026-05-07T11:10:51.819Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:51.819Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:51.828Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  84ms
+[2026-05-07T11:10:51.829Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:51.829Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:52.520Z] [debug] [vite] connecting...
+[2026-05-07T11:10:52.876Z] [debug] [vite] connected.
+[2026-05-07T11:10:53.321Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:53.343Z] [startGroupCollapsed] [api] POST /auth/refresh  200  164ms
+[2026-05-07T11:10:53.343Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:53.344Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:53.344Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:53.436Z] [startGroupCollapsed] [api] GET /auth/user/info  200  90ms
+[2026-05-07T11:10:53.437Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:53.438Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:53.556Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  109ms
+[2026-05-07T11:10:53.557Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:53.557Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:53.558Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  115ms
+[2026-05-07T11:10:53.559Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:53.559Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:53.560Z] [startGroupCollapsed] [api] GET /system/worker/me  200  114ms
+[2026-05-07T11:10:53.560Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:53.560Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:53.560Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  110ms
+[2026-05-07T11:10:53.560Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:53.561Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:54.237Z] [warning] [ErrorReporter] DOCUMENT_FETCH_FAIL: Network error {endpoint: /system/worker/me/document/bankbook}
+[2026-05-07T11:10:54.810Z] [debug] [vite] connecting...
+[2026-05-07T11:10:54.824Z] [debug] [vite] connected.
+[2026-05-07T11:10:54.885Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:55.102Z] [startGroupCollapsed] [api] POST /auth/refresh  200  94ms
+[2026-05-07T11:10:55.104Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:55.104Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:55.104Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:55.198Z] [startGroupCollapsed] [api] GET /auth/user/info  200  95ms
+[2026-05-07T11:10:55.198Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:55.200Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:55.297Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  102ms
+[2026-05-07T11:10:55.297Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:55.297Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:55.311Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  103ms
+[2026-05-07T11:10:55.311Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:55.312Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:55.312Z] [startGroupCollapsed] [api] GET /system/worker/me  200  117ms
+[2026-05-07T11:10:55.313Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:55.313Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:55.313Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  102ms
+[2026-05-07T11:10:55.313Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:55.313Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:56.620Z] [debug] [vite] connecting...
+[2026-05-07T11:10:56.623Z] [debug] [vite] connected.
+[2026-05-07T11:10:56.718Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:56.842Z] [startGroupCollapsed] [api] POST /auth/refresh  200  84ms
+[2026-05-07T11:10:56.843Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:56.843Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:56.844Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:56.912Z] [startGroupCollapsed] [api] GET /auth/user/info  200  69ms
+[2026-05-07T11:10:56.913Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:56.913Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:56.982Z] [startGroupCollapsed] [api] GET /system/worker/me  200  84ms
+[2026-05-07T11:10:56.982Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:56.983Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:56.993Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  79ms
+[2026-05-07T11:10:56.995Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:56.995Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:56.996Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  97ms
+[2026-05-07T11:10:56.996Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:56.996Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:56.997Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  81ms
+[2026-05-07T11:10:56.997Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:56.997Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:58.235Z] [debug] [vite] connecting...
+[2026-05-07T11:10:58.246Z] [debug] [vite] connected.
+[2026-05-07T11:10:58.279Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2026-05-07T11:10:58.445Z] [startGroupCollapsed] [api] POST /auth/refresh  200  125ms
+[2026-05-07T11:10:58.446Z] [log] [request] {refreshToken: ***}
+[2026-05-07T11:10:58.447Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:58.447Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:58.548Z] [startGroupCollapsed] [api] GET /auth/user/info  200  100ms
+[2026-05-07T11:10:58.548Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:58.548Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:58.664Z] [startGroupCollapsed] [api] GET /system/worker/me  200  112ms
+[2026-05-07T11:10:58.665Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:58.665Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:58.665Z] [startGroupCollapsed] [api] GET /common/dict/sys_user_gender  200  110ms
+[2026-05-07T11:10:58.666Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:58.667Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:58.668Z] [startGroupCollapsed] [api] GET /system/worker/me/document/summary  200  115ms
+[2026-05-07T11:10:58.669Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:58.670Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:58.670Z] [startGroupCollapsed] [api] GET /common/dict/nationality  200  111ms
+[2026-05-07T11:10:58.670Z] [log] [RESPONSE] {status: 200, data: Object}
+[2026-05-07T11:10:58.670Z] [endGroup] console.groupEnd
+[2026-05-07T11:10:59.795Z] [debug] [vite] connecting...
+[2026-05-07T11:10:59.817Z] [debug] [vite] connected.
+[2026-05-07T11:10:59.860Z] [info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
