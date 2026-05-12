@@ -68,9 +68,6 @@ function EntrySection({
   const origWage   = pc ? parseFloat(pc.originalWage || pc.originalValue || "0") : null
   const reqWage    = pc ? parseFloat(pc.requestedWage || pc.requestedValue || "0") : null
 
-  const origExpected = origEffort != null && origWage != null ? origEffort * origWage : null
-  const reqExpected  = reqEffort  != null && reqWage  != null ? reqEffort  * reqWage  : null
-
   return (
     <div className="rounded-lg overflow-hidden bg-slate-50">
       <div className="px-4 py-2.5 flex items-center justify-between">
@@ -118,16 +115,9 @@ function EntrySection({
         </div>
         <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
           <span className="text-sm text-slate-600">예상 임금(세전)</span>
-          {pc && origExpected != null && reqExpected != null ? (
-            <CorrectionValue
-              original={formatCurrency(origExpected)}
-              requested={formatCurrency(reqExpected)}
-            />
-          ) : (
-            <span className="text-sm font-medium text-slate-900">
-              {formatCurrency(expectedWage)}
-            </span>
-          )}
+          <span className="text-sm font-medium text-slate-900">
+            {formatCurrency(expectedWage)}
+          </span>
         </div>
       </div>
     </div>
