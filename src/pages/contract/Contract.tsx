@@ -4,10 +4,8 @@ import { AppBottomNav } from "@/components/layout/AppBottomNav"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { Spinner } from "@/components/ui/spinner"
 import { useContracts } from "@/lib/queries/useContracts"
-import { useHomeData } from "@/lib/queries/useHomeData"
-import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useDictItems } from "@/lib/queries/useDictItems"
-import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type MonthGroup, type SigningStage } from "@/lib/contract"
+import { fetchSigningLink, fetchDocumentPdf, type EfsDocument, type ContractGroup } from "@/lib/contract"
 import { useToast } from "@/contexts/ToastContext"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { ChevronDown as ExpandMoreIcon } from "lucide-react"
@@ -22,52 +20,44 @@ function formatMonth(yyyyMM: string): string {
 }
 
 
-function badgeText(stage: SigningStage): string {
-  switch (stage) {
-    case 'AWAITING_WORKER':  return '서명 필요'
-    case 'AWAITING_MANAGER': return '관리자 승인 대기'
-    case 'COMPLETED':        return '완료'
-    case 'SENT':             return '승인 대기'
-    case 'DRAFT':            return '미발송'
-    case 'REJECTED':         return '반려'
-    case 'CANCELLED':        return '취소'
-    case 'EXPIRED':          return '만료'
-    default:                 return stage
-  }
-}
 
 // ── Month Card ────────────────────────────────────────────
 
 interface MonthCardProps {
-  group: MonthGroup
+  group: ContractGroup
   actionLoading: string | null
   onAction: (doc: EfsDocument) => void
-  dailyWageSnapshot?: number | null
-  workerCategoryLabel?: string
-  siteName?: string
+  workerCategories: { code: string; name: string }[]
 }
 
-function badgePill(stage: SigningStage) {
-  switch (stage) {
-    case 'AWAITING_WORKER':  return { text: badgeText(stage), cls: 'bg-red-50 text-red-500' }
-    case 'AWAITING_MANAGER': return { text: badgeText(stage), cls: 'bg-orange-50 text-orange-500' }
-    case 'COMPLETED':        return { text: badgeText(stage), cls: 'bg-green-50 text-green-600' }
-    case 'SENT':             return { text: badgeText(stage), cls: 'bg-blue-50 text-blue-600' }
-    case 'REJECTED':         return { text: badgeText(stage), cls: 'bg-orange-50 text-orange-500' }
-    default:                 return { text: badgeText(stage), cls: 'bg-slate-100 text-slate-400' }
+function badgePill(status: string) {
+  switch (status) {
+    case 'in_progress':  return { text: '현장관리자 서명 대기', cls: 'bg-orange-50 text-orange-500' }
+    case 'sent':         return { text: '근로자 서명 대기',     cls: 'bg-red-50 text-red-500' }
+    case 'completed':    return { text: '서명 완료',           cls: 'bg-green-50 text-green-600' }
+    case 'rejected':     return { text: '서명 거절',           cls: 'bg-orange-50 text-orange-500' }
+    case 'cancelled':    return { text: '취소',                cls: 'bg-slate-100 text-slate-400' }
+    case 'deleted':      return { text: '삭제',                cls: 'bg-slate-100 text-slate-400' }
+    case 'expired':      return { text: '만료',                cls: 'bg-slate-100 text-slate-400' }
+    case 'send_failed':  return { text: '발송 실패',           cls: 'bg-slate-100 text-slate-400' }
+    default:             return { text: status,               cls: 'bg-slate-100 text-slate-400' }
   }
 }
 
-function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCategoryLabel, siteName }: MonthCardProps) {
+function MonthCard({ group, actionLoading, onAction, workerCategories }: MonthCardProps) {
   const allDocs: { doc: EfsDocument; label: string }[] = []
   if (group.contract)   allDocs.push({ doc: group.contract,   label: '근로계약서' })
   if (group.delegation) allDocs.push({ doc: group.delegation, label: '노무비위임장' })
   group.extras.forEach((doc) => allDocs.push({ doc, label: doc.title }))
 
-  const needsSign = allDocs.some((d) => d.doc.signingStage === 'AWAITING_WORKER')
+  const needsSign = allDocs.some((d) => d.doc.status === 'sent')
 
-  const headerParts = [workerCategoryLabel, dailyWageSnapshot != null ? `${dailyWageSnapshot.toLocaleString('ko-KR')}원` : ''].filter(Boolean)
-  const headerLine = headerParts.join(' · ')
+  const refDoc = group.contract ?? group.delegation ?? group.extras[0]
+  const siteName = refDoc?.siteName ?? ''
+  const dailyWage = refDoc?.dailyWage
+  const rawWorkerType = refDoc?.workerType ?? ''
+  const categoryLabel = workerCategories.find((c) => c.code === rawWorkerType)?.name ?? rawWorkerType
+  const headerLine = [categoryLabel, dailyWage != null ? `${dailyWage.toLocaleString('ko-KR')}원` : ''].filter(Boolean).join(' · ')
 
   return (
     <div
@@ -85,11 +75,8 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
       )}
 
       {allDocs.map(({ doc, label }, i) => {
-        const canAct = doc.signingStage === 'AWAITING_WORKER'
-          || doc.signingStage === 'COMPLETED'
-          || doc.signingStage === 'SENT'
         const loading = actionLoading === doc.id
-        const pill = badgePill(doc.signingStage)
+        const pill = badgePill(doc.status)
 
         return (
           <div
@@ -102,26 +89,24 @@ function MonthCard({ group, actionLoading, onAction, dailyWageSnapshot, workerCa
                 {pill.text}
               </span>
             </div>
-            {canAct && (
-              loading ? (
-                <Spinner size="sm" />
-              ) : doc.signingStage === 'AWAITING_WORKER' ? (
-                <button
-                  type="button"
-                  onClick={() => onAction(doc)}
-                  className="shrink-0 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white active:opacity-80"
-                >
-                  서명하기
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => onAction(doc)}
-                  className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  열람
-                </button>
-              )
+            {loading ? (
+              <Spinner size="sm" />
+            ) : doc.status === 'sent' ? (
+              <button
+                type="button"
+                onClick={() => onAction(doc)}
+                className="shrink-0 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white active:opacity-80"
+              >
+                서명하기
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onAction(doc)}
+                className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                열람
+              </button>
             )}
           </div>
         )
@@ -145,18 +130,12 @@ export function ContractPage() {
   const handleNavigation = useBottomNavHandler()
 
   const { data: groups = [], isLoading, isError, refetch } = useContracts(userId, year)
-  const { data: homeData } = useHomeData()
-  const { data: profile } = useWorkerProfile()
   const { data: workerCategories = [] } = useDictItems('worker_category')
-  const attendance = homeData?.todayAttendance.find((a) => a.dailyWageSnapshot != null) ?? homeData?.todayAttendance[0]
-  const dailyWageSnapshot = attendance?.dailyWageSnapshot ?? null
-  const siteName = attendance?.siteName ?? ''
-  const categoryLabel = profile?.workerCategory
-    ? (workerCategories.find((c) => c.code === profile.workerCategory)?.name ?? profile.workerCategory)
-    : ''
 
-  const hasUnsigned = groups.some((g) =>
-    [g.contract, g.delegation, ...g.extras].some((d) => d?.signingStage === 'AWAITING_WORKER')
+  const hasUnsigned = groups.some((mg) =>
+    mg.groups.some((cg) =>
+      [cg.contract, cg.delegation, ...cg.extras].some((d) => d?.status === 'sent')
+    )
   )
 
   const handleAction = useCallback(async (doc: EfsDocument) => {
@@ -166,7 +145,7 @@ export function ContractPage() {
     const win = window.open('about:blank', '_blank')
 
     try {
-      if (doc.signingStage === 'AWAITING_WORKER') {
+      if (doc.status === 'sent') {
         const result = await fetchSigningLink(doc.id)
         if (result.success && result.data) {
           if (win) win.location.href = result.data
@@ -242,17 +221,18 @@ export function ContractPage() {
           ) : groups.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">{year}년 계약서가 없습니다.</p>
           ) : (
-            groups.map((g) => (
-              <section key={g.month} className="space-y-2">
-                <h3 className="text-sm font-semibold text-slate-500">{formatMonth(g.month)}</h3>
-                <MonthCard
-                  group={g}
-                  actionLoading={actionLoading}
-                  onAction={handleAction}
-                  dailyWageSnapshot={dailyWageSnapshot}
-                  workerCategoryLabel={categoryLabel}
-                  siteName={siteName}
-                />
+            groups.map((mg) => (
+              <section key={mg.month} className="space-y-2">
+                <h3 className="text-sm font-semibold text-slate-500">{formatMonth(mg.month)}</h3>
+                {mg.groups.map((cg) => (
+                  <MonthCard
+                    key={cg.contractId ?? cg.contract?.id ?? cg.delegation?.id ?? cg.extras[0]?.id}
+                    group={cg}
+                    actionLoading={actionLoading}
+                    onAction={handleAction}
+                    workerCategories={workerCategories}
+                  />
+                ))}
               </section>
             ))
           )}

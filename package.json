@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:full": "node scripts/test-e2e-full.mjs",
+    "test:ui": "node scripts/test-runner-server.mjs",
+    "db:delete-user": "node scripts/db-delete-user.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

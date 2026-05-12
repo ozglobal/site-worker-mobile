@@ -33,8 +33,10 @@ export function Home() {
   const hasPendingDocs = docsCompleted === false
   const { data: contractGroups = [] } = useContracts(worker?.userId ?? null, new Date().getFullYear())
   const unsignedCount = useMemo(
-    () => contractGroups.flatMap((g) => [g.contract, g.delegation, ...g.extras])
-      .filter((d) => d?.signingStage === 'AWAITING_WORKER').length,
+    () => contractGroups
+      .flatMap((mg) => mg.groups)
+      .flatMap((cg) => [cg.contract, cg.delegation, ...cg.extras])
+      .filter((d) => d?.status === 'sent').length,
     [contractGroups]
   )
   // /attendance/daily carries per-site `attendanceId` which /home omits — we

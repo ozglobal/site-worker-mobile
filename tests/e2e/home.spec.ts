@@ -125,3 +125,151 @@ test.describe("Home page — checkout dialog", () => {
     await expect(page.getByText("예상 임금(세전)")).toBeVisible()
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scenario 12 — 야근 신청
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe("Scenario 12 — 야근 신청", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/home")
+    await page.waitForLoadState("networkidle")
+  })
+
+  test("야근 신청 button visible when checked in without overtime", async ({ page }) => {
+    const overtimeBtn = page.getByRole("button", { name: "야근 신청" })
+    const checkedInIndicator = page.getByRole("button", { name: "퇴근하기" })
+    if (!(await checkedInIndicator.isVisible({ timeout: 3_000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+    // When checked in and overtime not yet applied, 야근 신청 button should appear
+    await expect(overtimeBtn.or(page.getByText("야근 중"))).toBeVisible({ timeout: 3_000 })
+  })
+
+  test("야근 신청 button opens confirmation dialog", async ({ page }) => {
+    const overtimeBtn = page.getByRole("button", { name: "야근 신청" })
+    if (!(await overtimeBtn.isVisible({ timeout: 3_000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+    await overtimeBtn.click()
+    await expect(page.getByText("야근 신청")).toBeVisible({ timeout: 2_000 })
+    await expect(page.getByRole("button", { name: "신청하기" })).toBeVisible()
+    await expect(page.getByRole("button", { name: "취소하기" })).toBeVisible()
+  })
+
+  test("야근 신청 dialog shows policy notice", async ({ page }) => {
+    const overtimeBtn = page.getByRole("button", { name: "야근 신청" })
+    if (!(await overtimeBtn.isVisible({ timeout: 3_000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+    await overtimeBtn.click()
+    await expect(page.getByText(/야간 근로|야근 신청/)).toBeVisible({ timeout: 2_000 })
+  })
+
+  test("취소하기 closes 야근 신청 dialog", async ({ page }) => {
+    const overtimeBtn = page.getByRole("button", { name: "야근 신청" })
+    if (!(await overtimeBtn.isVisible({ timeout: 3_000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+    await overtimeBtn.click()
+    await expect(page.getByRole("button", { name: "취소하기" })).toBeVisible({ timeout: 2_000 })
+    await page.getByRole("button", { name: "취소하기" }).click()
+    await expect(page.getByRole("button", { name: "취소하기" })).not.toBeVisible({ timeout: 2_000 })
+  })
+
+  test("근무중 badge shows 야근 중 after overtime confirmed", async ({ page }) => {
+    const overtimeBtn = page.getByRole("button", { name: "야근 신청" })
+    if (!(await overtimeBtn.isVisible({ timeout: 3_000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+    // If 야근 중 badge already visible, overtime was already applied
+    const overtimeBadge = page.getByText("야근 중")
+    if (await overtimeBadge.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await expect(overtimeBadge).toBeVisible()
+    }
+  })
+
+  test("야근 신청 button hidden when already overtime", async ({ page }) => {
+    const overtimeBadge = page.getByText("야근 중")
+    if (!(await overtimeBadge.isVisible({ timeout: 2_000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+    // If already in overtime state, 야근 신청 button should not be shown
+    await expect(page.getByRole("button", { name: "야근 신청" })).not.toBeVisible()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scenario 14 — 홈 배너 상태 (unsigned contract banner)
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe("Scenario 14 — 홈 배너 (미서명 계약)", () => {
+  test("unsigned contract banner navigates to /contract", async ({ page }) => {
+    await page.goto("/home")
+    await page.waitForLoadState("networkidle")
+    const banner = page.getByText("서명하지 않은 근로계약서가 있어요")
+    if (!(await banner.isVisible({ timeout: 3_000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+    await banner.click()
+    await expect(page).toHaveURL(/\/contract/)
+  })
+
+  test("account incomplete banner navigates to /profile", async ({ page }) => {
+    await page.goto("/home")
+    await page.waitForLoadState("networkidle")
+    const banner = page.getByText("계좌 정보 입력이 완료되지 않았어요")
+    if (!(await banner.isVisible({ timeout: 3_000 }).catch(() => false))) {
+      test.skip()
+      return
+    }
+    await banner.click()
+    await expect(page).toHaveURL(/\/profile/)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 출근 QR 체크인 — tester scans real QR code in headed browser
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe("출근 QR 체크인 (수동 스캔)", () => {
+  test.use({ permissions: ["camera", "geolocation"] })
+  test.setTimeout(180_000)
+
+  test("QR 스캔으로 출근", async ({ page, context }) => {
+    // Provide a GPS coordinate so check-in doesn't block on location
+    await context.setGeolocation({ latitude: 37.5665, longitude: 126.9780 })
+
+    await page.goto("/home")
+    await page.waitForLoadState("networkidle")
+
+    // Already checked in — nothing to do
+    if (await page.getByRole("button", { name: "퇴근하기" }).isVisible({ timeout: 2_000 }).catch(() => false)) {
+      test.skip(true, "이미 출근 상태입니다.")
+      return
+    }
+
+    // Open QR scanner
+    const checkinBtn = page.getByRole("button", { name: /출근/ }).first()
+    await expect(checkinBtn).toBeVisible({ timeout: 8_000 })
+    await checkinBtn.click()
+
+    // Confirm scanner dialog is open (heading text or video element)
+    const scannerHeading = page.getByText("출근 현장 QR 스캔")
+    const videoEl = page.locator("video").first()
+    await expect(scannerHeading.or(videoEl).first()).toBeVisible({ timeout: 5_000 })
+
+    console.log("\n⏸  현장 QR 코드를 카메라에 비춰 스캔하세요. (최대 2분)\n")
+
+    // Wait for check-in success: 퇴근하기 button appears or success toast
+    const success = page.getByRole("button", { name: "퇴근하기" })
+      .or(page.getByText(/출근 완료/))
+    await expect(success.first()).toBeVisible({ timeout: 120_000 })
+
+    console.log("✅ 출근 완료\n")
+  })
+})

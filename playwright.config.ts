@@ -31,7 +31,7 @@ export default defineConfig({
       testIgnore: /auth\.setup\.ts/,
       dependencies: ["setup"],
       use: {
-        storageState: "tests/.auth/worker.json",
+        storageState: "tests/e2e/.auth/worker.json",
       },
     },
   ],

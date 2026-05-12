@@ -76,25 +76,79 @@ test.describe("Attendance — Daily Detail", () => {
   })
 })
 
-test.describe("Correction dialog", () => {
-  test("dialog fields pre-filled and submit works", async ({ page }) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// Scenario 13 — 출퇴근 정정요청
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe("Scenario 13 — 정정요청 dialog", () => {
+  async function openCorrectionDialog(page: import("@playwright/test").Page) {
     await page.goto(`/attendance/detail/${todayStr()}`)
     await page.waitForLoadState("networkidle")
-
     const corrBtn = page.getByRole("button", { name: /정정 요청/ }).first()
-    if (!(await corrBtn.isVisible({ timeout: 3_000 }).catch(() => false))) {
-      test.skip()
-      return
-    }
+    if (!(await corrBtn.isVisible({ timeout: 3_000 }).catch(() => false))) return false
     await corrBtn.click()
+    await page.waitForTimeout(300)
+    return true
+  }
 
+  test("dialog opens and shows site name and time range", async ({ page }) => {
+    if (!(await openCorrectionDialog(page))) { test.skip(); return }
     const dialog = page.locator("[role=dialog]").or(page.locator(".fixed.inset-0").last())
     await expect(dialog).toBeVisible({ timeout: 3_000 })
+    // Site name and time info should be pre-populated (not empty)
+    const textContent = await dialog.textContent()
+    expect(textContent?.length).toBeGreaterThan(10)
+  })
 
-    const closeBtn = dialog.getByRole("button", { name: /닫기|취소|×|X/ })
+  test("dialog contains 야근했어요 checkbox", async ({ page }) => {
+    if (!(await openCorrectionDialog(page))) { test.skip(); return }
+    await expect(page.getByText("야근했어요")).toBeVisible({ timeout: 3_000 })
+  })
+
+  test("dialog shows 적용단가 input field", async ({ page }) => {
+    if (!(await openCorrectionDialog(page))) { test.skip(); return }
+    await expect(page.getByText("적용단가")).toBeVisible({ timeout: 3_000 })
+  })
+
+  test("dialog has reason textarea with placeholder", async ({ page }) => {
+    if (!(await openCorrectionDialog(page))) { test.skip(); return }
+    const textarea = page.getByPlaceholder("요청사유를 입력해주세요")
+    await expect(textarea).toBeVisible({ timeout: 3_000 })
+  })
+
+  test("요청 제출하기 button disabled when reason is empty", async ({ page }) => {
+    if (!(await openCorrectionDialog(page))) { test.skip(); return }
+    await expect(page.getByRole("button", { name: /요청 제출하기/ })).toBeDisabled({ timeout: 3_000 })
+  })
+
+  test("요청 제출하기 button enabled after reason entered", async ({ page }) => {
+    if (!(await openCorrectionDialog(page))) { test.skip(); return }
+    const textarea = page.getByPlaceholder("요청사유를 입력해주세요")
+    await textarea.fill("테스트 정정 사유입니다.")
+    await expect(page.getByRole("button", { name: /요청 제출하기/ })).toBeEnabled({ timeout: 2_000 })
+  })
+
+  test("닫기 button closes the dialog", async ({ page }) => {
+    if (!(await openCorrectionDialog(page))) { test.skip(); return }
+    const dialog = page.locator("[role=dialog]").or(page.locator(".fixed.inset-0").last())
+    await expect(dialog).toBeVisible({ timeout: 3_000 })
+    const closeBtn = page.getByRole("button", { name: /닫기|취소|×|X/ }).first()
     if (await closeBtn.isVisible()) {
       await closeBtn.click()
       await expect(dialog).not.toBeVisible({ timeout: 3_000 })
     }
+  })
+
+  test("correction request submission shows toast on success", async ({ page }) => {
+    if (!(await openCorrectionDialog(page))) { test.skip(); return }
+
+    // Mock the correction API
+    await page.route("**/correction-request", (route) =>
+      route.fulfill({ status: 200, body: JSON.stringify({ code: 200, message: "ok", data: {} }) })
+    )
+
+    const textarea = page.getByPlaceholder("요청사유를 입력해주세요")
+    await textarea.fill("테스트 정정 사유입니다.")
+    await page.getByRole("button", { name: /요청 제출하기/ }).click()
+    await expect(page.getByText(/정정 요청이 제출/)).toBeVisible({ timeout: 5_000 })
   })
 })

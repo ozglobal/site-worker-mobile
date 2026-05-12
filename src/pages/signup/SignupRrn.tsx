@@ -10,7 +10,7 @@ export function SignupRrnPage() {
 
   const savedPhone = signupStorage.getPhone()
   const savedData = signupStorage.getData()
-  const [savedSsnFirst = "", savedSsnSecond = ""] = (savedData.idNumber || "").split("-")
+  const [savedSsnFirst = "", savedSsnSecond = ""] = (savedData.nationalIdNumber || "").split("-")
   const [formData, setFormData] = useState<RrnFormValues>({
     name: savedData.nameKo || "",
     ssnFirst: savedSsnFirst,
@@ -33,7 +33,7 @@ export function SignupRrnPage() {
       nameKo: formData.name,
       nationalityType: 'domestic',
       idType: 'resident_id',
-      idNumber: `${formData.ssnFirst}-${formData.ssnSecond}`,
+      nationalIdNumber: `${formData.ssnFirst}-${formData.ssnSecond}`,
       address: formData.address,
     })
     workerMetaStorage.patch({ nationalityType: 'domestic', idType: 'resident_id' })

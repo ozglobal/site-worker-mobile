@@ -189,7 +189,9 @@ export interface RegisterWorkerParams {
   nationalityType: string
   nationality?: string
   idType: string
-  idNumber: string
+  nationalIdNumber?: string  // 주민등록번호 (내국인)
+  idNumber?: string          // 외국인등록번호 (외국인)
+  passportNumber?: string    // 여권번호 (연수생)
   address: string
   addressDetail: string
   gender?: 'male' | 'female' | string

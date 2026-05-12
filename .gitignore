@@ -8,3 +8,4 @@ tests/.auth/worker.json
 playwright-report/
 test-results/
 .env.test
+tests/.env.local

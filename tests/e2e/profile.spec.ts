@@ -167,50 +167,168 @@ test.describe("Profile — Document Viewer", () => {
   })
 })
 
-test.describe("Profile — MyInfoPn phone change", () => {
+// ─────────────────────────────────────────────────────────────────────────────
+// Scenario 3 — 비밀번호 변경 (프로필)
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe("Scenario 3 — 비밀번호 변경 (프로필)", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/profile/myinfo-pn")
+    await page.goto("/profile/change-password")
     await page.waitForLoadState("networkidle")
   })
 
-  test("수정 button visible next to 휴대폰 번호 field", async ({ page }) => {
-    await expect(page.getByRole("button", { name: "수정" })).toBeVisible({ timeout: 5_000 })
+  test("renders 비밀번호 변경 page", async ({ page }) => {
+    await expect(page.getByText("비밀번호 변경")).toBeVisible()
   })
 
-  test("clicking 수정 opens 휴대폰 번호 변경 modal", async ({ page }) => {
-    await page.getByRole("button", { name: "수정" }).click()
-    await expect(page.getByText("휴대폰 번호 변경")).toBeVisible()
+  test("has 현재 비밀번호, 새 비밀번호 재입력 fields", async ({ page }) => {
+    await expect(page.getByPlaceholder("현재 비밀번호")).toBeVisible()
+    await expect(page.getByPlaceholder("새 비밀번호 재입력")).toBeVisible()
   })
 
-  test("modal has phone input and 인증번호 받기 button", async ({ page }) => {
-    await page.getByRole("button", { name: "수정" }).click()
-    await expect(page.getByPlaceholder("010-0000-0000")).toBeVisible()
-    await expect(page.getByRole("button", { name: "인증번호 받기" })).toBeVisible()
+  test("shows password requirement checklist", async ({ page }) => {
+    await expect(page.getByText("8자 이상")).toBeVisible()
+    await expect(page.getByText("영문 포함")).toBeVisible()
+    await expect(page.getByText("숫자 포함")).toBeVisible()
+    await expect(page.getByText("특수문자 포함")).toBeVisible()
   })
 
-  test("인증번호 받기 disabled when phone incomplete", async ({ page }) => {
-    await page.getByRole("button", { name: "수정" }).click()
-    const sendBtn = page.getByRole("button", { name: "인증번호 받기" })
-    await expect(sendBtn).toBeDisabled()
+  test("변경 button disabled when fields are empty", async ({ page }) => {
+    await expect(page.getByRole("button", { name: "변경", exact: true })).toBeDisabled()
   })
 
-  test("인증번호 받기 enabled when phone is 11 digits", async ({ page }) => {
-    await page.getByRole("button", { name: "수정" }).click()
-    await page.getByPlaceholder("010-0000-0000").fill("010-9999-1234")
-    const sendBtn = page.getByRole("button", { name: "인증번호 받기" })
-    await expect(sendBtn).toBeEnabled()
+  test("변경 button disabled when new password criteria not met", async ({ page }) => {
+    await page.getByPlaceholder("현재 비밀번호").fill("AnyOldPass1!")
+    await page.locator("input[type=password]").nth(1).fill("tooshort")
+    await expect(page.getByRole("button", { name: "변경", exact: true })).toBeDisabled()
   })
 
-  test("변경하기 button disabled until 6-digit code entered", async ({ page }) => {
-    await page.getByRole("button", { name: "수정" }).click()
-    const changeBtn = page.getByRole("button", { name: "변경하기" })
-    await expect(changeBtn).toBeDisabled()
+  test("mismatch between new password and confirm shows 비밀번호가 일치하지 않습니다", async ({ page }) => {
+    await page.getByPlaceholder("현재 비밀번호").fill("AnyOldPass1!")
+    await page.locator("input[type=password]").nth(1).fill("NewPass1!@")
+    await page.getByPlaceholder("새 비밀번호 재입력").fill("DiffPass9!@")
+    await expect(page.getByText("비밀번호가 일치하지 않습니다")).toBeVisible()
+    await expect(page.getByRole("button", { name: "변경", exact: true })).toBeDisabled()
   })
 
-  test("취소 button closes the modal", async ({ page }) => {
-    await page.getByRole("button", { name: "수정" }).click()
-    await expect(page.getByText("휴대폰 번호 변경")).toBeVisible()
-    await page.getByRole("button", { name: "취소" }).click()
-    await expect(page.getByText("휴대폰 번호 변경")).not.toBeVisible()
+  test("변경 button enabled when all fields valid and matching", async ({ page }) => {
+    await page.getByPlaceholder("현재 비밀번호").fill("AnyOldPass1!")
+    await page.locator("input[type=password]").nth(1).fill("NewPass1!@")
+    await page.getByPlaceholder("새 비밀번호 재입력").fill("NewPass1!@")
+    await expect(page.getByRole("button", { name: "변경", exact: true })).toBeEnabled({ timeout: 2_000 })
+  })
+
+  test("navigates back to /profile on success (requires TEST_PHONE/TEST_PASSWORD)", async ({ page }) => {
+    const phone = process.env.TEST_PHONE
+    const currentPw = process.env.TEST_PASSWORD
+    const newPw = process.env.TEST_NEW_PASSWORD
+    if (!phone || !currentPw || !newPw) test.skip()
+
+    await page.getByPlaceholder("현재 비밀번호").fill(currentPw!)
+    await page.locator("input[type=password]").nth(1).fill(newPw!)
+    await page.getByPlaceholder("새 비밀번호 재입력").fill(newPw!)
+    await page.getByRole("button", { name: "변경", exact: true }).click()
+    await expect(page).toHaveURL(/\/profile/, { timeout: 10_000 })
+    await expect(page.getByText(/변경/)).toBeVisible({ timeout: 5_000 })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scenario 3B — 휴대폰 번호 변경
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe("Scenario 3B — 휴대폰 번호 변경", () => {
+  // All 3 myinfo pages share PhoneChangeModal — verify 수정 button on each
+  for (const [path, label] of [
+    ["/profile/myinfo-rrn", "myinfo-rrn"],
+    ["/profile/myinfo-frn", "myinfo-frn"],
+    ["/profile/myinfo-pn", "myinfo-pn"],
+  ] as const) {
+    test(`수정 button visible on ${label}`, async ({ page }) => {
+      await page.goto(path)
+      await page.waitForLoadState("networkidle")
+      await expect(page.getByRole("button", { name: "수정" })).toBeVisible({ timeout: 5_000 })
+    })
+  }
+
+  test.describe("modal behavior (myinfo-pn)", () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto("/profile/myinfo-pn")
+      await page.waitForLoadState("networkidle")
+    })
+
+    test("clicking 수정 opens 휴대폰 번호 변경 modal", async ({ page }) => {
+      await page.getByRole("button", { name: "수정" }).click()
+      await expect(page.getByText("휴대폰 번호 변경")).toBeVisible()
+    })
+
+    test("modal has phone input and 인증번호 받기 button", async ({ page }) => {
+      await page.getByRole("button", { name: "수정" }).click()
+      await expect(page.getByPlaceholder("010-0000-0000")).toBeVisible()
+      await expect(page.getByRole("button", { name: "인증번호 받기" })).toBeVisible()
+    })
+
+    test("인증번호 받기 disabled when phone incomplete", async ({ page }) => {
+      await page.getByRole("button", { name: "수정" }).click()
+      const sendBtn = page.getByRole("button", { name: "인증번호 받기" })
+      await expect(sendBtn).toBeDisabled()
+    })
+
+    test("인증번호 받기 enabled when phone is 11 digits", async ({ page }) => {
+      await page.getByRole("button", { name: "수정" }).click()
+      const newPhone = process.env.TEST_NEW_PHONE ?? "010-9999-1234"
+      await page.getByPlaceholder("010-0000-0000").fill(newPhone)
+      const sendBtn = page.getByRole("button", { name: "인증번호 받기" })
+      await expect(sendBtn).toBeEnabled()
+    })
+
+    test("인증번호 입력란은 코드 발송 전 숨겨짐", async ({ page }) => {
+      await page.getByRole("button", { name: "수정" }).click()
+      await expect(page.getByPlaceholder("인증번호 입력")).not.toBeVisible()
+    })
+
+    test("변경하기 button disabled until 6-digit code entered", async ({ page }) => {
+      await page.getByRole("button", { name: "수정" }).click()
+      const changeBtn = page.getByRole("button", { name: "변경하기" })
+      await expect(changeBtn).toBeDisabled()
+    })
+
+    test("취소 button closes the modal", async ({ page }) => {
+      await page.getByRole("button", { name: "수정" }).click()
+      await expect(page.getByText("휴대폰 번호 변경")).toBeVisible()
+      await page.getByRole("button", { name: "취소" }).click()
+      await expect(page.getByText("휴대폰 번호 변경")).not.toBeVisible()
+    })
+  })
+
+  test("full phone change flow: SMS → verify → re-login dialog [headed]", async ({ page }) => {
+    const newPhone = process.env.TEST_NEW_PHONE
+    if (!newPhone) test.skip()
+
+    await page.goto("/profile/myinfo-pn")
+    await page.waitForLoadState("networkidle")
+
+    await test.step("open modal", async () => {
+      await page.getByRole("button", { name: "수정" }).click()
+      await expect(page.getByText("휴대폰 번호 변경")).toBeVisible()
+    })
+
+    await test.step("enter new phone and request SMS code", async () => {
+      await page.getByPlaceholder("010-0000-0000").fill(newPhone!)
+      await expect(page.getByRole("button", { name: "인증번호 받기" })).toBeEnabled()
+      await page.getByRole("button", { name: "인증번호 받기" }).click()
+      // wait for 인증번호가 발송되었습니다 toast or code input to appear
+      await expect(page.getByPlaceholder("인증번호 입력")).toBeVisible({ timeout: 15_000 })
+    })
+
+    await test.step("wait for user to enter SMS code (up to 2 minutes)", async () => {
+      // manual step: user enters the received 6-digit code
+      await expect(page.getByRole("button", { name: "변경하기" })).toBeEnabled({ timeout: 120_000 })
+    })
+
+    await test.step("submit phone change and check re-login dialog", async () => {
+      await page.getByRole("button", { name: "변경하기" }).click()
+      await expect(page.getByText("으로 변경되었습니다")).toBeVisible({ timeout: 10_000 })
+      await expect(page.getByRole("button", { name: "예" })).toBeVisible()
+      await expect(page.getByRole("button", { name: "아니오" })).toBeVisible()
+    })
   })
 })

@@ -9,11 +9,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // Real-environment signup tests — no API mocks, SMS delivered to a real phone.
 // Run one scenario at a time. Requires --headed so page.pause() works.
 //
-// Scenario A:  DB_PASSWORD=xxx REAL_PHONE=010-6369-6595 RRN_NAME_KO=홍길동 RRN_FIRST=901010 RRN_SECOND=1234567 TEST_PASSWORD=Test123! npx playwright test tests/signup-real.spec.ts --headed --no-deps -g "Scenario A"
-// Scenario B:  DB_PASSWORD=xxx REAL_PHONE=010-6369-6595 FRN_NAME_KO=홍길동 "FRN_NAME_EN=HONG GILDONG" FRN_FIRST=901010 FRN_SECOND=1234567 TEST_PASSWORD=Test123! npx playwright test tests/signup-real.spec.ts --headed --no-deps -g "Scenario B"
-// Scenario C:  DB_PASSWORD=xxx REAL_PHONE=010-6369-6595 PN_NAME_KO=연수생 "PN_NAME_EN=Trainee" PN_GENDER=남성 PN_PASSPORT=M12345678 PN_NATIONALITY=베트남 PN_BIRTHDATE=1990-01-01 TEST_PASSWORD=Test123! npx playwright test tests/signup-real.spec.ts --headed --no-deps -g "Scenario C"
+// Scenario A:  DB_PASSWORD=xxx TEST_PHONE=010-6369-6595 RRN_NAME_KO=홍길동 RRN_FIRST=901010 RRN_SECOND=1234567 TEST_PASSWORD=Test123! npx playwright test tests/signup-real.spec.ts --headed --no-deps -g "Scenario A"
+// Scenario B:  DB_PASSWORD=xxx TEST_PHONE=010-6369-6595 FRN_NAME_KO=홍길동 "FRN_NAME_EN=HONG GILDONG" FRN_FIRST=901010 FRN_SECOND=1234567 TEST_PASSWORD=Test123! npx playwright test tests/signup-real.spec.ts --headed --no-deps -g "Scenario B"
+// Scenario C:  DB_PASSWORD=xxx TEST_PHONE=010-6369-6595 PN_NAME_KO=연수생 "PN_NAME_EN=Trainee" PN_GENDER=남성 PN_PASSPORT=M12345678 PN_NATIONALITY=베트남 PN_BIRTHDATE=1990-01-01 TEST_PASSWORD=Test123! npx playwright test tests/signup-real.spec.ts --headed --no-deps -g "Scenario C"
 
-const REAL_PHONE    = process.env.REAL_PHONE    ?? "010-6369-6595"
+const REAL_PHONE    = process.env.TEST_PHONE    ?? "010-6369-6595"
 const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "Test123!"
 const DB_PASSWORD   = process.env.DB_PASSWORD   ?? ""
 

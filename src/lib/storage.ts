@@ -273,7 +273,9 @@ export interface SignupData {
   nationalityType?: string
   nationality?: string   // country name, e.g. "베트남"
   idType?: string
-  idNumber?: string
+  nationalIdNumber?: string  // 주민등록번호 (내국인)
+  idNumber?: string          // 외국인등록번호 (외국인)
+  passportNumber?: string    // 여권번호 (연수생)
   address?: string
   gender?: 'male' | 'female' | string
   birthDate?: string // yyyy-MM-dd

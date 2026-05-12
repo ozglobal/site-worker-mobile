@@ -2,6 +2,7 @@ import { authFetch } from './auth'
 import { API_BASE_URL } from './config'
 import { safeJson, type ApiResult } from './api-result'
 import { reportError } from './errorReporter'
+import { logDebug } from '../utils/devLog'
 
 // ── Types ─────────────────────────────────────────────────
 
@@ -36,11 +37,16 @@ export interface EfsDocument {
   siteName?: string | null
 }
 
-export interface MonthGroup {
-  month: string        // "2026-04"
+export interface ContractGroup {
+  contractId: string | null
   contract?: EfsDocument
   delegation?: EfsDocument
   extras: EfsDocument[]
+}
+
+export interface MonthGroup {
+  month: string        // "2026-04"
+  groups: ContractGroup[]
 }
 
 // ── Helpers ───────────────────────────────────────────────
@@ -49,23 +55,47 @@ const isContract = (d: EfsDocument) => d.docTypeCode?.startsWith('DAILY_CONTRACT
 const isDelegation = (d: EfsDocument) => d.docTypeCode?.startsWith('LABOR_COST_DELEGATION_') ?? false
 const byCreateDesc = (a: EfsDocument, b: EfsDocument) => b.createTime.localeCompare(a.createTime)
 
+let _nullSeq = 0
+
 export function groupByMonth(docs: EfsDocument[]): MonthGroup[] {
-  const buckets = new Map<string, EfsDocument[]>()
+  // Level 1: bucket by month
+  const monthBuckets = new Map<string, EfsDocument[]>()
   for (const d of docs) {
     const key = d.contractMonth ?? d.createTime.slice(0, 7)
-    if (!buckets.has(key)) buckets.set(key, [])
-    buckets.get(key)!.push(d)
+    if (!monthBuckets.has(key)) monthBuckets.set(key, [])
+    monthBuckets.get(key)!.push(d)
   }
 
-  return [...buckets.entries()]
+  return [...monthBuckets.entries()]
     .sort(([a], [b]) => b.localeCompare(a))
     .map(([month, items]) => {
-      const contracts = items.filter(isContract).sort(byCreateDesc)
-      const delegations = items.filter(isDelegation).sort(byCreateDesc)
-      const contract = contracts[0]
-      const delegation = delegations[0]
-      const extras = items.filter((d) => d !== contract && d !== delegation)
-      return { month, contract, delegation, extras }
+      // Level 2: bucket by contractId within the month
+      const contractBuckets = new Map<string, EfsDocument[]>()
+      for (const d of items) {
+        const key = d.contractId ?? `__null_${_nullSeq++}`
+        if (!contractBuckets.has(key)) contractBuckets.set(key, [])
+        contractBuckets.get(key)!.push(d)
+      }
+
+      const groups: ContractGroup[] = [...contractBuckets.entries()]
+        .map(([cid, cdocs]) => {
+          const sorted = [...cdocs].sort(byCreateDesc)
+          const contract = sorted.find(isContract)
+          const delegation = sorted.find(isDelegation)
+          const extras = sorted.filter((d) => d !== contract && d !== delegation)
+          const contractId = cid.startsWith('__null_') ? null : cid
+          return { contractId, contract, delegation, extras }
+        })
+        // Sort groups within a month: oldest first (by earliest doc createTime)
+        .sort((a, b) => {
+          const earliest = (g: ContractGroup) =>
+            [...[g.contract, g.delegation, ...g.extras].filter(Boolean) as EfsDocument[]]
+              .map((d) => d.createTime)
+              .sort()[0] ?? ''
+          return earliest(a).localeCompare(earliest(b))
+        })
+
+      return { month, groups }
     })
 }
 
@@ -168,7 +198,9 @@ export async function fetchSigningLink(documentId: string): Promise<ApiResult<st
     }
 
     const items = json.data ?? []
-    const link = (items.length >= 2 ? items[1]?.linkUrl : items[0]?.linkUrl) || ''
+    logDebug('[signing-link] items', items)
+    const link = items[0]?.linkUrl || ''
+    logDebug('[signing-link] selected linkUrl', link)
     if (!link) return { success: false, error: '서명 링크가 없습니다.' }
     return { success: true, data: link }
   } catch (err) {

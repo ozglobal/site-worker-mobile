@@ -82,7 +82,7 @@ export function NiceApiPage() {
                 signupStorage.setPhone(phoneNumber)
                 signupStorage.setData({
                   nameKo: name,
-                  idNumber: `${ssnFirst}-${ssnSecond}`,
+                  nationalIdNumber: `${ssnFirst}-${ssnSecond}`,
                 })
                 navigate("/signup/agreement")
               }}
