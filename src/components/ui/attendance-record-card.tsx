@@ -9,6 +9,7 @@ export interface PendingCorrection {
   requestedEffort: string
   originalWage: string
   requestedWage: string
+  status?: string
 }
 
 export interface AttendanceEntryDetail {

@@ -160,6 +160,7 @@ export function Home() {
             requestedEffort: r.requestedEffort,
             originalWage: r.originalWage,
             requestedWage: r.requestedWage,
+            status: r.status,
           },
         }))
         if (r.status === "pending") {
