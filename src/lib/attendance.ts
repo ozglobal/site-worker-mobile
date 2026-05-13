@@ -1,7 +1,7 @@
 import { authFetch, getWorkerId } from './auth'
 import { safeJson, type ApiResult } from './api-result'
 import { reportError } from './errorReporter'
-import { logError, logDebug } from '../utils/devLog'
+import { logError } from '../utils/devLog'
 
 import { API_BASE_URL } from './config'
 
@@ -695,9 +695,7 @@ export const fetchCorrectionRequests = async (): Promise<ApiResult<CorrectionReq
     if (!json) return { success: false, error: 'Invalid server response' }
     if (!response.ok) return { success: false, error: (json.message as string) || `API error: ${response.status}` }
     const payload = (json.data || json) as Record<string, unknown>
-    logDebug('[correction-requests] payload', payload)
     const items = (Array.isArray(payload) ? payload : (payload.items ?? payload.data ?? [])) as Record<string, unknown>[]
-    logDebug('[correction-requests] first item', items[0])
     const list: CorrectionRequest[] = items.map((item) => ({
       id: (item.id as string) || '',
       attendanceId: (item.attendanceId as string) || '',

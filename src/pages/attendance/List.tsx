@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
@@ -18,7 +18,6 @@ import { submitCorrectionRequest, type WeeklyAttendanceRecord } from "@/lib/atte
 import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
 import { useCorrectionRequests } from "@/lib/queries/useCorrectionRequests"
-import { logDebug } from "@/utils/devLog"
 
 export function ListPage() {
   const navigate = useNavigate()
@@ -163,11 +162,6 @@ export function ListPage() {
   const sites = useMemo(() => daysToSiteLegend(data?.days || []), [data])
   const attendanceDays = data?.totalWorkDays || 0
   const totalWorkEffort = data?.totalEffort || 0
-
-  useEffect(() => {
-    logDebug('[List] correctionMap keys', Object.keys(correctionMap))
-    logDebug('[List] today records', records.filter(r => r.effectiveDate === todayStr).map(r => ({ workEntryId: r.workEntryId, id: r.id })))
-  }, [correctionMap, records, todayStr])
 
   // Site dropdown options — union of today's attendance and all sites seen
   // in monthly records so the dropdown is populated even on historical months.
