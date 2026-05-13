@@ -103,7 +103,6 @@ export function MyInfoPage() {
           </Button>
         </div>
 
-        <p className="pb-6 text-center text-xs font-semibold text-slate-400">v{__APP_VERSION__}</p>
       </main>
 
       <AppBottomNav active="profile" onNavigate={handleNavigation} className="shrink-0" />

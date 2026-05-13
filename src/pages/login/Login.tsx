@@ -179,6 +179,8 @@ export function LoginPage() {
           </Button>
         </div>
       )}
+
+      <p className="mt-auto pb-6 pt-8 text-center text-xs font-semibold text-slate-400">v{__APP_VERSION__}</p>
     </div>
   )
 }
