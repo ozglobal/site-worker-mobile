@@ -292,6 +292,7 @@ export interface WeeklyAttendanceRecord {
   hasCheckedIn: boolean
   hasCheckedOut: boolean
   complete: boolean
+  workEntryId?: string
 }
 
 // ============================================

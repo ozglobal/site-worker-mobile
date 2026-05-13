@@ -17,6 +17,7 @@ import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/
 import { submitCorrectionRequest, type WeeklyAttendanceRecord } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
+import { useCorrectionRequests } from "@/lib/queries/useCorrectionRequests"
 
 export function ListPage() {
   const navigate = useNavigate()
@@ -71,9 +72,16 @@ export function ListPage() {
     showSuccess("정정 요청이 제출되었습니다.")
     if (todayStr) queryClient.invalidateQueries({ queryKey: ["todayAttendance", todayStr] })
     else queryClient.invalidateQueries({ queryKey: ["todayAttendance"] })
+    void queryClient.invalidateQueries({ queryKey: ['correctionRequests'] })
     setShowCorrectionDialog(false)
     setCorrectionAttendanceId(null)
   }
+  const { data: correctionRequests = [] } = useCorrectionRequests()
+  const correctionMap = useMemo(
+    () => Object.fromEntries(correctionRequests.map((r) => [r.workEntryId, r])),
+    [correctionRequests]
+  )
+
   const { data, isError, refetch } = useMonthlyAttendance(year, month)
   // Today's daily is authoritative for whether a same-day attendance is
   // still active — monthly entries alone can't tell us that. Cross-reference
@@ -116,6 +124,7 @@ export function ListPage() {
         const hasCheckedOut = stillActiveToday ? false : (e.hasCheckedOut ?? true)
         fromDays.push({
           id: e.attendanceId || e.entryId || `${d.date}-${e.siteId}-${idx}`,
+          workEntryId: e.entryId,
           effectiveDate: d.date,
           siteId: e.siteId,
           siteName: e.siteName || "",
@@ -305,6 +314,7 @@ export function ListPage() {
                     expectedWage: r.expectedWage,
                     showCorrection: isGroupToday,
                     correctionDisabled: !correctableTodaySiteIds.has(r.siteId),
+                    pendingCorrection: correctionMap[r.workEntryId ?? r.id] ?? undefined,
                     onCorrectionClick: () => openCorrectionDialog(r, rEntry?.checkInTime, rEntry?.checkOutTime),
                   }
                 })
@@ -321,6 +331,7 @@ export function ListPage() {
                     statusVariant={first.hasCheckedOut ? "default" : "active"}
                     showCorrection={isGroupToday}
                     correctionDisabled={!correctableTodaySiteIds.has(first.siteId)}
+                    pendingCorrection={correctionMap[first.workEntryId ?? first.id] ?? undefined}
                     onCorrectionClick={() => openCorrectionDialog(first, firstDailyEntry?.checkInTime, firstDailyEntry?.checkOutTime)}
                     additionalEntries={additionalEntries.length > 0 ? additionalEntries : undefined}
                     className="shadow-sm border border-slate-100 p-5"
