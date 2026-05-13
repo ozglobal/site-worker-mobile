@@ -180,7 +180,7 @@ export function LoginPage() {
         </div>
       )}
 
-      <p className="mt-auto pb-6 pt-8 text-center text-xs font-semibold text-slate-400">v{__APP_VERSION__}</p>
+      <p className="mt-auto pb-6 pt-8 text-center text-xs font-semibold text-slate-400">v{__APP_VERSION__} {__BUILD_TIME__}</p>
     </div>
   )
 }
