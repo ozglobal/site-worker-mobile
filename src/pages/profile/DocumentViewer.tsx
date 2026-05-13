@@ -56,15 +56,27 @@ export function DocumentViewerPage() {
   const { slug = "", docId } = useParams<{ slug: string; docId?: string }>()
   const [searchParams] = useSearchParams()
   const equipmentId = searchParams.get("equipmentId") ?? undefined
+  const { showSuccess, showError } = useToast()
+  const { data: profile } = useWorkerProfile()
+  // id-card 슬러그 제목은 근로자의 nationalityType 에 따라 동적으로 표시.
+  const idCardTitleByNationality: Record<string, string> = {
+    domestic: '주민등록증',
+    foreigner_registered: '외국인등록증',
+    foreigner_unregistered: '여권 사본',
+  }
   const entry = useMemo<{ title: string; load: DocLoader } | undefined>(() => {
     if (slug === "equipment-license" && docId) {
       const name = searchParams.get("name") || "장비 자격증"
       return { title: name, load: () => fetchEquipmentLicenseDoc(docId) }
     }
-    return LOADERS[slug]
-  }, [slug, docId, searchParams])
-  const { showSuccess, showError } = useToast()
-  const { data: profile } = useWorkerProfile()
+    const base = LOADERS[slug]
+    if (!base) return undefined
+    if (slug === "id-card" && profile?.nationalityType && idCardTitleByNationality[profile.nationalityType]) {
+      return { title: idCardTitleByNationality[profile.nationalityType], load: base.load }
+    }
+    return base
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, docId, searchParams, profile?.nationalityType])
   const { data: docSummary } = useDocumentSummary()
   const docCode = SLUG_TO_CODE[slug]
   const docStatus = docSummary?.find((d) => d.code === docCode)?.status

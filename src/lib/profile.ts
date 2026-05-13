@@ -29,6 +29,8 @@ export interface WorkerMeData {
   equipmentCompanyName?: string | null
   equipmentCompanyOwner?: string | null
   nationality?: string
+  /** 국적 유형 — domestic | foreigner_registered | foreigner_unregistered */
+  nationalityType?: 'domestic' | 'foreigner_registered' | 'foreigner_unregistered' | string
   missingRequiredDocs?: string[]
   relatedSiteId?: string
 }
@@ -94,6 +96,7 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
       equipmentCompanyName: (payload.equipmentCompanyName as string) || null,
       equipmentCompanyOwner: (payload.equipmentCompanyOwner as string) || null,
       nationality: (payload.nationality as string) || undefined,
+      nationalityType: (payload.nationalityType as string) || undefined,
       missingRequiredDocs: Array.isArray(payload.missingRequiredDocs)
         ? (payload.missingRequiredDocs as string[])
         : [],

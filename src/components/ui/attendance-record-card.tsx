@@ -9,6 +9,10 @@ export interface PendingCorrection {
   requestedEffort: string
   originalWage: string
   requestedWage: string
+  /** 백엔드 산출 원래 일당 (공수 × 단가). 미제공 시 null. */
+  originalExpectedWage?: number | null
+  /** 백엔드 산출 요청 일당 (공수 × 단가). 미제공 시 null. */
+  requestedExpectedWage?: number | null
   status?: string
 }
 
@@ -69,6 +73,17 @@ function EntrySection({
   const origWage   = pc ? parseFloat(pc.originalWage || pc.originalValue || "0") : null
   const reqWage    = pc ? parseFloat(pc.requestedWage || pc.requestedValue || "0") : null
 
+  // 예상임금 변경값: 백엔드 산출값(originalExpectedWage / requestedExpectedWage) 우선,
+  // 없으면 공수 × 단가로 fallback.
+  const origExpectedWage = pc?.originalExpectedWage ?? expectedWage ?? null
+  const requestedExpectedWage = pc
+    ? (pc.requestedExpectedWage
+        ?? (
+            ((affectsEffort && reqEffort != null) ? reqEffort : (workEffort ?? 0))
+            * ((affectsWage && reqWage != null) ? reqWage : (dailyWageSnapshot ?? 0))
+          ))
+    : null
+
   return (
     <div className="rounded-lg overflow-visible bg-slate-50">
       <div className="px-4 py-2.5 flex items-center justify-between">
@@ -123,9 +138,16 @@ function EntrySection({
         </div>
         <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
           <span className="text-sm text-slate-600">예상 임금(세전)</span>
-          <span className="text-sm font-medium text-slate-900">
-            {formatCurrency(expectedWage)}
-          </span>
+          {pc && requestedExpectedWage != null && origExpectedWage != null && requestedExpectedWage !== origExpectedWage ? (
+            <CorrectionValue
+              original={formatCurrency(origExpectedWage)}
+              requested={formatCurrency(requestedExpectedWage)}
+            />
+          ) : (
+            <span className="text-sm font-medium text-slate-900">
+              {formatCurrency(expectedWage)}
+            </span>
+          )}
         </div>
       </div>
     </div>

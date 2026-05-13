@@ -308,20 +308,24 @@ export function ListPage() {
                 </h4>
               </div>
 
-              {/* Records — all entries for the day merged into one card */}
+              {/* Records — 현장별로 카드 분리, 같은 현장 내 분할 entry 는 한 카드에 묶음 */}
               {(() => {
-                const [first, ...rest] = group.records
-                if (!first) return null
-                const firstDailyEntry = isGroupToday
-                  ? (todayDaily?.attendances || []).find((a) => a.siteId === first.siteId)
-                  : null
-                const checkIn = firstDailyEntry?.checkInTime ?? first.checkInTime
-                const checkOut = firstDailyEntry?.checkOutTime ?? first.checkOutTime
-                const additionalEntries: AttendanceEntryDetail[] = rest.map((r) => {
-                  const rEntry = isGroupToday
-                    ? (todayDaily?.attendances || []).find((a) => a.siteId === r.siteId)
+                // 같은 현장끼리 그룹핑 (현장 등장 순서 유지)
+                const bySite = new Map<string, typeof group.records>()
+                group.records.forEach((r) => {
+                  const list = bySite.get(r.siteId) ?? []
+                  list.push(r)
+                  bySite.set(r.siteId, list)
+                })
+                return Array.from(bySite.entries()).map(([siteId, siteRecords]) => {
+                  const [first, ...rest] = siteRecords
+                  if (!first) return null
+                  const firstDailyEntry = isGroupToday
+                    ? (todayDaily?.attendances || []).find((a) => a.siteId === first.siteId)
                     : null
-                  return {
+                  const checkIn = firstDailyEntry?.checkInTime ?? first.checkInTime
+                  const checkOut = firstDailyEntry?.checkOutTime ?? first.checkOutTime
+                  const additionalEntries: AttendanceEntryDetail[] = rest.map((r) => ({
                     recordType: r.recordType || "",
                     workEffort: r.workEffort,
                     dailyWageSnapshot: r.dailyWageSnapshot,
@@ -329,28 +333,30 @@ export function ListPage() {
                     showCorrection: isGroupToday,
                     correctionDisabled: !correctableTodaySiteIds.has(r.siteId),
                     pendingCorrection: correctionMap[r.workEntryId ?? r.siteId] ?? undefined,
-                    onCorrectionClick: () => openCorrectionDialog(r, rEntry?.checkInTime, rEntry?.checkOutTime),
-                  }
+                    onCorrectionClick: () => openCorrectionDialog(r, firstDailyEntry?.checkInTime, firstDailyEntry?.checkOutTime),
+                  }))
+                  return (
+                    <div key={siteId} className="mb-3 last:mb-0">
+                      <AttendanceRecordCard
+                        key={first.id || `${group.date}-${siteId}`}
+                        siteName={first.siteName}
+                        timeRange={`${formatKstTime(checkIn as never)} - ${formatKstTime(checkOut as never)}`}
+                        recordType={first.recordType || ""}
+                        workEffort={first.workEffort}
+                        dailyWageSnapshot={first.dailyWageSnapshot}
+                        expectedWage={first.expectedWage}
+                        statusBadge={first.hasCheckedOut ? "퇴근 완료" : "근무중"}
+                        statusVariant={first.hasCheckedOut ? "default" : "active"}
+                        showCorrection={isGroupToday}
+                        correctionDisabled={!correctableTodaySiteIds.has(first.siteId)}
+                        pendingCorrection={correctionMap[first.workEntryId ?? first.siteId] ?? undefined}
+                        onCorrectionClick={() => openCorrectionDialog(first, firstDailyEntry?.checkInTime, firstDailyEntry?.checkOutTime)}
+                        additionalEntries={additionalEntries.length > 0 ? additionalEntries : undefined}
+                        className="shadow-sm border border-slate-100 p-5"
+                      />
+                    </div>
+                  )
                 })
-                return (
-                  <AttendanceRecordCard
-                    key={first.id || group.date}
-                    siteName={first.siteName}
-                    timeRange={`${formatKstTime(checkIn as never)} - ${formatKstTime(checkOut as never)}`}
-                    recordType={first.recordType || ""}
-                    workEffort={first.workEffort}
-                    dailyWageSnapshot={first.dailyWageSnapshot}
-                    expectedWage={first.expectedWage}
-                    statusBadge={first.hasCheckedOut ? "퇴근 완료" : "근무중"}
-                    statusVariant={first.hasCheckedOut ? "default" : "active"}
-                    showCorrection={isGroupToday}
-                    correctionDisabled={!correctableTodaySiteIds.has(first.siteId)}
-                    pendingCorrection={correctionMap[first.workEntryId ?? first.siteId] ?? undefined}
-                    onCorrectionClick={() => openCorrectionDialog(first, firstDailyEntry?.checkInTime, firstDailyEntry?.checkOutTime)}
-                    additionalEntries={additionalEntries.length > 0 ? additionalEntries : undefined}
-                    className="shadow-sm border border-slate-100 p-5"
-                  />
-                )
               })()}
             </div>
           )

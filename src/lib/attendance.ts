@@ -615,6 +615,10 @@ export interface CorrectionRequest {
   requestedEffort: string
   originalWage: string
   requestedWage: string
+  /** 백엔드 산출 원래 일당(공수×단가, wageSystem=daily 기준). monthly/none 또는 분류·직종 정정 시 null. */
+  originalExpectedWage: number | null
+  /** 백엔드 산출 요청 일당. 동일 규칙으로 null 가능. */
+  requestedExpectedWage: number | null
 }
 
 export const submitCorrectionRequest = async (
@@ -673,6 +677,8 @@ export const submitCorrectionRequest = async (
       requestedEffort: (payload.requestedEffort as string) || '',
       originalWage: (payload.originalWage as string) || '',
       requestedWage: (payload.requestedWage as string) || '',
+      originalExpectedWage: payload.originalExpectedWage != null ? Number(payload.originalExpectedWage) : null,
+      requestedExpectedWage: payload.requestedExpectedWage != null ? Number(payload.requestedExpectedWage) : null,
     }
     return { success: true, data: correction }
   } catch (error) {
@@ -710,6 +716,8 @@ export const fetchCorrectionRequests = async (): Promise<ApiResult<CorrectionReq
       requestedEffort: (item.requestedEffort as string) || '',
       originalWage: (item.originalWage as string) || '',
       requestedWage: (item.requestedWage as string) || '',
+      originalExpectedWage: item.originalExpectedWage != null ? Number(item.originalExpectedWage) : null,
+      requestedExpectedWage: item.requestedExpectedWage != null ? Number(item.requestedExpectedWage) : null,
     }))
     return { success: true, data: list }
   } catch (error) {

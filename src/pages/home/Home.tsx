@@ -335,32 +335,57 @@ export function Home() {
             </div>
             {todayWorkRecords.length > 0 ? (
               <div className="space-y-3">
-                {todayWorkRecords.map((record, idx) => (
-                  <div key={record.workEntryId || `${record.id}-${idx}`}>
-                    <AttendanceRecordCard
-                      siteName={record.siteName}
-                      timeRange={`${formatKstTime(record.checkInTime)} - ${record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}`}
-                      recordType={record.recordType || ""}
-                      workEffort={record.workEffort}
-                      dailyWageSnapshot={record.dailyWageSnapshot}
-                      expectedWage={record.expectedWage}
-                      showCorrection
-                      correctionDisabled={!record.canRequestCorrection || localPendingIds.has(record.workEntryId || record.id)}
-                      pendingCorrection={pendingCorrections[record.workEntryId || record.id] ?? correctionMap[record.workEntryId || record.id] ?? undefined}
-                      onCorrectionClick={() => {
-                        setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "")
-                        setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "")
-                        setCorrectionAttendanceId(record.id)
-                        setCorrectionWorkEntryId(record.workEntryId || null)
-                        setCorrectionSiteName(record.siteName || "")
-                        setCorrectionTimeRange(
-                          `직영 · ${record.checkInTime ? formatKstTime(record.checkInTime) : ""} - ${record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}`
-                        )
-                        setShowCorrectionDialog(true)
-                      }}
-                    />
-                  </div>
-                ))}
+                {(() => {
+                  // attendanceId(=record.id) 별로 그룹핑 — 같은 현장 같은 출퇴근 세션의 분할 entry 들을 하나의 카드에 묶음
+                  const byAttendance = new Map<string, typeof todayWorkRecords>()
+                  todayWorkRecords.forEach((r) => {
+                    const list = byAttendance.get(r.id) ?? []
+                    list.push(r)
+                    byAttendance.set(r.id, list)
+                  })
+                  const openCorrection = (record: (typeof todayWorkRecords)[number]) => {
+                    setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "")
+                    setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "")
+                    setCorrectionAttendanceId(record.id)
+                    setCorrectionWorkEntryId(record.workEntryId || null)
+                    setCorrectionSiteName(record.siteName || "")
+                    setCorrectionTimeRange(
+                      `직영 · ${record.checkInTime ? formatKstTime(record.checkInTime) : ""} - ${record.checkOutTime ? formatKstTime(record.checkOutTime) : ""}`
+                    )
+                    setShowCorrectionDialog(true)
+                  }
+                  return Array.from(byAttendance.entries()).map(([attendanceId, recs]) => {
+                    const [first, ...rest] = recs
+                    if (!first) return null
+                    const additional = rest.map((r) => ({
+                      recordType: r.recordType || "",
+                      workEffort: r.workEffort,
+                      dailyWageSnapshot: r.dailyWageSnapshot,
+                      expectedWage: r.expectedWage,
+                      showCorrection: true,
+                      correctionDisabled: !r.canRequestCorrection || localPendingIds.has(r.workEntryId || r.id),
+                      pendingCorrection: pendingCorrections[r.workEntryId || r.id] ?? correctionMap[r.workEntryId || r.id] ?? undefined,
+                      onCorrectionClick: () => openCorrection(r),
+                    }))
+                    return (
+                      <div key={attendanceId}>
+                        <AttendanceRecordCard
+                          siteName={first.siteName}
+                          timeRange={`${formatKstTime(first.checkInTime)} - ${first.checkOutTime ? formatKstTime(first.checkOutTime) : ""}`}
+                          recordType={first.recordType || ""}
+                          workEffort={first.workEffort}
+                          dailyWageSnapshot={first.dailyWageSnapshot}
+                          expectedWage={first.expectedWage}
+                          showCorrection
+                          correctionDisabled={!first.canRequestCorrection || localPendingIds.has(first.workEntryId || first.id)}
+                          pendingCorrection={pendingCorrections[first.workEntryId || first.id] ?? correctionMap[first.workEntryId || first.id] ?? undefined}
+                          onCorrectionClick={() => openCorrection(first)}
+                          additionalEntries={additional.length > 0 ? additional : undefined}
+                        />
+                      </div>
+                    )
+                  })
+                })()}
               </div>
             ) : (
               <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-center border border-slate-200">

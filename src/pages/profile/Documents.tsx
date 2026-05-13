@@ -79,11 +79,23 @@ export function ProfileDocumentsPage() {
 
   const handleNavigation = useBottomNavHandler()
 
+  // id_card 라벨은 근로자의 nationalityType 에 따라 동적으로 표시:
+  //  - domestic → 주민등록증
+  //  - foreigner_registered → 외국인등록증
+  //  - foreigner_unregistered → 여권 사본
+  const idCardLabelByNationality: Record<string, string> = {
+    domestic: '주민등록증',
+    foreigner_registered: '외국인등록증',
+    foreigner_unregistered: '여권 사본',
+  }
+  const idCardLabel = (profile?.nationalityType && idCardLabelByNationality[profile.nationalityType]) || null
+
   const docs = (summary || []).filter((item) => !ALIEN_REG_SUB_CODES.has(item.code)).map((item) => {
     const catalogue: RequiredDocMeta | undefined = requiredDocsCatalogue[item.code]
+    const baseLabel = item.label || catalogue?.label || item.code
     return {
       code: item.code,
-      label: item.label || catalogue?.label || item.code,
+      label: item.code === 'id_card' && idCardLabel ? idCardLabel : baseLabel,
       method: item.method || catalogue?.method || "upload",
       status: item.status,
       state: item.state,

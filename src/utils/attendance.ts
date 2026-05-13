@@ -78,20 +78,26 @@ export function recordsToCalendarEvents(records: WeeklyAttendanceRecord[]): Cale
 
 /**
  * Transform the `days[].entries[]` block from the monthly API directly into
- * calendar events — one dot per entry per day, colored per site.
+ * calendar events — one dot per (date, siteId), 같은 현장에 공수분할 entry 가 여러개면
+ * effort 를 합산하여 단일 dot 으로 표시.
  */
 export function daysToCalendarEvents(days: MonthlyDay[]): CalendarEvent[] {
   const siteIndexMap = new Map<string, number>()
   const events: CalendarEvent[] = []
   days.forEach((d) => {
+    // (date, siteId) 별로 effort 합산
+    const bySite = new Map<string, number>()
     d.entries?.forEach((e) => {
       if (!e.siteId) return
-      if (!siteIndexMap.has(e.siteId)) siteIndexMap.set(e.siteId, siteIndexMap.size)
+      bySite.set(e.siteId, (bySite.get(e.siteId) ?? 0) + (e.effort ?? 0))
+    })
+    bySite.forEach((effortSum, siteId) => {
+      if (!siteIndexMap.has(siteId)) siteIndexMap.set(siteId, siteIndexMap.size)
       events.push({
         date: new Date(d.date),
-        color: SITE_COLORS[(siteIndexMap.get(e.siteId) ?? 0) % SITE_COLORS.length],
-        label: e.effort != null ? e.effort.toFixed(2) : "",
-        siteId: e.siteId,
+        color: SITE_COLORS[(siteIndexMap.get(siteId) ?? 0) % SITE_COLORS.length],
+        label: effortSum.toFixed(2),
+        siteId,
       })
     })
   })

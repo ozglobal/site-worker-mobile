@@ -66,9 +66,10 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: 'https://worker.kwork365.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
+        rewrite: (path: string) => path.replace(/^\/api/, ''),
       },
       '/juso-api': {
         target: 'https://business.juso.go.kr',

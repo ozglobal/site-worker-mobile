@@ -1,5 +1,12 @@
 /// <reference types="vite/client" />
 
+// @tabler/icons-react ships types but Bundler resolution doesn't pick them up — re-declare.
+declare module "@tabler/icons-react" {
+  import * as TablerIcons from "@tabler/icons-react/dist/tabler-icons-react"
+  export = TablerIcons
+  export as namespace TablerIcons
+}
+
 declare const __APP_VERSION__: string
 declare const __BUILD_TIME__: string
 
