@@ -13,6 +13,7 @@ import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
 import { Spinner } from "@/components/ui/spinner"
 import { AttendanceRecordCard, type AttendanceEntryDetail } from "@/components/ui/attendance-record-card"
+import { useCorrectionRequests } from "@/lib/queries/useCorrectionRequests"
 
 
 function formatTime(t: string | null | undefined): string {
@@ -74,6 +75,7 @@ export function DailyDetailPage() {
     }
     showSuccess("정정 요청이 제출되었습니다.")
     if (date) queryClient.invalidateQueries({ queryKey: ["todayAttendance", date] })
+    void queryClient.invalidateQueries({ queryKey: ['correctionRequests'] })
     setShowCorrectionDialog(false)
     setCorrectionAttendanceId(null)
     setCorrectionEntryId(null)
@@ -107,6 +109,12 @@ export function DailyDetailPage() {
     const day = String(d.getDate()).padStart(2, "0")
     navigate(`/attendance/detail/${y}-${m}-${day}`, { replace: true })
   }, [date, navigate])
+
+  const { data: correctionRequests = [] } = useCorrectionRequests()
+  const correctionMap = useMemo(
+    () => Object.fromEntries(correctionRequests.map((r) => [r.workEntryId, r])),
+    [correctionRequests]
+  )
 
   const attendances = data?.attendances ?? []
 
@@ -152,6 +160,7 @@ export function DailyDetailPage() {
                       expectedWage: e.expectedWage,
                       showCorrection: isToday,
                       correctionDisabled: !e.canRequestCorrection,
+                      pendingCorrection: correctionMap[e.entryId] ?? undefined,
                       onCorrectionClick: () => openCorrectionDialog(site, e),
                     }))
                     return (
@@ -167,6 +176,7 @@ export function DailyDetailPage() {
                         statusVariant={site.checkOutTime ? "default" : "active"}
                         showCorrection={isToday}
                         correctionDisabled={!firstEntry.canRequestCorrection}
+                        pendingCorrection={correctionMap[firstEntry.entryId] ?? undefined}
                         onCorrectionClick={() => openCorrectionDialog(site, firstEntry)}
                         additionalEntries={additionalEntries.length > 0 ? additionalEntries : undefined}
                         className="shadow-sm border border-slate-100 p-5"
