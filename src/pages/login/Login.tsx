@@ -20,6 +20,9 @@ export function LoginPage() {
   const { honeypotProps, isBotDetected } = useHoneypot()
   const [autoLogin, setAutoLogin] = useState(() => autoLoginStorage.isEnabled())
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+  const showIosHint = isIos && !isStandalone
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -171,12 +174,20 @@ export function LoginPage() {
         </button>
       </div>
 
-      {/* PWA Install Prompt */}
+      {/* PWA Install Prompt (Android / Desktop) */}
       {installPrompt && (
         <div className="mt-6 flex justify-center">
           <Button variant="outline" size="full" onClick={handleInstall}>
             앱 설치하기
           </Button>
+        </div>
+      )}
+
+      {/* iOS install hint */}
+      {showIosHint && (
+        <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <p className="font-semibold text-slate-700 mb-1">홈 화면에 앱 추가하기</p>
+          <p>Safari 하단의 <span className="font-medium">공유 버튼(⎙)</span>을 누른 후 <span className="font-medium">'홈 화면에 추가'</span>를 선택하세요.</p>
         </div>
       )}
 
