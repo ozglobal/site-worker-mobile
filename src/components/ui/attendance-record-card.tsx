@@ -75,11 +75,11 @@ function EntrySection({
         {showCorrection && onCorrectionClick && (
           <button
             type="button"
-            onClick={correctionDisabled && !pc ? undefined : pc ? undefined : onCorrectionClick}
-            disabled={correctionDisabled}
+            onClick={correctionDisabled || pc ? undefined : onCorrectionClick}
+            disabled={correctionDisabled || !!pc}
             className={cn(
               "text-sm font-medium flex items-center gap-0.5 text-[#007DCA]",
-              correctionDisabled && "opacity-40 cursor-not-allowed"
+              (correctionDisabled || !!pc) && "opacity-40 cursor-not-allowed"
             )}
           >
             정정 요청 <span>→</span>
