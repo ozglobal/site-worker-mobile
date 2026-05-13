@@ -70,7 +70,7 @@ function EntrySection({
   const reqWage    = pc ? parseFloat(pc.requestedWage || pc.requestedValue || "0") : null
 
   return (
-    <div className="rounded-lg overflow-hidden bg-slate-50">
+    <div className="rounded-lg overflow-visible bg-slate-50">
       <div className="px-4 py-2.5 flex items-center justify-between">
         <span className="text-sm font-bold text-slate-900">{recordType || ""}</span>
         {showCorrection && onCorrectionClick && (
@@ -87,7 +87,7 @@ function EntrySection({
               정정 요청 <span>→</span>
             </button>
             {pc?.status === 'pending' && (
-              <div className="pointer-events-none absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-full bg-[#333] px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="pointer-events-none absolute bottom-full right-0 z-10 mb-2 whitespace-nowrap rounded-full bg-[#333] px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
                 이미 신청중인 정정 요청이 있습니다.
               </div>
             )}
