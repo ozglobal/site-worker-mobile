@@ -10,7 +10,7 @@ export default defineConfig({
   root: __dirname,
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')),
+    __BUILD_TIME__: JSON.stringify(new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).slice(0, 16)),
   },
 
   plugins: [
