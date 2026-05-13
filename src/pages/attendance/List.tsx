@@ -77,10 +77,14 @@ export function ListPage() {
     setCorrectionAttendanceId(null)
   }
   const { data: correctionRequests = [] } = useCorrectionRequests()
-  const correctionMap = useMemo(
-    () => Object.fromEntries(correctionRequests.map((r) => [r.workEntryId, r])),
-    [correctionRequests]
-  )
+  const correctionMap = useMemo(() => {
+    const map: Record<string, typeof correctionRequests[0]> = {}
+    correctionRequests.forEach((r) => {
+      if (r.workEntryId) map[r.workEntryId] = r
+      if (r.attendanceId) map[r.attendanceId] = r
+    })
+    return map
+  }, [correctionRequests])
 
   const { data, isError, refetch } = useMonthlyAttendance(year, month)
   // Today's daily is authoritative for whether a same-day attendance is
