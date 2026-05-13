@@ -264,7 +264,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
             handleScanSuccess(result.getText());
           }
           // Silently ignore decode errors - this is normal during scanning
-          if (error && !(error.name === 'NotFoundException')) {
+          if (error && error.name !== 'NotFoundException' && !error.message?.includes('Dimensions could be not found')) {
             logDebug('[QRScanner] Decode error:', error.message);
           }
         }

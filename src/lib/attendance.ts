@@ -515,6 +515,8 @@ export interface DailyAttendanceEntry {
   expectedWage: number
   canRequestCorrection: boolean
   overtime: boolean
+  pendingCorrectionRequestId?: string
+  correctionStatus?: string
 }
 
 export interface DailySiteSchedule {
@@ -678,6 +680,40 @@ export const submitCorrectionRequest = async (
       success: false,
       error: error instanceof Error ? error.message : 'Network error',
     }
+  }
+}
+
+export const fetchCorrectionRequests = async (): Promise<ApiResult<CorrectionRequest[]>> => {
+  const endpoint = '/system/worker/me/attendance/correction-requests'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: { 'accept': '*/*' },
+    })
+    const json = await safeJson(response) as Record<string, unknown> | null
+    if (!json) return { success: false, error: 'Invalid server response' }
+    if (!response.ok) return { success: false, error: (json.message as string) || `API error: ${response.status}` }
+    const payload = (json.data || json) as Record<string, unknown>
+    const items = (Array.isArray(payload) ? payload : (payload.items ?? payload.data ?? [])) as Record<string, unknown>[]
+    const list: CorrectionRequest[] = items.map((item) => ({
+      id: (item.id as string) || '',
+      attendanceId: (item.attendanceId as string) || '',
+      workEntryId: (item.workEntryId as string) || '',
+      requesterId: (item.requesterId as number) || 0,
+      requestType: (item.requestType as string) || '',
+      originalValue: (item.originalValue as string) || '',
+      requestedValue: (item.requestedValue as string) || '',
+      reason: (item.reason as string) || '',
+      status: (item.status as string) || '',
+      originalEffort: (item.originalEffort as string) || '',
+      requestedEffort: (item.requestedEffort as string) || '',
+      originalWage: (item.originalWage as string) || '',
+      requestedWage: (item.requestedWage as string) || '',
+    }))
+    return { success: true, data: list }
+  } catch (error) {
+    reportError('CORRECTION_REQUESTS_FETCH_FAIL', error instanceof Error ? error.message : 'Network error', { endpoint })
+    return { success: false, error: error instanceof Error ? error.message : 'Network error' }
   }
 }
 

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { MapPin as FmdGoodIcon } from "lucide-react"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { AppBottomNav } from "@/components/layout/AppBottomNav"
@@ -20,9 +21,11 @@ import { useHomeData } from "@/lib/queries/useHomeData"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { useContracts } from "@/lib/queries/useContracts"
 import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
+import { useCorrectionRequests } from "@/lib/queries/useCorrectionRequests"
 
 export function Home() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { showSuccess, showError } = useToast()
   const { worker } = useAuth()
   // Fire GET /system/worker/me/home first — aggregates today's attendance,
@@ -42,6 +45,11 @@ export function Home() {
   // /attendance/daily carries per-site `attendanceId` which /home omits — we
   // need it to open the correction dialog against a specific record.
   const { data: todayDaily, refetch: refetchTodayAttendance, isFetching: isFetchingToday } = useTodayAttendance()
+  const { data: correctionRequests = [] } = useCorrectionRequests()
+  const correctionMap = useMemo(
+    () => Object.fromEntries(correctionRequests.map((r) => [r.workEntryId, r])),
+    [correctionRequests]
+  )
   const {
     userName,
     currentDate,
@@ -137,6 +145,7 @@ export function Home() {
     }
 
     showSuccess("정정 요청이 제출되었습니다.")
+    void queryClient.invalidateQueries({ queryKey: ['correctionRequests'] })
     if (result.data) {
       const r = result.data
       const key = correctionWorkEntryId || correctionAttendanceId
@@ -336,7 +345,7 @@ export function Home() {
                       expectedWage={record.expectedWage}
                       showCorrection
                       correctionDisabled={!record.canRequestCorrection || localPendingIds.has(record.workEntryId || record.id)}
-                      pendingCorrection={pendingCorrections[record.workEntryId || record.id] ?? undefined}
+                      pendingCorrection={pendingCorrections[record.workEntryId || record.id] ?? correctionMap[record.workEntryId || record.id] ?? undefined}
                       onCorrectionClick={() => {
                         setCorrectionWorkEffort(record.workEffort != null ? String(record.workEffort) : "")
                         setCorrectionDailyWage(record.dailyWageSnapshot != null ? record.dailyWageSnapshot.toLocaleString("ko-KR") : "")
