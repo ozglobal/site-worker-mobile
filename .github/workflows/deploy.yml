@@ -1,4 +1,4 @@
-name: Deploy site-worker-mobile (dev)
+name: Deploy to DEV (workerm.kwork365.com)
 
 on:
   push:

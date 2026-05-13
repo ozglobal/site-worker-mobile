@@ -1,4 +1,4 @@
-name: Deploy site-worker-mobile (UAT)
+name: Deploy to UAT (worker.kwork365.com)
 
 on:
   workflow_dispatch:
