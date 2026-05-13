@@ -77,21 +77,31 @@ export function ListPage() {
     setShowCorrectionDialog(false)
     setCorrectionAttendanceId(null)
   }
-  const { data: correctionRequests = [] } = useCorrectionRequests()
-  const correctionMap = useMemo(() => {
-    const map: Record<string, typeof correctionRequests[0]> = {}
-    correctionRequests.forEach((r) => {
-      if (r.workEntryId) map[r.workEntryId] = r
-      if (r.attendanceId) map[r.attendanceId] = r
-    })
-    return map
-  }, [correctionRequests])
-
   const { data, isError, refetch } = useMonthlyAttendance(year, month)
   // Today's daily is authoritative for whether a same-day attendance is
   // still active — monthly entries alone can't tell us that. Cross-reference
   // by siteId because monthly entries may not carry the attendanceId.
   const { data: todayDaily } = useTodayAttendance()
+
+  const { data: correctionRequests = [] } = useCorrectionRequests()
+  const correctionMap = useMemo(() => {
+    const map: Record<string, typeof correctionRequests[0]> = {}
+    // workEntryId / attendanceId keys (direct match when available)
+    correctionRequests.forEach((r) => {
+      if (r.workEntryId) map[r.workEntryId] = r
+      if (r.attendanceId) map[r.attendanceId] = r
+    })
+    // siteId key via todayDaily bridge — monthly records carry siteId but not attendanceId/entryId
+    const attendanceToSite: Record<string, string> = {}
+    ;(todayDaily?.attendances || []).forEach((a) => {
+      if (a.attendanceId && a.siteId) attendanceToSite[a.attendanceId] = a.siteId
+    })
+    correctionRequests.forEach((r) => {
+      const siteId = attendanceToSite[r.attendanceId]
+      if (siteId) map[siteId] = r
+    })
+    return map
+  }, [correctionRequests, todayDaily])
   const todayStr = todayDaily?.date
   const activeTodaySiteIds = useMemo(() => {
     const ids = new Set<string>()
@@ -324,7 +334,7 @@ export function ListPage() {
                     expectedWage: r.expectedWage,
                     showCorrection: isGroupToday,
                     correctionDisabled: !correctableTodaySiteIds.has(r.siteId),
-                    pendingCorrection: correctionMap[r.workEntryId ?? r.id] ?? undefined,
+                    pendingCorrection: correctionMap[r.workEntryId ?? r.siteId] ?? undefined,
                     onCorrectionClick: () => openCorrectionDialog(r, rEntry?.checkInTime, rEntry?.checkOutTime),
                   }
                 })
@@ -341,7 +351,7 @@ export function ListPage() {
                     statusVariant={first.hasCheckedOut ? "default" : "active"}
                     showCorrection={isGroupToday}
                     correctionDisabled={!correctableTodaySiteIds.has(first.siteId)}
-                    pendingCorrection={correctionMap[first.workEntryId ?? first.id] ?? undefined}
+                    pendingCorrection={correctionMap[first.workEntryId ?? first.siteId] ?? undefined}
                     onCorrectionClick={() => openCorrectionDialog(first, firstDailyEntry?.checkInTime, firstDailyEntry?.checkOutTime)}
                     additionalEntries={additionalEntries.length > 0 ? additionalEntries : undefined}
                     className="shadow-sm border border-slate-100 p-5"
