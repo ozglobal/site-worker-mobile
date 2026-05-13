@@ -241,7 +241,7 @@ export const login = async (params: LoginParams): Promise<LoginResult> => {
     const requestBody = {
       username: params.username,
       password: params.password,
-      clientId: params.clientId || 'mobile',
+      clientId: params.clientId || 'worker_mobile',
     }
     const response = await loggedFetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
