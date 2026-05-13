@@ -76,16 +76,16 @@ function EntrySection({
           <div className="relative group">
             <button
               type="button"
-              onClick={correctionDisabled || pc ? undefined : onCorrectionClick}
-              disabled={correctionDisabled || !!pc}
+              onClick={correctionDisabled || pc?.status === 'pending' ? undefined : onCorrectionClick}
+              disabled={correctionDisabled || pc?.status === 'pending'}
               className={cn(
                 "text-sm font-medium flex items-center gap-0.5 text-[#007DCA]",
-                (correctionDisabled || !!pc) && "opacity-40 cursor-not-allowed"
+                (correctionDisabled || pc?.status === 'pending') && "opacity-40 cursor-not-allowed"
               )}
             >
               정정 요청 <span>→</span>
             </button>
-            {!!pc && (
+            {pc?.status === 'pending' && (
               <div className="pointer-events-none absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-full bg-[#333] px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
                 이미 신청중인 정정 요청이 있습니다.
               </div>
