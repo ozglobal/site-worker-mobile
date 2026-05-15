@@ -9,13 +9,9 @@ export function useNotices() {
       if (!result.success) throw new Error(result.error)
       return result.data
     },
-    staleTime: 60_000,
-    // Background poll kept at 30 min to stay friendly on mobile data.
-    // User returning to the app no longer triggers a refetch — they can
-    // pull-to-refresh if they need the latest, and badge counts update on
-    // the next foreground poll.
-    refetchInterval: 30 * 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   })
 }
 

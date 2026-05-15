@@ -157,7 +157,7 @@ export function CorrectionDialog({
             <div>
               <p className="text-sm font-bold text-slate-900 mb-3">공수</p>
               <div className="flex items-center gap-3">
-                <div className="bg-slate-100 rounded-lg px-2 py-2.5 flex flex-col items-center flex-1 min-w-0">
+                <div className="bg-neutral-100 rounded-lg px-2 py-2.5 flex flex-col items-center flex-1 min-w-0">
                   <span className="text-xs text-slate-500">현재</span>
                   <span className="text-base font-bold text-slate-900">{initialWorkEffort}</span>
                 </div>
@@ -185,7 +185,7 @@ export function CorrectionDialog({
           <div>
             <p className="text-sm font-bold text-slate-900 mb-3">적용단가</p>
             <div className="flex items-center gap-3">
-              <div className="bg-slate-100 rounded-lg px-2 py-2.5 flex flex-col items-center flex-1 min-w-0">
+              <div className="bg-neutral-100 rounded-lg px-2 py-2.5 flex flex-col items-center flex-1 min-w-0">
                 <span className="text-xs text-slate-500">현재</span>
                 <span className="text-base font-bold text-slate-900">{initialDailyWage}원</span>
               </div>
@@ -209,7 +209,7 @@ export function CorrectionDialog({
           </div>
 
           {/* Expected Wage */}
-          <div className="bg-slate-50 rounded-lg px-4 py-3 flex items-center justify-between">
+          <div className="bg-neutral-100 rounded-lg px-4 py-3 flex items-center justify-between">
             <span className="text-sm text-slate-600">변경 후 예상 임금(세전)</span>
             <span className="text-sm font-bold text-[#007DCA]">
               {formatCurrency(expectedWage)}

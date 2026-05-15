@@ -8,9 +8,12 @@ interface KoreanNameFieldProps {
   value: string
   isSignup: boolean
   onChange: (value: string) => void
+  /** NICE 본인인증 완료된 워커는 이름 수정 불가 */
+  verified?: boolean
 }
 
-export function KoreanNameField({ value, isSignup, onChange }: KoreanNameFieldProps) {
+export function KoreanNameField({ value, isSignup, onChange, verified = false }: KoreanNameFieldProps) {
+  const readOnly = !isSignup && verified
   const [hint, setHint] = useState(false)
   const [maxHint, setMaxHint] = useState(false)
 
@@ -39,14 +42,12 @@ export function KoreanNameField({ value, isSignup, onChange }: KoreanNameFieldPr
           }
         }}
         placeholder={isSignup ? "한글 이름" : undefined}
-        readOnly={!isSignup}
-        className={isSignup ? "bg-white" : readOnlyClass}
+        readOnly={readOnly}
+        error={isSignup && (hint || maxHint)}
+        className={readOnly ? readOnlyClass : "bg-white"}
       />
-      {isSignup && hint && (
-        <p className="text-sm text-amber-500">한글로 입력해 주세요</p>
-      )}
-      {isSignup && !hint && maxHint && (
-        <p className="text-sm text-red-500">한글 이름은 최대 4글자까지 입력할 수 있습니다</p>
+      {isSignup && (hint || maxHint) && (
+        <p className="text-sm text-[#DC2626]">한국어 이름을 4글자 이내로 입력해주세요</p>
       )}
     </div>
   )

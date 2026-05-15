@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { ko } from "react-day-picker/locale"
 import { useMonthlyAttendance } from "@/lib/queries/useMonthlyAttendance"
 import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
-import { daysToCalendarEvents, daysToSiteLegend, getSiteColor } from "@/utils/attendance"
+import { daysToCalendarEvents, buildSiteColorMap } from "@/utils/attendance"
 import { formatCurrency } from "@/utils/format"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 
@@ -23,11 +23,18 @@ export function CalendarPage() {
   const { data } = useMonthlyAttendance(year, month)
   // Calendar date dots and site legend both come from `days` so their colors
   // stay in lock-step.
-  const events = useMemo(() => daysToCalendarEvents(data?.days || []), [data])
-  const sites = useMemo(() => daysToSiteLegend(data?.days || []), [data])
+  const rawEvents = useMemo(() => daysToCalendarEvents(data?.days || []), [data])
 
   // Site dropdown is populated from today's attendance (daily API).
   const { data: today } = useTodayAttendance()
+  const colorMap = useMemo(
+    () => buildSiteColorMap((today?.attendances || []).map((a) => a.siteId), data?.days || []),
+    [today, data],
+  )
+  const events = useMemo(
+    () => rawEvents.map((e) => ({ ...e, color: colorMap.get(e.siteId || "") || e.color })),
+    [rawEvents, colorMap],
+  )
   const siteOptions = useMemo(() => {
     const seen = new Map<string, { value: string; label: string; color: string }>()
     ;(today?.attendances || []).forEach((a) => {
@@ -35,11 +42,11 @@ export function CalendarPage() {
       seen.set(a.siteId, {
         value: a.siteId,
         label: a.siteName || "",
-        color: getSiteColor(a.siteId, sites),
+        color: colorMap.get(a.siteId) || "#007DCA",
       })
     })
     return Array.from(seen.values())
-  }, [today, sites])
+  }, [today, colorMap])
   const attendanceDays = data?.totalWorkDays || 0
   const totalWorkEffort = data?.totalEffort || 0
 
@@ -51,29 +58,16 @@ export function CalendarPage() {
         siteId: s.siteId,
         name: s.siteName,
         effort: s.effort,
-        color: getSiteColor(s.siteId, sites),
+        color: colorMap.get(s.siteId) || "#007DCA",
       })),
-    [data, sites]
+    [data, colorMap]
   )
 
   const totalExpectedWage = data?.totalExpectedWage || 0
 
-  const handlePrevMonth = () => {
-    if (month === 1) {
-      setYear(year - 1)
-      setMonth(12)
-    } else {
-      setMonth(month - 1)
-    }
-  }
-
-  const handleNextMonth = () => {
-    if (month === 12) {
-      setYear(year + 1)
-      setMonth(1)
-    } else {
-      setMonth(month + 1)
-    }
+  const handleYearMonthChange = (y: number, m: number) => {
+    setYear(y)
+    setMonth(m)
   }
 
   const handleNavigation = useBottomNavHandler()
@@ -92,8 +86,7 @@ export function CalendarPage() {
         year={year}
         month={month}
         viewMode={viewMode}
-        onPrevMonth={handlePrevMonth}
-        onNextMonth={handleNextMonth}
+        onYearMonthChange={handleYearMonthChange}
         onViewModeChange={handleViewModeChange}
         className="shrink-0"
       />
@@ -129,7 +122,7 @@ export function CalendarPage() {
 
         {/* Monthly Summary Card */}
         <div className="px-4 pt-6 pb-4">
-          <div className="bg-slate-100 rounded-xl p-5">
+          <div className="rounded-xl p-5" style={{ backgroundColor: "#00000008" }}>
             <h3 className="text-lg font-bold text-slate-900 mb-4">이번 달 요약</h3>
 
             {/* 총 출역일 */}

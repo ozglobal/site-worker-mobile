@@ -1,6 +1,12 @@
 import { Input } from "@/components/ui/input"
 
-const readOnlyClass = "bg-gray-100 text-slate-500 pointer-events-none"
+// 비활성화 상태: text gray-400 (#9CA3AF) · bg neutral-100 (#F5F5F5) · border neutral-200 (#E5E5E5)
+const disabledClass = "pointer-events-none"
+const disabledStyle = {
+  color: "#9CA3AF",
+  backgroundColor: "#F5F5F5",
+  borderColor: "#E5E5E5",
+} as const
 
 interface PhoneFieldProps {
   value: string
@@ -15,7 +21,8 @@ export function PhoneField({ value, isSignup, onChangeClick }: PhoneFieldProps) 
         type="tel"
         value={value}
         readOnly
-        className={isSignup ? "bg-gray-100" : `${readOnlyClass}${onChangeClick ? " pr-16" : ""}`}
+        style={disabledStyle}
+        className={isSignup ? disabledClass : `${disabledClass}${onChangeClick ? " pr-16" : ""}`}
       />
       {!isSignup && onChangeClick && (
         <button

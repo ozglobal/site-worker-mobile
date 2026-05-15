@@ -66,11 +66,22 @@ export function ChangePasswordPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
         <div className="px-4 py-6 space-y-6">
+          {/* Chrome 의 "암호 업데이트?" 휴리스틱 차단용 미끼 input */}
+          <input type="text" name="dummy-username" autoComplete="username" tabIndex={-1} aria-hidden="true" style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, width: 0 }} readOnly />
+          <input type="password" name="dummy-current-password" autoComplete="current-password" tabIndex={-1} aria-hidden="true" style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, width: 0 }} readOnly />
+
           {/* 현재 비밀번호 */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">현재 비밀번호</label>
             <Input
-              type="password"
+              type="text"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              data-lpignore="true"
+              data-1p-ignore="true"
+              style={{ WebkitTextSecurity: "disc", textSecurity: "disc" } as React.CSSProperties}
               value={formData.currentPassword}
               onChange={handleChange("currentPassword")}
               placeholder="현재 비밀번호"
@@ -82,7 +93,14 @@ export function ChangePasswordPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">새 비밀번호</label>
             <Input
-              type="password"
+              type="text"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              data-lpignore="true"
+              data-1p-ignore="true"
+              style={{ WebkitTextSecurity: "disc", textSecurity: "disc" } as React.CSSProperties}
               value={formData.newPassword}
               onChange={handleChange("newPassword")}
               placeholder=""
@@ -111,10 +129,18 @@ export function ChangePasswordPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">새 비밀번호 확인</label>
             <Input
-              type="password"
+              type="text"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              data-lpignore="true"
+              data-1p-ignore="true"
+              style={{ WebkitTextSecurity: "disc", textSecurity: "disc" } as React.CSSProperties}
               value={formData.confirmPassword}
               onChange={handleChange("confirmPassword")}
               placeholder="새 비밀번호 재입력"
+              error={formData.confirmPassword.length > 0 && formData.confirmPassword.length >= formData.newPassword.length && formData.newPassword !== formData.confirmPassword}
               className="bg-white"
             />
             {formData.confirmPassword.length > 64 && (

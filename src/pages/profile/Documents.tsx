@@ -1,42 +1,26 @@
-import { useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useQueryClient } from "@tanstack/react-query"
 import { AppTopBar } from "@/components/layout/AppTopBar"
 import { AppBottomNav } from "@/components/layout/AppBottomNav"
-import { StatusListItem, type StatusType } from "@/components/ui/status-list-item"
+import { type StatusType } from "@/components/ui/status-list-item"
 import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { ChevronRight as ChevronRightIcon } from "lucide-react"
-import { DocumentCapture } from "@/components/ui/document-capture/document-capture"
-import { CaptureGuideIdcard } from "@/components/ui/document-capture/CaptureGuideIdcard"
-import { CaptureGuidePassport } from "@/components/ui/id-card-capture/CaptureGuidePassport"
-import { CaptureGuideBankbook } from "@/components/ui/id-card-capture/CaptureGuideBankbook"
 import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
 import { usePendingSignDocuments } from "@/lib/queries/usePendingSignDocuments"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { useToast } from "@/contexts/ToastContext"
 import { requiredDocsCatalogue, type RequiredDocMeta } from "@/lib/documents"
-import {
-  uploadIdCardDoc,
-  uploadBankbookDoc,
-  uploadSafetyCertDoc,
-  uploadFamilyRelationDoc,
-  uploadBusinessLicenseDoc,
-  uploadHealthCheckupDoc,
-  uploadPassportDoc,
-} from "@/lib/profile"
-import type { ApiResult } from "@/lib/api-result"
 
 const ALIEN_REG_CODES = new Set(["alien_reg", "alien_reg_front", "alien_reg_back"])
 const ALIEN_REG_SUB_CODES = new Set(["alien_reg_front", "alien_reg_back"])
 
-function mapStatus(status: string | undefined): { status: StatusType; label: string } | null {
+function mapStatus(status: string | undefined): { status: StatusType; label: string } {
   switch (status) {
     case "uploaded":
-      return { status: "pending", label: "제출 완료 (심사 대기)" }
+      return { status: "pending", label: "승인 대기" }
     case "approved":
-      return { status: "complete", label: "승인" }
+      return { status: "complete", label: "승인 완료" }
     case "rejected":
       return { status: "error", label: "반려" }
     case "resubmission_requested":
@@ -44,38 +28,35 @@ function mapStatus(status: string | undefined): { status: StatusType; label: str
     case "expired":
       return { status: "incomplete", label: "만료" }
     default:
-      return null
+      return { status: "incomplete", label: "미제출" }
   }
 }
 
 const badgeClassFor = (status: StatusType): string => {
   switch (status) {
     case "complete":
-      return "bg-green-50 text-green-600"
+      // 승인 완료
+      return "bg-[#16A34A1A] text-[#16A34A]"
     case "pending":
-      return "bg-blue-50 text-blue-600"
+      // 승인 대기
+      return "bg-[#EA580C1A] text-[#EA580C]"
     case "error":
+      // 반려 / 재제출 요청
       return "bg-red-50 text-red-600"
     default:
-      return "bg-slate-100 text-slate-500"
+      // 미제출 / 만료 — 같은 색 (#DC26261A)
+      return "bg-[#DC26261A] text-[#DC2626]"
   }
 }
 
 export function ProfileDocumentsPage() {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { showSuccess, showError, showInfo } = useToast()
-  const { data: summary, isLoading, isError, refetch } = useDocumentSummary()
+  const { showInfo } = useToast()
+  const { data: summary, isLoading, isError, refetch, sites: docSites, documents: rawDocs } = useDocumentSummary()
   const { data: profile } = useWorkerProfile()
   // Fire-and-forget: surfaces any eformsign documents the worker still needs
   // to sign. Payload consumed elsewhere once the UI for it is designed.
   usePendingSignDocuments()
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const pendingCodeRef = useRef<string | null>(null)
-  const [uploadingCode, setUploadingCode] = useState<string | null>(null)
-  const [captureCode, setCaptureCode] = useState<string | null>(null)
-  const [guideCode, setGuideCode] = useState<string | null>(null)
 
   const handleNavigation = useBottomNavHandler()
 
@@ -90,7 +71,7 @@ export function ProfileDocumentsPage() {
   }
   const idCardLabel = (profile?.nationalityType && idCardLabelByNationality[profile.nationalityType]) || null
 
-  const docs = (summary || []).filter((item) => !ALIEN_REG_SUB_CODES.has(item.code)).map((item) => {
+  const baseDocs = (summary || []).filter((item) => !ALIEN_REG_SUB_CODES.has(item.code)).map((item) => {
     const catalogue: RequiredDocMeta | undefined = requiredDocsCatalogue[item.code]
     const baseLabel = item.label || catalogue?.label || item.code
     return {
@@ -99,33 +80,93 @@ export function ProfileDocumentsPage() {
       method: item.method || catalogue?.method || "upload",
       status: item.status,
       state: item.state,
+      perSite: catalogue?.perSite ?? false,
     }
   })
 
-  const dispatchUpload = async (code: string, file: File): Promise<ApiResult<void>> => {
-    switch (code) {
-      case "id_card":
-        return uploadIdCardDoc(file)
-      case "bankbook":
-        return uploadBankbookDoc({
-          file,
-          accountHolder: profile?.accountHolder || profile?.workerName || undefined,
-          bankName: profile?.bankName || undefined,
-          bankAccount: profile?.bankAccount || undefined,
-        })
-      case "safety_cert":
-        return uploadSafetyCertDoc(file)
-      case "family_relation":
-        return uploadFamilyRelationDoc(file)
-      case "business_license":
-        return uploadBusinessLicenseDoc(file)
-      case "health_checkup":
-        return uploadHealthCheckupDoc(file)
-      case "passport":
-        return uploadPassportDoc({ file })
-      default:
-        return { success: true, data: undefined }
+  // Expand per-site documents into one row per assigned site so each (doc, site)
+  // pair can carry its own siteName subtitle and status.
+  interface DocRow {
+    key: string
+    code: string
+    label: string
+    method: string
+    status?: string
+    state?: 'missing' | 'completed'
+    siteName?: string
+    siteId?: string
+    validUntil?: string | null
+  }
+  const lookupValidUntil = (code: string, siteId?: string): string | null => {
+    // 코드별 만료일 위치가 다름:
+    //  - alien_reg → workers.residence_period_end (profile.residencePeriodEnd)
+    //  - passport → workers.passport_expiry_date (profile.passportExpiryDate)
+    //  - 그 외 → worker_documents.valid_until (documents[].validUntil)
+    if (code === 'alien_reg') return profile?.residencePeriodEnd ?? null
+    if (code === 'passport') return profile?.passportExpiryDate ?? null
+    const match = rawDocs.find((d) =>
+      d.documentType === code && (siteId ? d.siteId === siteId : true),
+    )
+    return match?.validUntil ?? null
+  }
+  const docs: DocRow[] = baseDocs.flatMap((d) => {
+    if (!d.perSite || docSites.length === 0) {
+      return [{
+        key: d.code,
+        code: d.code,
+        label: d.label,
+        method: d.method,
+        status: d.status,
+        state: d.state,
+        validUntil: lookupValidUntil(d.code),
+      }]
     }
+    // 현장별 행으로 펼침. 해당 현장의 missingGroups/completedGroups 기반으로 status 재계산.
+    return docSites
+      .filter((s) => s.requiredGroups.includes(d.code))
+      .map((s) => {
+        let state: 'missing' | 'completed' | undefined
+        let status: string | undefined = d.status
+        if (s.missingGroups.includes(d.code)) {
+          state = 'missing'
+          // 백엔드 siteId 미지원 상태 임시 처리: 글로벌 doc(site_id=NULL)이 있으면
+          // 모든 per-site 행에 글로벌 상태(uploaded/approved 등) 반영.
+          // 백엔드가 per-site 업로드 지원하면 자연스럽게 site 별로 분리됨.
+          if (!d.status) status = undefined
+        } else if (s.completedGroups.includes(d.code)) {
+          state = 'completed'
+          // status (uploaded/approved/rejected) — global status 그대로 사용
+        }
+        return {
+          key: `${d.code}::${s.siteId}`,
+          code: d.code,
+          label: d.label,
+          method: d.method,
+          status,
+          state,
+          siteName: s.siteName,
+          siteId: s.siteId,
+          validUntil: lookupValidUntil(d.code, s.siteId),
+        }
+      })
+  })
+
+  const formatExpiryInfo = (validUntil: string | null | undefined): { label: string; className: string } | null => {
+    if (!validUntil) return null
+    const d = new Date(validUntil)
+    if (Number.isNaN(d.getTime())) return null
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const target = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    const diff = Math.round((target.getTime() - today.getTime()) / 86400000)
+    const ymd = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
+    const label = diff >= 0 ? `만료일: ${ymd} (D-${diff})` : `만료일: ${ymd} (D+${-diff})`
+    // 만료(D+N) 또는 7일 이내: 빨강 / 8~30일: 주황 / 그 외: 회색
+    const className =
+      diff < 0 || diff <= 7 ? 'text-red-600'
+      : diff <= 30 ? 'text-amber-600'
+      : 'text-slate-500'
+    return { label, className }
   }
 
   const viewerSlugByCode: Record<string, string> = {
@@ -136,23 +177,13 @@ export function ProfileDocumentsPage() {
     passport: "passport",
   }
 
-  const runUpload = async (code: string, file: File) => {
-    setUploadingCode(code)
-    const result = await dispatchUpload(code, file)
-    setUploadingCode(null)
-
-    if (!result.success) {
-      showError(result.error)
-      return
-    }
-    const label = docs.find((d) => d.code === code)?.label || code
-    showSuccess(`[${label}] 제출되었습니다.`)
-    queryClient.invalidateQueries({ queryKey: ["documentSummary"] })
-  }
-
-  const handleView = (code: string) => {
+  const handleView = (code: string, siteId?: string) => {
     if (ALIEN_REG_CODES.has(code)) {
       navigate("/profile/documents/alien-reg")
+      return
+    }
+    if (code === "passport") {
+      navigate("/profile/documents/passport")
       return
     }
     if (code === "equipment_license") {
@@ -161,74 +192,12 @@ export function ProfileDocumentsPage() {
     }
     const slug = viewerSlugByCode[code]
     if (slug) {
-      navigate(`/profile/documents/view/${slug}`)
+      const query = siteId ? `?siteId=${encodeURIComponent(siteId)}` : ""
+      navigate(`/profile/documents/view/${slug}${query}`)
       return
     }
     showInfo("미리보기는 준비 중입니다.")
   }
-
-  // "사진 촬영" — opens the capture guide, then the camera.
-  const handleCapture = (code: string, method: string) => {
-    if (uploadingCode) return
-    if (method === "eformsign") {
-      showInfo("전자서명 서류는 별도 진행이 필요합니다.")
-      return
-    }
-    if (code === "equipment_license") {
-      navigate("/profile/equipments")
-      return
-    }
-    if (code === "passport" || code === "id_card" || code === "bankbook") {
-      setGuideCode(code)
-      return
-    }
-    setCaptureCode(code)
-  }
-
-  // "파일 선택" — opens the native file picker.
-  const handlePickFile = (code: string, method: string) => {
-    if (uploadingCode) return
-    if (method === "eformsign") {
-      showInfo("전자서명 서류는 별도 진행이 필요합니다.")
-      return
-    }
-    if (code === "equipment_license") {
-      navigate("/profile/equipments")
-      return
-    }
-    pendingCodeRef.current = code
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    const code = pendingCodeRef.current
-    pendingCodeRef.current = null
-    e.target.value = ""
-    if (!file || !code) return
-    await runUpload(code, file)
-  }
-
-  const handleCaptureConfirm = async (imageBase64: string) => {
-    const code = captureCode
-    setCaptureCode(null)
-    if (!code) return
-    const res = await fetch(imageBase64)
-    const blob = await res.blob()
-    const file = new File([blob], `${code}.jpg`, { type: "image/jpeg" })
-    await runUpload(code, file)
-  }
-
-  const handleGuideStart = () => {
-    const code = guideCode
-    setGuideCode(null)
-    if (!code) return
-    setCaptureCode(code)
-  }
-
-  const guideDocLabel = guideCode
-    ? (docs.find((d) => d.code === guideCode)?.label || guideCode)
-    : ""
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-100">
@@ -249,139 +218,56 @@ export function ProfileDocumentsPage() {
           <div className="mt-6 mx-4 bg-white rounded-xl border border-gray-300 shadow-sm">
             {docs.map((doc, idx) => {
               const mapped = mapStatus(doc.status)
-              const isUploading = uploadingCode === doc.code
-              const isCompleted = doc.state === "completed"
               const isLast = idx === docs.length - 1
+              const expiry = formatExpiryInfo(doc.validUntil)
+              // 만료일이 오늘보다 과거 → 백엔드 status와 무관하게 "만료됨" 뱃지로 override.
+              const isExpired = (() => {
+                if (!doc.validUntil) return false
+                const d = new Date(doc.validUntil)
+                if (Number.isNaN(d.getTime())) return false
+                const today = new Date()
+                today.setHours(0, 0, 0, 0)
+                return d.getTime() < today.getTime()
+              })()
+              const displayBadge = isExpired
+                ? { status: 'error' as StatusType, label: '만료됨' }
+                : mapped
 
-              // 외국인등록증 keeps the legacy status-list-item style.
-              if (ALIEN_REG_CODES.has(doc.code)) {
-                const trailing = (
-                  <button
-                    type="button"
-                    disabled={isUploading}
-                    onClick={() => navigate("/profile/documents/alien-reg")}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700 disabled:opacity-50"
-                  >
-                    {isUploading ? (
-                      "업로드 중..."
-                    ) : isCompleted ? (
-                      <>
-                        보기
-                        <ChevronRightIcon className="h-4 w-4" />
-                      </>
-                    ) : (
-                      <>
-                        제출
-                        <ChevronRightIcon className="h-4 w-4" />
-                      </>
-                    )}
-                  </button>
-                )
-                return (
-                  <StatusListItem
-                    key={doc.code}
-                    title={doc.label}
-                    subtitle=""
-                    status={isUploading ? "pending" : (mapped?.status ?? undefined)}
-                    statusLabel={isUploading ? "업로드 중..." : (mapped?.label ?? undefined)}
-                    hideChevron
-                    trailing={trailing}
-                    className={isLast ? "border-b-0" : ""}
-                  />
-                )
-              }
-
-              // New card style for all other documents.
               return (
-                <div
-                  key={doc.code}
-                  className={`flex items-center justify-between gap-3 px-4 py-4 ${isLast ? "" : "border-b border-gray-200"}`}
+                <button
+                  key={doc.key}
+                  type="button"
+                  onClick={() => handleView(doc.code, doc.siteId)}
+                  className={`w-full flex items-center justify-between gap-3 px-4 h-[60px] text-left transition-colors hover:bg-slate-50 ${isLast ? "" : "border-b border-gray-200"}`}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-base font-bold text-slate-900">{doc.label}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {isUploading ? (
-                      <span className="text-xs text-slate-400">업로드 중...</span>
-                    ) : mapped ? (
-                      <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${badgeClassFor(mapped.status)}`}>
-                        {mapped.label}
-                      </span>
-                    ) : null}
-                    {isCompleted ? (
-                      <button
-                        type="button"
-                        disabled={isUploading}
-                        onClick={() => handleView(doc.code)}
-                        className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700 disabled:opacity-50"
-                      >
-                        보기
-                        <ChevronRightIcon className="h-4 w-4" />
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          disabled={isUploading}
-                          onClick={() => handleCapture(doc.code, doc.method)}
-                          className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-                        >
-                          사진 촬영
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isUploading}
-                          onClick={() => handlePickFile(doc.code, doc.method)}
-                          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                        >
-                          파일 선택
-                        </button>
-                      </>
+                    <p className="text-base font-bold text-slate-900 leading-tight">{doc.label}</p>
+                    {(doc.siteName || expiry) && (
+                      <div>
+                        {doc.siteName && (
+                          <span className="text-xs text-slate-500 leading-tight">{doc.siteName}</span>
+                        )}
+                        {doc.siteName && expiry && (
+                          <span className="text-xs text-slate-400 leading-tight"> · </span>
+                        )}
+                        {expiry && (
+                          <span className={`text-xs font-medium leading-tight ${expiry.className}`}>{expiry.label}</span>
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${badgeClassFor(displayBadge.status)}`}>
+                      {displayBadge.label}
+                    </span>
+                    <ChevronRightIcon className="h-4 w-4 text-slate-400" />
+                  </div>
+                </button>
               )
             })}
           </div>
         )}
       </main>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
-      {guideCode === "passport" && (
-        <CaptureGuidePassport
-          onStart={handleGuideStart}
-          onClose={() => setGuideCode(null)}
-        />
-      )}
-
-      {guideCode === "bankbook" && (
-        <CaptureGuideBankbook
-          onStart={handleGuideStart}
-          onClose={() => setGuideCode(null)}
-        />
-      )}
-
-      {guideCode && guideCode !== "passport" && guideCode !== "bankbook" && (
-        <CaptureGuideIdcard
-          title={guideDocLabel}
-          onStart={handleGuideStart}
-          onClose={() => setGuideCode(null)}
-        />
-      )}
-
-      {captureCode && (
-        <DocumentCapture
-          onConfirm={handleCaptureConfirm}
-          onClose={() => setCaptureCode(null)}
-        />
-      )}
 
       <AppBottomNav active="profile" onNavigate={handleNavigation} className="shrink-0" />
     </div>

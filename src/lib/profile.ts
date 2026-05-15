@@ -2,6 +2,7 @@ import { authFetch } from './auth'
 import { safeJson, type ApiResult } from './api-result'
 import { API_BASE_URL } from './config'
 import { reportError } from './errorReporter'
+import { UPLOAD_NETWORK_ERROR_MESSAGE, mapUploadHttpError, validateFile } from './upload'
 
 export interface WorkerMeResponse {
   success: boolean
@@ -15,10 +16,17 @@ export interface WorkerMeData {
   ssnFirst: string
   ssnSecond: string
   idNumberMasked?: string
+  /** 주민등록번호 마스킹값 (내국인 전용). 외국인등록번호는 idNumberMasked 에 들어옴. */
+  nationalIdNumberMasked?: string
+  /** 여권번호 마스킹값 (외국인 미등록자 전용). */
+  passportNumberMasked?: string
+  /** NICE 본인인증 완료 여부. true 면 이름/주민번호 수정 불가. */
+  isVerified?: boolean
   gender?: string
   birthDate?: string
   phone: string
   address: string
+  addressDetail?: string
   accountHolder: string
   accountHolderRelation?: string | null
   bankName: string
@@ -31,8 +39,13 @@ export interface WorkerMeData {
   nationality?: string
   /** 국적 유형 — domestic | foreigner_registered | foreigner_unregistered */
   nationalityType?: 'domestic' | 'foreigner_registered' | 'foreigner_unregistered' | string
+  /** 외국인등록증 체류기간 종료일 (yyyy-MM-dd) */
+  residencePeriodEnd?: string | null
+  /** 여권 만료일 (yyyy-MM-dd) */
+  passportExpiryDate?: string | null
   missingRequiredDocs?: string[]
   relatedSiteId?: string
+  relatedVendorId?: string
 }
 
 /**
@@ -74,18 +87,26 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
       ssnFirst: (payload.ssnFirst as string) || (payload.residentFirst as string) || '',
       ssnSecond: (payload.ssnSecond as string) || (payload.residentSecond as string) || '',
       idNumberMasked: (payload.idNumberMasked as string) || undefined,
+      nationalIdNumberMasked: (payload.nationalIdNumberMasked as string) || undefined,
+      passportNumberMasked: (payload.passportNumberMasked as string) || undefined,
+      isVerified: Boolean(payload.isVerified),
       gender: (payload.gender as string) || "",
       birthDate:
         (payload.birthDate as string) ||
         (payload.birthdate as string) ||
         (payload.dateOfBirth as string) ||
         undefined,
-      phone:
-        (payload.mobilePhone as string) ||
-        (payload.phone as string) ||
-        (payload.phoneNumber as string) ||
-        '',
+      phone: (() => {
+        const raw = (payload.mobilePhone as string)
+          || (payload.phone as string)
+          || (payload.phoneNumber as string)
+          || ''
+        // 백엔드가 "010-****2026" 처럼 마스킹된 형태로 내려줄 때 마스킹과 뒷자리
+        // 사이에 하이픈을 끼워서 "010-****-2026" 으로 보정.
+        return raw.replace(/-(\*+)(\d{3,4})$/, '-$1-$2')
+      })(),
       address: ['주소', '주소 입력'].includes((payload.address as string) || '') ? '' : ((payload.address as string) || ''),
+      addressDetail: (payload.addressDetail as string) || '',
       accountHolder: (payload.accountHolder as string) || '',
       accountHolderRelation: (payload.accountHolderRelation as string) || null,
       bankName: (payload.bankName as string) || '',
@@ -97,10 +118,13 @@ export const fetchWorkerMe = async (): Promise<WorkerMeResponse> => {
       equipmentCompanyOwner: (payload.equipmentCompanyOwner as string) || null,
       nationality: (payload.nationality as string) || undefined,
       nationalityType: (payload.nationalityType as string) || undefined,
+      residencePeriodEnd: (payload.residencePeriodEnd as string) || null,
+      passportExpiryDate: (payload.passportExpiryDate as string) || null,
       missingRequiredDocs: Array.isArray(payload.missingRequiredDocs)
         ? (payload.missingRequiredDocs as string[])
         : [],
       relatedSiteId: (payload.relatedSiteId as string) || undefined,
+      relatedVendorId: (payload.relatedVendorId as string) || undefined,
     }
 
     return { success: true, data }
@@ -248,6 +272,54 @@ export const fetchActivePartners = async (): Promise<ActivePartnersResponse> => 
 }
 
 /**
+ * PUT /system/worker/me — 본인 정보 self-update.
+ * 백엔드 WorkerSelfUpdateReq 의 모든 선택 필드를 받아 부분 갱신.
+ * admin/manager 웹의 PUT /system/worker/{id} 와 동일 schema (본인 버전).
+ */
+export interface MyInfoUpdateReq {
+  nameKo?: string
+  nameEn?: string
+  birthDate?: string  // yyyy-MM-dd
+  email?: string
+  address?: string
+  addressDetail?: string
+  nationality?: string
+  passportExpiryDate?: string  // yyyy-MM-dd
+  nationalIdNumber?: string
+  passportNumber?: string
+  residenceStatus?: string
+  residencePeriodStart?: string
+  residencePeriodEnd?: string
+  jobType?: string
+  emergencyContact?: string
+  remarks?: string
+  gender?: string  // 백엔드 DTO 확장 필요 (현재 WorkerSelfUpdateReq 미보유)
+}
+
+export const updateMyInfo = async (data: MyInfoUpdateReq): Promise<ApiResult<void>> => {
+  const endpoint = '/system/worker/me'
+  try {
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        accept: '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+    const json = await safeJson(response) as Record<string, unknown> | null
+    if (!response.ok) {
+      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+    }
+    return { success: true, data: undefined }
+  } catch {
+    reportError('PROFILE_UPDATE_FAIL', 'Network error', { endpoint })
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * @deprecated Use updateMyInfo() — uses old POST /system/worker endpoint.
  * Update worker profile via POST /system/worker
  */
 export const updateWorkerProfile = async (data: {
@@ -475,6 +547,8 @@ export const uploadEquipment = async (
   payload: UploadEquipmentPayload,
 ): Promise<ApiResult<void>> => {
   const endpoint = '/system/worker/me/equipment'
+  const validationError = validateFile(payload.licenseFile)
+  if (validationError) return { success: false, error: validationError }
   try {
     const form = new FormData()
     form.append('equipmentType', payload.equipmentType)
@@ -491,13 +565,13 @@ export const uploadEquipment = async (
     const json = await safeJson(response) as Record<string, unknown> | null
 
     if (!response.ok) {
-      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+      return { success: false, error: mapUploadHttpError(response.status, json?.message as string | undefined) }
     }
 
     return { success: true, data: undefined }
   } catch {
     reportError('EQUIPMENT_UPLOAD_FAIL', 'Network error', { endpoint })
-    return { success: false, error: 'Network error' }
+    return { success: false, error: UPLOAD_NETWORK_ERROR_MESSAGE }
   }
 }
 
@@ -506,6 +580,8 @@ export const reuploadEquipmentLicense = async (
   file: File,
 ): Promise<ApiResult<void>> => {
   const endpoint = `/system/worker/me/equipment/${equipmentId}`
+  const validationError = validateFile(file)
+  if (validationError) return { success: false, error: validationError }
   try {
     const form = new FormData()
     form.append('licenseFile', file)
@@ -516,12 +592,12 @@ export const reuploadEquipmentLicense = async (
     })
     const json = await safeJson(response) as Record<string, unknown> | null
     if (!response.ok) {
-      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+      return { success: false, error: mapUploadHttpError(response.status, json?.message as string | undefined) }
     }
     return { success: true, data: undefined }
   } catch {
     reportError('EQUIPMENT_REUPLOAD_FAIL', 'Network error', { endpoint })
-    return { success: false, error: 'Network error' }
+    return { success: false, error: UPLOAD_NETWORK_ERROR_MESSAGE }
   }
 }
 
@@ -744,6 +820,17 @@ export interface DocumentSummaryItem {
   submittedAt?: string | null
   /** Which bucket the document came from on the server response. */
   state?: 'missing' | 'completed'
+  /** From documents[].validUntil — for displaying 만료일. */
+  validUntil?: string | null
+}
+
+export interface DocumentSummarySite {
+  siteId: string
+  siteName: string
+  requiredGroups: string[]
+  completedGroups: string[]
+  missingGroups: string[]
+  expiredGroups: string[]
 }
 
 /**
@@ -755,6 +842,14 @@ export interface DocumentSummaryItem {
 export interface DocumentSummaryResult {
   items: DocumentSummaryItem[]
   requiredDocsCompleted: boolean | null
+  sites: DocumentSummarySite[]
+  /** Raw documents array — used to look up validUntil per (code, siteId). */
+  documents: Array<{
+    documentType: string
+    siteId?: string | null
+    status?: string
+    validUntil?: string | null
+  }>
 }
 
 export const fetchDocumentSummary = async (): Promise<ApiResult<DocumentSummaryResult>> => {
@@ -803,8 +898,9 @@ export const fetchDocumentSummary = async (): Promise<ApiResult<DocumentSummaryR
       const status = (e.status ?? undefined) as string | undefined
       const perSite = (e.perSite ?? e.siteSpecific ?? undefined) as boolean | undefined
       const submittedAt = (e.submittedAt ?? e.submitDate ?? null) as string | null
+      const validUntil = (e.validUntil ?? e.expiryDate ?? null) as string | null
       const resolvedState = state ?? stateFromStatus(status)
-      return { code: String(code), label, method, status, perSite, submittedAt, state: resolvedState }
+      return { code: String(code), label, method, status, perSite, submittedAt, validUntil, state: resolvedState }
     }
 
     const documentsList = Array.isArray(payload.documents) ? payload.documents as unknown[] : []
@@ -815,10 +911,38 @@ export const fetchDocumentSummary = async (): Promise<ApiResult<DocumentSummaryR
           : Array.isArray(payload) ? (payload as unknown[]) : []
         : []
 
+    // alien_reg 는 front+back 2개 sub-doc 으로 구성됨. 한쪽만 올라가면 미제출 취급,
+    // 둘 다 올라가야 승인 대기. 둘 다 approved 면 승인 완료. 하나라도 반려면 반려.
+    const alienFront = documentsList
+      .map((e) => e as Record<string, unknown>)
+      .find((d) => (d.documentType ?? d.code) === 'alien_reg_front')
+    const alienBack = documentsList
+      .map((e) => e as Record<string, unknown>)
+      .find((d) => (d.documentType ?? d.code) === 'alien_reg_back')
+    const alienAggregateStatus: string | undefined = (() => {
+      const fs = alienFront?.status as string | undefined
+      const bs = alienBack?.status as string | undefined
+      // 한쪽이라도 없으면 미제출(undefined)
+      if (!fs || !bs) return undefined
+      // 한쪽이라도 반려면 반려
+      if (fs === 'rejected' || bs === 'rejected') return 'rejected'
+      // 둘 다 승인되면 승인 완료
+      if (fs === 'approved' && bs === 'approved') return 'approved'
+      // 그 외(둘 다 존재, 부분 승인 또는 둘 다 uploaded) → 승인 대기
+      return 'uploaded'
+    })()
+    const syntheticAlienReg: DocumentSummaryItem | null = (alienFront || alienBack)
+      ? { code: 'alien_reg', status: alienAggregateStatus, state: alienAggregateStatus ? 'completed' : 'missing' }
+      : null
+
+    // documents[]를 먼저 처리 — 이쪽에만 status(uploaded/approved/rejected)와
+    // validUntil 정보가 있어서 같은 code를 missingList/completedList보다 우선해야
+    // 뱃지(승인 대기 등)가 올바르게 노출됨.
     const rawItems: DocumentSummaryItem[] = [
+      ...(syntheticAlienReg ? [syntheticAlienReg] : []),
+      ...documentsList.map((e) => toItem(e)),
       ...missingList.map((e) => toItem(e, 'missing')),
       ...completedList.map((e) => toItem(e, 'completed')),
-      ...documentsList.map((e) => toItem(e)),
       ...legacyList.map((e) => toItem(e)),
     ].filter((it): it is DocumentSummaryItem => !!it)
 
@@ -832,7 +956,28 @@ export const fetchDocumentSummary = async (): Promise<ApiResult<DocumentSummaryR
     const requiredDocsCompleted =
       typeof payload.requiredDocsCompleted === 'boolean' ? payload.requiredDocsCompleted : null
 
-    return { success: true, data: { items, requiredDocsCompleted } }
+    const sites: DocumentSummarySite[] = Array.isArray(payload.sites)
+      ? (payload.sites as Array<Record<string, unknown>>).map((s) => ({
+          siteId: String(s.siteId ?? ''),
+          siteName: String(s.siteName ?? ''),
+          requiredGroups: Array.isArray(s.requiredGroups) ? (s.requiredGroups as string[]) : [],
+          completedGroups: Array.isArray(s.completedGroups) ? (s.completedGroups as string[]) : [],
+          missingGroups: Array.isArray(s.missingGroups) ? (s.missingGroups as string[]) : [],
+          expiredGroups: Array.isArray(s.expiredGroups) ? (s.expiredGroups as string[]) : [],
+        })).filter((s) => !!s.siteId)
+      : []
+
+    const documents = documentsList.map((d) => {
+      const r = d as Record<string, unknown>
+      return {
+        documentType: String(r.documentType ?? r.code ?? ''),
+        siteId: (r.siteId ?? null) as string | null,
+        status: (r.status ?? undefined) as string | undefined,
+        validUntil: (r.validUntil ?? r.expiryDate ?? null) as string | null,
+      }
+    })
+
+    return { success: true, data: { items, requiredDocsCompleted, sites, documents } }
   } catch {
     reportError('DOCS_SUMMARY_FAIL', 'Network error', { endpoint })
     return { success: false, error: 'Network error' }
@@ -895,21 +1040,22 @@ const postDocumentMultipart = async (
     })
     const json = await safeJson(response) as Record<string, unknown> | null
     if (!response.ok) {
-      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+      return { success: false, error: mapUploadHttpError(response.status, json?.message as string | undefined) }
     }
     return { success: true, data: undefined }
   } catch {
     reportError('DOCUMENT_UPLOAD_FAIL', 'Network error', { endpoint })
-    return { success: false, error: 'Network error' }
+    return { success: false, error: UPLOAD_NETWORK_ERROR_MESSAGE }
   }
 }
 
 /** 1. 신분증 사본 — POST /system/worker/me/document/id-card */
-export const uploadIdCardDoc = async (file: File) => {
+export const uploadIdCardDoc = async (file: File): Promise<ApiResult<void>> => {
+  const validationError = validateFile(file)
+  if (validationError) return { success: false, error: validationError }
   const form = new FormData()
   form.append('file', file)
-  const result = await postDocumentMultipart('id-card', form)
-  return result
+  return postDocumentMultipart('id-card', form)
 }
 
 export interface DocumentDetail {
@@ -951,8 +1097,9 @@ const fetchDocumentDetail = async (slug: string): Promise<ApiResult<DocumentDeta
 /** GET /system/worker/me/document/id-card — detail for the 보기 flow. */
 export const fetchIdCardDoc = () => fetchDocumentDetail('id-card')
 
-/** GET /system/worker/me/document/bankbook — detail for the 보기 flow. */
-export const fetchBankbookDoc = () => fetchDocumentDetail('bankbook')
+/** GET /system/worker/me/document/bankbook[?siteId=...] — detail for the 보기 flow. */
+export const fetchBankbookDoc = (siteId?: string) =>
+  fetchDocumentDetail(siteId ? `bankbook?siteId=${encodeURIComponent(siteId)}` : 'bankbook')
 
 /** GET /system/worker/me/document/family-relation — detail for the 보기 flow. */
 export const fetchFamilyRelationDoc = () => fetchDocumentDetail('family-relation')
@@ -1054,7 +1201,15 @@ export interface AlienRegUploadReq {
 }
 
 /** 2. 외국인등록증 — POST /system/worker/me/document/alien-reg */
-export const uploadAlienRegDoc = (data: AlienRegUploadReq) => {
+export const uploadAlienRegDoc = async (data: AlienRegUploadReq): Promise<ApiResult<void>> => {
+  if (data.frontFile) {
+    const e = validateFile(data.frontFile)
+    if (e) return { success: false, error: e }
+  }
+  if (data.backFile) {
+    const e = validateFile(data.backFile)
+    if (e) return { success: false, error: e }
+  }
   const form = new FormData()
   if (data.frontFile) form.append('frontFile', data.frontFile)
   if (data.backFile) form.append('backFile', data.backFile)
@@ -1072,7 +1227,11 @@ export interface PassportUploadReq {
 }
 
 /** 3. 여권 — POST /system/worker/me/document/passport */
-export const uploadPassportDoc = (data: PassportUploadReq) => {
+export const uploadPassportDoc = async (data: PassportUploadReq): Promise<ApiResult<void>> => {
+  if (data.file) {
+    const e = validateFile(data.file)
+    if (e) return { success: false, error: e }
+  }
   const form = new FormData()
   if (data.file) form.append('file', data.file)
   if (data.nationality) form.append('nationality', data.nationality)
@@ -1087,39 +1246,52 @@ export interface BankbookUploadReq {
   bankAccount?: string
 }
 
-/** 4. 통장사본 — POST /system/worker/me/document/bankbook */
-export const uploadBankbookDoc = (data: BankbookUploadReq) => {
+/** 4. 통장사본 — POST /system/worker/me/document/bankbook[?siteId=...] */
+export const uploadBankbookDoc = async (data: BankbookUploadReq & { siteId?: string }): Promise<ApiResult<void>> => {
+  if (data.file) {
+    const e = validateFile(data.file)
+    if (e) return { success: false, error: e }
+  }
   const form = new FormData()
   if (data.file) form.append('file', data.file)
   if (data.accountHolder) form.append('accountHolder', data.accountHolder)
   if (data.bankName) form.append('bankName', data.bankName)
   if (data.bankAccount) form.append('bankAccount', data.bankAccount)
-  return postDocumentMultipart('bankbook', form)
+  const slug = data.siteId ? `bankbook?siteId=${encodeURIComponent(data.siteId)}` : 'bankbook'
+  return postDocumentMultipart(slug, form)
 }
 
 /** 5. 기초안전보건교육 이수증 — POST /system/worker/me/document/safety-cert */
-export const uploadSafetyCertDoc = (file: File) => {
+export const uploadSafetyCertDoc = async (file: File): Promise<ApiResult<void>> => {
+  const e = validateFile(file)
+  if (e) return { success: false, error: e }
   const form = new FormData()
   form.append('file', file)
   return postDocumentMultipart('safety-cert', form)
 }
 
 /** 6. 가족관계증명서 — POST /system/worker/me/document/family-relation */
-export const uploadFamilyRelationDoc = (file: File) => {
+export const uploadFamilyRelationDoc = async (file: File): Promise<ApiResult<void>> => {
+  const e = validateFile(file)
+  if (e) return { success: false, error: e }
   const form = new FormData()
   form.append('file', file)
   return postDocumentMultipart('family-relation', form)
 }
 
 /** 7. 사업자등록증 — POST /system/worker/me/document/business-license */
-export const uploadBusinessLicenseDoc = (file: File) => {
+export const uploadBusinessLicenseDoc = async (file: File): Promise<ApiResult<void>> => {
+  const e = validateFile(file)
+  if (e) return { success: false, error: e }
   const form = new FormData()
   form.append('file', file)
   return postDocumentMultipart('business-license', form)
 }
 
 /** 8. 건강검진 내역 — POST /system/worker/me/document/health-checkup */
-export const uploadHealthCheckupDoc = (file: File) => {
+export const uploadHealthCheckupDoc = async (file: File): Promise<ApiResult<void>> => {
+  const e = validateFile(file)
+  if (e) return { success: false, error: e }
   const form = new FormData()
   form.append('file', file)
   return postDocumentMultipart('health-checkup', form)
@@ -1138,6 +1310,8 @@ export const uploadDocument = async (
   file: File
 ): Promise<UploadDocumentResponse> => {
   const endpoint = `/system/worker/me/document?documentType=${documentType}`
+  const validationError = validateFile(file)
+  if (validationError) return { success: false, error: validationError }
   try {
     const isImage = file.type.startsWith('image/')
     const blob = isImage ? await compressImage(file) : file
@@ -1154,13 +1328,13 @@ export const uploadDocument = async (
     const json = await safeJson(response) as Record<string, unknown> | null
 
     if (!response.ok) {
-      return { success: false, error: (json?.message as string) || `API error: ${response.status}` }
+      return { success: false, error: mapUploadHttpError(response.status, json?.message as string | undefined) }
     }
 
     return { success: true }
   } catch (error) {
     console.error('[PROFILE] uploadDocument error:', error)
     reportError('PROFILE_DOCUMENT_UPLOAD_FAIL', 'Network error', { endpoint })
-    return { success: false, error: 'Network error' }
+    return { success: false, error: UPLOAD_NETWORK_ERROR_MESSAGE }
   }
 }

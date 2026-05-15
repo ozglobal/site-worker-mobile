@@ -34,9 +34,9 @@ export function AddressField({ value, onChange }: AddressFieldProps) {
       type="button"
       onClick={() => openKakaoPostcode(onChange)}
       className={cn(
-        "flex w-full items-center gap-2 rounded-md border border-input bg-white px-3 py-2 text-sm text-left",
-        "min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        !value && "text-slate-400"
+        "flex w-full items-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 text-base font-normal text-[#27272A] text-left shadow-sm",
+        "h-12 focus-visible:outline-none focus-visible:border-[#007DCA] focus-visible:ring-[3px] focus-visible:ring-[#007DCA]/25",
+        !value && "text-[#9CA3AF]"
       )}
     >
       <span className="flex-1 truncate">{value || "주소를 검색하세요"}</span>

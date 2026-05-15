@@ -20,6 +20,7 @@ export function SignupPnPage() {
     birthdate: savedData.birthDate || "",
     phone: savedPhone,
     address: savedData.address || "",
+    addressDetail: savedData.addressDetail || "",
   })
   const allFieldsFilled =
     formData.name.trim() !== "" &&
@@ -44,6 +45,7 @@ export function SignupPnPage() {
       idType: 'passport',
       passportNumber: formData.passport,
       address: formData.address,
+      addressDetail: formData.addressDetail,
       gender: formData.gender || undefined,
       birthDate: formData.birthdate || undefined,
     })

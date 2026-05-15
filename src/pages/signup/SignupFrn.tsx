@@ -19,6 +19,7 @@ export function SignupFrnPage() {
     ssnSecond: savedFrnSecond,
     phone: savedPhone,
     address: savedData.address || "",
+    addressDetail: savedData.addressDetail || "",
   })
   const allFieldsFilled =
     formData.name.trim() !== "" &&
@@ -40,6 +41,7 @@ export function SignupFrnPage() {
       idType: 'alien_registration',
       idNumber: `${formData.ssnFirst}-${formData.ssnSecond}`,
       address: formData.address,
+      addressDetail: formData.addressDetail,
     })
     workerMetaStorage.patch({ nationalityType: 'foreigner_registered', idType: 'alien_registration' })
     navigate("/signup/set-password")

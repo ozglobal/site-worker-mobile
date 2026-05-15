@@ -6,6 +6,7 @@ import { ProgressBar } from "@/components/ui/progress-bar"
 import { useOnboardingDraft } from "@/contexts/OnboardingDraftContext"
 import { workerMetaStorage } from "@/lib/storage"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
+import { useBankNames } from "@/lib/queries/useBankNames"
 import { updatePayment } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
 
@@ -18,6 +19,7 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
   const queryClient = useQueryClient()
   const { patch: patchDraft } = useOnboardingDraft()
   const { data: profile } = useWorkerProfile()
+  const { data: banks = [] } = useBankNames()
   const { showSuccess, showError } = useToast()
 
   const effectiveTarget = profile?.wagePaymentTarget
@@ -33,8 +35,8 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
   // may surface either "labor_service" or "LABOR_SERVICE".
   const showCompanyOption = (profile?.workerCategory || "").toLowerCase() === "labor_service"
   const routes = mode === "onboarding"
-    ? { myAccount: "/onboarding/my-account", familyAccount: "/onboarding/family-account" }
-    : { myAccount: "/profile/my-account", familyAccount: "/profile/family-account" }
+    ? { myAccount: "/onboarding/my-account", familyAccount: "/onboarding/family-account", companyAccount: "/onboarding/company-account" }
+    : { myAccount: "/profile/my-account", familyAccount: "/profile/family-account", companyAccount: "/profile/company-account" }
 
   const selectTarget = (t: 'SELF' | 'PROXY' | 'COMPANY') => {
     if (t === 'SELF') {
@@ -42,16 +44,36 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
     } else if (t === 'PROXY') {
       workerMetaStorage.patch({ wagePaymentTarget: 'PROXY' })
       navigate(routes.familyAccount)
+    } else if (mode === 'profile') {
+      navigate(routes.companyAccount)
     } else {
       handleCompany()
     }
   }
 
-  const cardClass = (t: 'SELF' | 'PROXY' | 'COMPANY') => {
-    if (!target) return "border-gray-200 bg-white"
-    return target === t
-      ? "border-primary bg-white"
-      : "border-gray-200 bg-gray-100 text-slate-500"
+  // 실제 결제정보가 들어있어야 "설정됨" 으로 보고 파란 테두리. 그렇지 않으면
+  // 백엔드가 기본값으로 'SELF' 를 내려줘도 미설정 상태로 취급.
+  const hasPaymentInfo = !!profile?.bankAccount || target === 'COMPANY'
+  const cardClass = (t: 'SELF' | 'PROXY' | 'COMPANY') =>
+    target === t && hasPaymentInfo ? "border-primary bg-white" : "border-gray-200 bg-white"
+
+  // 현재 target과 일치하면 "{은행명} {계좌번호} ({예금주})" 형식으로 표시.
+  // 백엔드가 bankName 으로 dict code (예: "004") 를 내려주므로 dict로 한글명 변환.
+  const resolveBankName = (raw: string | null | undefined) => {
+    if (!raw) return ""
+    return banks.find((b) => b.code === raw)?.name
+      ?? banks.find((b) => b.name === raw)?.name
+      ?? raw
+  }
+  const accountDescription = (t: 'SELF' | 'PROXY', fallback: string) => {
+    if (target !== t || !profile?.bankAccount) return fallback
+    const parts: string[] = []
+    const bankLabel = resolveBankName(profile.bankName)
+    if (bankLabel) parts.push(bankLabel)
+    parts.push(profile.bankAccount)
+    return profile.accountHolder
+      ? `${parts.join(' ')} (${profile.accountHolder})`
+      : parts.join(' ')
   }
 
   const handleCompany = async () => {
@@ -103,31 +125,19 @@ export function PayrollAccountPage({ mode = "profile" }: PayrollAccountPageProps
         </div>
 
         <div className="space-y-3">
-          {(!target || target === 'SELF') && (
-            <OptionCard
-              title="본인 계좌"
-              description={
-                target === 'SELF' && profile?.accountHolder
-                  ? profile.accountHolder
-                  : "본인 명의 계좌로 급여 지급"
-              }
-              onClick={() => selectTarget('SELF')}
-              className={cardClass('SELF')}
-            />
-          )}
-          {(!target || target === 'PROXY') && (
-            <OptionCard
-              title="가족 계좌"
-              description={
-                target === 'PROXY' && profile?.accountHolder
-                  ? profile.accountHolder
-                  : "가족 명의 계좌로 급여 지급"
-              }
-              onClick={() => selectTarget('PROXY')}
-              className={cardClass('PROXY')}
-            />
-          )}
-          {showCompanyOption && (!target || target === 'COMPANY') && (
+          <OptionCard
+            title="본인 계좌"
+            description={accountDescription('SELF', "본인 명의 계좌로 급여 지급")}
+            onClick={() => selectTarget('SELF')}
+            className={cardClass('SELF')}
+          />
+          <OptionCard
+            title="가족 계좌"
+            description={accountDescription('PROXY', "가족 명의 계좌로 급여 지급")}
+            onClick={() => selectTarget('PROXY')}
+            className={cardClass('PROXY')}
+          />
+          {showCompanyOption && (
             <OptionCard
               title="소속 회사"
               description="소속된 용역 업체로 급여 지급"

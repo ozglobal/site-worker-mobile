@@ -8,6 +8,7 @@ import { AlertCircle as ErrorOutlineIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
 import { DateInput } from "@/components/ui/date-input"
+import { DocumentCapture } from "@/components/ui/document-capture/document-capture"
 import { useDictItems } from "@/lib/queries/useDictItems"
 import { uploadEquipment } from "@/lib/profile"
 import { useToast } from "@/contexts/ToastContext"
@@ -23,6 +24,14 @@ export function EquipmentPage() {
   const [validFrom, setValidFrom] = useState<Date | undefined>()
   const [expiryDate, setExpiryDate] = useState<Date | undefined>()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showCapture, setShowCapture] = useState(false)
+
+  const handleCaptureConfirm = async (imageBase64: string) => {
+    setShowCapture(false)
+    const res = await fetch(imageBase64)
+    const blob = await res.blob()
+    setCertFile(new File([blob], "equipment-cert.jpg", { type: "image/jpeg" }))
+  }
 
   const expiryAfterIssue = validFrom && expiryDate ? expiryDate >= validFrom : true
   const isFormValid = selectedEquipment && certFile && validFrom && expiryDate && expiryAfterIssue
@@ -46,7 +55,7 @@ export function EquipmentPage() {
               <Select
                 options={equipmentTypes.map((t) => ({ value: t.code, label: t.name }))}
                 value={selectedEquipment}
-                onChange={(v) => { setSelectedEquipment(v); setTimeout(() => fileInputRef.current?.click(), 300) }}
+                onChange={setSelectedEquipment}
                 placeholder="장비 선택"
               />
             </div>
@@ -63,17 +72,37 @@ export function EquipmentPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">장비 자격증</label>
-              <label className="flex items-center w-full h-12 px-4 rounded-lg border border-gray-200 bg-white cursor-pointer">
-                <span className="font-medium text-slate-900 mr-2">파일 선택</span>
-                <span className="text-sm text-slate-400 truncate">{certFile ? certFile.name : "선택된 파일 없음"}</span>
+              <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 text-sm text-slate-500 truncate">
+                    {certFile ? certFile.name : "선택된 파일 없음"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCapture(true)}
+                    className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90"
+                  >
+                    사진 촬영
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    파일 선택
+                  </button>
+                </div>
                 <input
                   type="file"
-                  accept="image/*,.pdf"
+                  accept="image/*,application/pdf"
                   ref={fileInputRef}
-                  onChange={(e) => { setCertFile(e.target.files?.[0] || null) }}
+                  onChange={(e) => {
+                    setCertFile(e.target.files?.[0] || null)
+                    e.target.value = ""
+                  }}
                   className="hidden"
                 />
-              </label>
+              </div>
               <label className="block text-sm font-medium text-slate-700 mt-4 mb-2">자격증 발급일</label>
               <DateInput value={validFrom} onChange={setValidFrom} />
               <label className="block text-sm font-medium text-slate-700 mt-4 mb-2">자격증 만료일</label>
@@ -116,6 +145,13 @@ export function EquipmentPage() {
           </div>
         </div>
       </main>
+
+      {showCapture && (
+        <DocumentCapture
+          onConfirm={handleCaptureConfirm}
+          onClose={() => setShowCapture(false)}
+        />
+      )}
     </div>
   )
 }

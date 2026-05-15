@@ -24,8 +24,8 @@ export interface UploadResult {
 // Constants
 // ============================================
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
-const ALLOWED_TYPES = [
+export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+export const ALLOWED_TYPES = [
   'image/jpeg',
   'image/png',
   'image/gif',
@@ -34,6 +34,8 @@ const ALLOWED_TYPES = [
   'image/bmp',
   'application/pdf',
 ]
+
+export const UPLOAD_NETWORK_ERROR_MESSAGE = '네트워크 오류가 발생했습니다.'
 
 // ============================================
 // Validation
@@ -47,6 +49,24 @@ export function validateFile(file: File): string | null {
     return '파일 크기가 10MB를 초과합니다.'
   }
   return null
+}
+
+// Map an HTTP response from a multipart upload endpoint to a Korean toast message.
+// Server-provided Korean message wins for 400-range validation; otherwise use the
+// canonical Korean copy so the three frontends stay consistent.
+export function mapUploadHttpError(status: number, serverMessage?: string | null): string {
+  switch (status) {
+    case 401:
+      return '로그인이 필요합니다.'
+    case 403:
+      return '권한이 없습니다.'
+    case 413:
+      return '파일 크기가 10MB를 초과합니다.'
+    case 415:
+      return '지원하지 않는 파일 형식입니다. 이미지 또는 PDF만 업로드 가능합니다.'
+  }
+  if (status >= 500) return '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+  return serverMessage || '업로드에 실패했습니다.'
 }
 
 // ============================================
@@ -80,7 +100,7 @@ export async function uploadFile(file: File): Promise<UploadResult> {
     if (!response.ok) {
       return {
         success: false,
-        error: responseData.message || `업로드 실패 (${response.status})`,
+        error: mapUploadHttpError(response.status, responseData?.message as string | undefined),
       }
     }
 
@@ -93,7 +113,7 @@ export async function uploadFile(file: File): Promise<UploadResult> {
     reportError('UPLOAD_FAIL', error instanceof Error ? error.message : 'Upload network error', { endpoint: '/uploads' })
     return {
       success: false,
-      error: error instanceof Error ? error.message : '네트워크 오류가 발생했습니다.',
+      error: UPLOAD_NETWORK_ERROR_MESSAGE,
     }
   }
 }

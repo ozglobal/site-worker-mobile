@@ -10,6 +10,7 @@ export function useContracts(userId: string | null, year?: number) {
       return groupByMonth(result.data)
     },
     enabled: !!userId,
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }

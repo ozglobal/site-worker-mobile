@@ -87,7 +87,7 @@ export function OnboardingDocumentsPage() {
       showSuccess(`${label} 등록 완료`)
       return true
     } else {
-      showError("업로드에 실패했습니다.")
+      showError(result.error || "업로드에 실패했습니다.")
       return false
     }
   }

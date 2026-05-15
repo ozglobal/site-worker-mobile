@@ -18,12 +18,15 @@ export function useDocumentSummary() {
       if (!result.data) throw new Error('Failed to fetch document summary')
       return result.data
     },
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   return {
     ...query,
     data: query.data?.items as DocumentSummaryItem[] | undefined,
     requiredDocsCompleted: query.data?.requiredDocsCompleted ?? null,
+    sites: query.data?.sites ?? [],
+    documents: query.data?.documents ?? [],
   }
 }

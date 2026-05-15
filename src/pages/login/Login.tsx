@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { IconEye, IconEyeClosed } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -19,25 +19,6 @@ export function LoginPage() {
   const { login } = useAuth()
   const { honeypotProps, isBotDetected } = useHoneypot()
   const [autoLogin, setAutoLogin] = useState(() => autoLoginStorage.isEnabled())
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-  const showIosHint = isIos && !isStandalone
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault()
-      setInstallPrompt(e as BeforeInstallPromptEvent)
-    }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
-
-  const handleInstall = async () => {
-    if (!installPrompt) return
-    await installPrompt.prompt()
-    setInstallPrompt(null)
-  }
 
   const handleLogin = async () => {
     if (isBotDetected || isSubmitting) return
@@ -49,8 +30,16 @@ export function LoginPage() {
     setError("")
     setIsSubmitting(true)
 
+    // 사용자가 하이픈 없이 입력해도 받게: 숫자만 11자리면 010-XXXX-XXXX 형식으로 변환.
+    const normalizePhoneForLogin = (raw: string): string => {
+      const digits = raw.replace(/\D/g, '')
+      if (digits.length === 11 && digits.startsWith('010')) {
+        return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+      }
+      return raw
+    }
     const result = await login({
-      username: phone,
+      username: normalizePhoneForLogin(phone),
       password: password,
     })
     setIsSubmitting(false)
@@ -173,23 +162,6 @@ export function LoginPage() {
           비밀번호 재설정
         </button>
       </div>
-
-      {/* PWA Install Prompt (Android / Desktop) */}
-      {installPrompt && (
-        <div className="mt-6 flex justify-center">
-          <Button variant="outline" size="full" onClick={handleInstall}>
-            앱 설치하기
-          </Button>
-        </div>
-      )}
-
-      {/* iOS install hint */}
-      {showIosHint && (
-        <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          <p className="font-semibold text-slate-700 mb-1">홈 화면에 앱 추가하기</p>
-          <p>Safari 하단의 <span className="font-medium">공유 버튼(⎙)</span>을 누른 후 <span className="font-medium">'홈 화면에 추가'</span>를 선택하세요.</p>
-        </div>
-      )}
 
       <p className="mt-auto pb-6 pt-8 text-center text-xs font-semibold text-slate-400">v{__APP_VERSION__} {__BUILD_TIME__}</p>
     </div>

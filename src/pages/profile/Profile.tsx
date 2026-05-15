@@ -7,13 +7,18 @@ import { Button } from "@/components/ui/button"
 import { handleLogout } from "@/lib/auth"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useDictItems } from "@/lib/queries/useDictItems"
+import { useBankNames } from "@/lib/queries/useBankNames"
 import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
 
 export function MyInfoPage() {
   const navigate = useNavigate()
   const { data: profile } = useWorkerProfile()
   const { data: workerCategories = [] } = useDictItems("worker_category")
-  const accountIncomplete = !profile?.accountHolder
+  const { data: banks = [] } = useBankNames()
+  // 계좌 정보 미완료 판단:
+  //  - 소속 회사 지급(COMPANY) 인 경우는 별도 계좌 입력이 필요 없으므로 OK
+  //  - 그 외(SELF/PROXY) 에서 bankAccount 가 비어있으면 미완료
+  const accountIncomplete = profile?.wagePaymentTarget !== 'COMPANY' && !profile?.bankAccount
 
   const workerCategoryLabel = profile?.workerCategory
     ? workerCategories.find((c) => c.code === profile.workerCategory)?.name
@@ -28,12 +33,19 @@ export function MyInfoPage() {
   const paymentLabel = profile?.wagePaymentTarget
     ? paymentLabels[profile.wagePaymentTarget] ?? profile.wagePaymentTarget
     : ""
-  const accountSubtitle = [
-    paymentLabel,
-    profile?.accountHolder && profile?.bankAccount
-      ? `${profile.accountHolder} · ${profile.bankAccount}`
-      : "",
-  ].filter(Boolean).join(" · ") || "예금주 · 계좌"
+  // bankName은 dict code("004")로 내려오므로 한글명 변환.
+  const bankLabel = profile?.bankName
+    ? (banks.find((b) => b.code === profile.bankName)?.name
+       ?? banks.find((b) => b.name === profile.bankName)?.name
+       ?? profile.bankName)
+    : ""
+  const accountDetail = profile?.bankAccount
+    ? [bankLabel, profile.bankAccount].filter(Boolean).join(" ")
+      + (profile.accountHolder ? ` (${profile.accountHolder})` : "")
+    : ""
+  const accountSubtitle = profile?.wagePaymentTarget === 'COMPANY'
+    ? "소속 회사로 지급"
+    : ([paymentLabel, accountDetail].filter(Boolean).join(" / ") || "예금주 · 계좌")
 
   const { requiredDocsCompleted: docsCompleted } = useDocumentSummary()
   const docsIncomplete = docsCompleted === false
@@ -48,8 +60,17 @@ export function MyInfoPage() {
         <div className="mt-6">
           <div className="bg-white rounded-xl mx-4 border border-gray-300 shadow-sm">
             <StatusListItem
-              title="개인정보"
-              subtitle={profile?.workerName || "이름"}
+              title="내 정보"
+              subtitle={
+                (() => {
+                  const koName = profile?.workerName || "이름"
+                  const enName = profile?.workerNameEn
+                  const isForeigner =
+                    profile?.nationalityType === 'foreigner_registered'
+                    || profile?.nationalityType === 'foreigner_unregistered'
+                  return isForeigner && enName ? `${koName}(${enName})` : koName
+                })()
+              }
               onClick={() => {
                 const path =
                   profile?.idType === "alien_registration" ? "/profile/myinfo-frn"
@@ -58,18 +79,16 @@ export function MyInfoPage() {
                 navigate(path)
               }}
             />
-            {profile?.idType !== "passport" && (
-              <StatusListItem
-                title="회원유형"
-                subtitle={workerCategoryLabel || "근로자 유형"}
-                onClick={() => navigate("/profile/worker-type")}
-              />
-            )}
+            <StatusListItem
+              title="회원유형"
+              subtitle={workerCategoryLabel || "근로자 유형"}
+              onClick={() => navigate("/profile/worker-type")}
+            />
             <StatusListItem
               title="계좌정보"
               subtitle={accountSubtitle}
               status={accountIncomplete ? "incomplete" : undefined}
-              statusLabel={accountIncomplete ? "미완료" : undefined}
+              statusLabel={accountIncomplete ? "미제출" : undefined}
               onClick={() => navigate("/profile/payroll-account")}
             />
             <StatusListItem

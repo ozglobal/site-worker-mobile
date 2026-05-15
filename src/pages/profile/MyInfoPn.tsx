@@ -11,7 +11,7 @@ import { PhoneChangeModal } from "@/components/ui/PhoneChangeModal"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useGenderDict } from "@/lib/queries/useGenderDict"
 import { useToast } from "@/contexts/ToastContext"
-import { updateWorkerAddress } from "@/lib/profile"
+import { updateMyInfo } from "@/lib/profile"
 import { getWorkerName } from "@/lib/auth"
 import { usePhoneChange } from "@/hooks/usePhoneChange"
 import { IdFormPn, type PnFormValues } from "@/components/profile/IdFormPn"
@@ -22,6 +22,7 @@ export function MyInfoPnPage() {
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
   const { showSuccess, showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   const [formData, setFormData] = useState<PnFormValues>({
     name: "",
@@ -32,8 +33,19 @@ export function MyInfoPnPage() {
     birthdate: "",
     phone: "",
     address: "",
+    addressDetail: "",
   })
-  const [originalAddress, setOriginalAddress] = useState("")
+  const [original, setOriginal] = useState<PnFormValues>({
+    name: "",
+    englishName: "",
+    gender: "",
+    passport: "",
+    nationality: "",
+    birthdate: "",
+    phone: "",
+    address: "",
+    addressDetail: "",
+  })
 
   useEffect(() => {
     if (profile) {
@@ -46,18 +58,27 @@ export function MyInfoPnPage() {
         name: profile.workerName || getWorkerName() || "",
         englishName: profile.workerNameEn || "",
         gender: profile.gender || "",
-        passport: profile.idNumberMasked || profile.ssnFirst || "",
+        passport: profile.passportNumberMasked || profile.idNumberMasked || profile.ssnFirst || "",
         nationality: profile.nationality || "",
         birthdate: birthDate,
         phone: profile.phone,
         address: profile.address,
+        addressDetail: profile.addressDetail || "",
       }
       setFormData(loaded)
-      setOriginalAddress(loaded.address)
+      setOriginal(loaded)
     }
   }, [profile])
 
-  const hasChanges = formData.address !== originalAddress
+  const hasChanges =
+    formData.name !== original.name ||
+    formData.englishName !== original.englishName ||
+    formData.gender !== original.gender ||
+    formData.passport !== original.passport ||
+    formData.nationality !== original.nationality ||
+    formData.birthdate !== original.birthdate ||
+    formData.address !== original.address ||
+    formData.addressDetail !== original.addressDetail
   const isFormValid = !!(formData.name && formData.phone && formData.address)
 
   const keyboardOpen = useKeyboardOpen()
@@ -70,16 +91,36 @@ export function MyInfoPnPage() {
     if (isSubmitting) return
     setIsSubmitting(true)
     try {
-      const result = await updateWorkerAddress(formData.address)
+      const payload: Parameters<typeof updateMyInfo>[0] = {}
+      if (formData.name !== original.name) payload.nameKo = formData.name
+      if (formData.englishName !== original.englishName) payload.nameEn = formData.englishName
+      if (formData.birthdate !== original.birthdate) payload.birthDate = formData.birthdate
+      if (formData.address !== original.address) payload.address = formData.address
+      if (formData.addressDetail !== original.addressDetail) payload.addressDetail = formData.addressDetail
+      if (formData.nationality !== original.nationality) payload.nationality = formData.nationality
+      if (formData.gender !== original.gender) payload.gender = formData.gender
+      if (
+        formData.passport !== original.passport &&
+        !formData.passport.includes("*")
+      ) {
+        payload.passportNumber = formData.passport
+      }
+      const result = await updateMyInfo(payload)
       if (result.success) {
         await refetch()
         showSuccess("저장되었습니다.")
+        setEditing(false)
       } else {
         showError(result.error)
       }
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleCancel = () => {
+    setFormData(original)
+    setEditing(false)
   }
 
   const phoneChange = usePhoneChange()
@@ -104,17 +145,31 @@ export function MyInfoPnPage() {
             values={formData}
             onChange={handleFieldChange}
             onPhoneChangeClick={phoneChange.openModal}
+            verified={profile?.isVerified ?? false}
+            readOnly={!editing}
           />
 
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
-            <Button
-              variant={isFormValid && hasChanges && !isSubmitting ? "primary" : "primaryDisabled"}
-              size="full"
-              disabled={!isFormValid || !hasChanges || isSubmitting}
-              onClick={handleSave}
-            >
-              {isSubmitting ? "저장 중..." : "저장"}
-            </Button>
+            {editing ? (
+              <div className="flex gap-3">
+                <Button variant="outline" size="full" onClick={handleCancel} disabled={isSubmitting} className="flex-1 bg-white border-gray-200 text-slate-900 hover:bg-gray-50">
+                  취소
+                </Button>
+                <Button
+                  variant={isFormValid && hasChanges && !isSubmitting ? "primary" : "primaryDisabled"}
+                  size="full"
+                  disabled={!isFormValid || !hasChanges || isSubmitting}
+                  onClick={handleSave}
+                  className="flex-1"
+                >
+                  {isSubmitting ? "저장 중..." : "저장"}
+                </Button>
+              </div>
+            ) : (
+              <Button variant="primary" size="full" onClick={() => setEditing(true)}>
+                내 정보 수정
+              </Button>
+            )}
           </div>
         </div>
         )}

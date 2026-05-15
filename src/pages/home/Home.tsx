@@ -15,9 +15,10 @@ import { AlertBanner } from "@/components/ui/alert-banner"
 import { useToast } from "@/contexts/ToastContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/ui/correction-dialog"
+import { CorrectionSuccessModal } from "@/components/ui/correction-success-modal"
 import { useHomeAgent } from "./useHomeAgent"
 import { useTodayAttendance } from "@/lib/queries/useTodayAttendance"
-import { useHomeData } from "@/lib/queries/useHomeData"
+import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { useContracts } from "@/lib/queries/useContracts"
 import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
@@ -28,12 +29,55 @@ export function Home() {
   const queryClient = useQueryClient()
   const { showSuccess, showError } = useToast()
   const { worker } = useAuth()
-  // Fire GET /system/worker/me/home first — aggregates today's attendance,
-  // monthly stats, unread notices, and onboarding/documents flags in one call.
-  const { data: homeData } = useHomeData()
-  const { requiredDocsCompleted: docsCompleted } = useDocumentSummary()
-  const onboardingIncomplete = homeData?.onboardingCompleted === false
-  const hasPendingDocs = docsCompleted === false
+  const { data: workerProfile } = useWorkerProfile()
+  const { data: docSummaryItems } = useDocumentSummary()
+  // 온보딩에서 계좌입력이 빠진 후 onboardingCompleted 플래그가 계좌 상태를 반영 못함 — 계좌번호 직접 확인.
+  const bankAccountMissing = workerProfile != null && !workerProfile.bankAccount
+  // 백엔드 requiredDocsCompleted 는 업로드 즉시 true 가 되지만, 배너는 '승인 완료'까지 유지.
+  // 우선순위: 미제출 > 만료 > 반려 > 승인 대기.
+  const docBanner: { title: string; description: string } | null = (() => {
+    const items = docSummaryItems ?? []
+    const isExpiredDate = (date: string | null | undefined): boolean => {
+      if (!date) return false
+      const d = new Date(date)
+      if (Number.isNaN(d.getTime())) return false
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      return d.getTime() < today.getTime()
+    }
+    const hasMissing = items.some((d) => !d.status)
+    const hasExpired =
+      items.some((d) => d.status === 'expired' || isExpiredDate(d.validUntil)) ||
+      isExpiredDate(workerProfile?.passportExpiryDate) ||
+      isExpiredDate(workerProfile?.residencePeriodEnd)
+    const hasRejected = items.some((d) => d.status === 'rejected' || d.status === 'resubmission_requested')
+    const hasPending = items.some((d) => d.status === 'uploaded')
+    if (hasMissing) {
+      return {
+        title: "제출하지 않은 서류가 있어요",
+        description: "월말까지 제출하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요.",
+      }
+    }
+    if (hasExpired) {
+      return {
+        title: "만료된 서류가 있어요",
+        description: "만료된 서류를 다시 제출해주세요.",
+      }
+    }
+    if (hasRejected) {
+      return {
+        title: "반려된 서류가 있어요",
+        description: "반려 사유를 확인하고 다시 제출해주세요.",
+      }
+    }
+    if (hasPending) {
+      return {
+        title: "서류 승인을 기다리고 있어요",
+        description: "관리자가 확인 후 승인됩니다. 잠시만 기다려주세요.",
+      }
+    }
+    return null
+  })()
   const { data: contractGroups = [] } = useContracts(worker?.userId ?? null, new Date().getFullYear())
   const unsignedCount = useMemo(
     () => contractGroups
@@ -46,10 +90,19 @@ export function Home() {
   // need it to open the correction dialog against a specific record.
   const { data: todayDaily, refetch: refetchTodayAttendance, isFetching: isFetchingToday } = useTodayAttendance()
   const { data: correctionRequests = [] } = useCorrectionRequests()
-  const correctionMap = useMemo(
-    () => Object.fromEntries(correctionRequests.map((r) => [r.workEntryId, r])),
-    [correctionRequests]
-  )
+  const correctionMap = useMemo(() => {
+    // 같은 workEntryId 에 여러 정정요청이 있을 수 있음(과거 reject 이력 등).
+    // pending 이 있으면 무조건 pending 을 보여줘야 하므로 status='pending' 을 우선 선택.
+    const map: Record<string, typeof correctionRequests[0]> = {}
+    correctionRequests.forEach((r) => {
+      if (!r.workEntryId) return
+      const existing = map[r.workEntryId]
+      if (!existing || (existing.status !== 'pending' && r.status === 'pending')) {
+        map[r.workEntryId] = r
+      }
+    })
+    return map
+  }, [correctionRequests])
   const {
     userName,
     currentDate,
@@ -100,6 +153,7 @@ export function Home() {
 
   // Correction request dialog state
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
+  const [showCorrectionSuccess, setShowCorrectionSuccess] = useState(false)
   const [correctionWorkEffort, setCorrectionWorkEffort] = useState("")
   const [correctionDailyWage, setCorrectionDailyWage] = useState("")
   const [correctionSiteName, setCorrectionSiteName] = useState("")
@@ -144,7 +198,7 @@ export function Home() {
       return
     }
 
-    showSuccess("정정 요청이 제출되었습니다.")
+    setShowCorrectionSuccess(true)
     void queryClient.invalidateQueries({ queryKey: ['correctionRequests'] })
     if (result.data) {
       const r = result.data
@@ -194,9 +248,9 @@ export function Home() {
         {/* Main Content - Scrollable */}
         <div className="flex-1 p-4 space-y-3 overflow-y-auto">
           {/* Notice banners */}
-          {(onboardingIncomplete || unsignedCount > 0 || hasPendingDocs) && (
+          {(bankAccountMissing || unsignedCount > 0 || docBanner) && (
             <div className="space-y-3">
-              {onboardingIncomplete && (
+              {bankAccountMissing && (
                 <AlertBanner
                   title="계좌 정보 입력이 완료되지 않았어요"
                   description="내정보 메뉴에서 계좌 정보 입력을 완료해주세요."
@@ -210,10 +264,10 @@ export function Home() {
                   onClick={() => navigate("/contract")}
                 />
               )}
-              {hasPendingDocs && (
+              {docBanner && (
                 <AlertBanner
-                  title="제출하지 않은 서류가 있어요"
-                  description="월말까지 제출하지 않을 경우, 급여가 지급되지 않을 수 있으니 반드시 확인해주세요."
+                  title={docBanner.title}
+                  description={docBanner.description}
                   onClick={() => navigate("/profile/documents")}
                 />
               )}
@@ -224,13 +278,18 @@ export function Home() {
             <div className="px-4 pt-3 flex items-center gap-2">
               <h2 className="text-base font-bold text-slate-900">현장 체크인</h2>
               <span
-                className={`flex items-center gap-1 text-sm font-semibold px-2 py-0.5 rounded ${
-                  attendance.status === "근무 중"
-                    ? "text-primary bg-primary/10"
-                    : "text-slate-500 bg-slate-100"
-                }`}
+                className="flex items-center gap-1 text-sm font-semibold px-2 py-0.5 rounded"
+                style={
+                  attendance.status === "근무 중" && isOvertime
+                    ? { color: "#9333EA", backgroundColor: "#9333EA1A" }
+                    : attendance.status === "근무 중"
+                      ? { color: "#007DCA", backgroundColor: "#007DCA1A" }
+                      : attendance.status === "퇴근 완료"
+                        ? { color: "#4B5563", backgroundColor: "#F5F5F5" }
+                        : { color: "#64748B", backgroundColor: "#F5F5F5" }
+                }
               >
-                {attendance.status === "근무 중" && isOvertime ? "야근 중" : attendance.status}
+                {attendance.status === "근무 중" && isOvertime ? "야간 근무중" : attendance.status}
               </span>
             </div>
 
@@ -299,18 +358,18 @@ export function Home() {
                     </Button>
                   </div>
                 ) : (
-                  <div
-                    className="relative"
-                    onMouseEnter={() => !attendance.canCheckIn && setShowMaxCheckInTooltip(true)}
-                    onMouseLeave={() => setShowMaxCheckInTooltip(false)}
-                    onTouchStart={() => !attendance.canCheckIn && setShowMaxCheckInTooltip(true)}
-                    onTouchEnd={() => setTimeout(() => setShowMaxCheckInTooltip(false), 2000)}
-                  >
+                  <div className="relative">
                     <Button
                       variant={!attendance.canCheckIn || attendance.isProcessing ? "primaryDisabled" : "primary"}
                       size="full"
+                      onMouseEnter={() => { if (!attendance.canCheckIn) setShowMaxCheckInTooltip(true) }}
+                      onMouseLeave={() => setShowMaxCheckInTooltip(false)}
                       onClick={() => {
-                        if (!attendance.canCheckIn) return
+                        if (!attendance.canCheckIn) {
+                          setShowMaxCheckInTooltip(true)
+                          window.setTimeout(() => setShowMaxCheckInTooltip(false), 2500)
+                          return
+                        }
                         actions.clockIn()
                       }}
                     >
@@ -328,12 +387,22 @@ export function Home() {
           </div>
 
 
-          {/* Today's Work Status Card */}
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="pb-3">
+          {/* Today's Work Status Section */}
+          {todayWorkRecords.length === 0 ? (
+            // 기록 없음 — 흰 카드 안에 placeholder
+            <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
               <h2 className="text-base font-bold text-slate-900">오늘 근무 기록</h2>
+              <div className="rounded-lg px-4 py-4 flex items-center justify-center" style={{ backgroundColor: "#00000008" }}>
+                <p className="text-sm text-slate-500">아직 오늘 퇴근한 기록이 없어요</p>
+              </div>
             </div>
-            {todayWorkRecords.length > 0 ? (
+          ) : (
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">오늘 근무 기록</h2>
+              <p className="text-sm text-slate-500 mt-1">당일 퇴근을 완료한 기록이 여기에 노출됩니다.</p>
+            </div>
+            {todayWorkRecords.length > 0 && (
               <div className="space-y-3">
                 {(() => {
                   // attendanceId(=record.id) 별로 그룹핑 — 같은 현장 같은 출퇴근 세션의 분할 entry 들을 하나의 카드에 묶음
@@ -387,12 +456,9 @@ export function Home() {
                   })
                 })()}
               </div>
-            ) : (
-              <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-center border border-slate-200">
-                <p className="text-sm text-slate-500">아직 오늘 퇴근한 기록이 없어요.</p>
-              </div>
             )}
           </div>
+          )}
 
           {/* Weekly Work Status Card - temporarily hidden
           <div className="bg-white rounded-lg shadow-sm">
@@ -574,35 +640,35 @@ export function Home() {
                   <Spinner size="md" />
                 </div>
               ) : (
-                <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                  <div className="px-4 py-2.5">
-                    <span className="text-sm font-bold text-slate-900">용역</span>
-                  </div>
-                  <div>
-                    {(() => {
-                      const entry = activeAttendance?.entries?.[0]
-                      const effort = entry?.effort ?? null
-                      const wage = entry?.dailyWageSnapshot ?? null
-                      const expected = entry?.expectedWage ?? null
-                      return (
-                        <>
-                          <div className="flex items-center justify-between px-4 py-2.5">
-                            <span className="text-sm text-slate-600">공수</span>
-                            <span className="text-sm font-medium text-slate-900">{effort != null ? `${effort}공수` : "—"}</span>
-                          </div>
-                          <div className="flex items-center justify-between px-4 py-2.5">
-                            <span className="text-sm text-slate-600">적용 단가</span>
-                            <span className="text-sm font-medium text-slate-900">{wage != null ? formatCurrency(wage) : "—"}</span>
-                          </div>
-                          <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
-                            <span className="text-sm text-slate-600">예상 임금(세전)</span>
-                            <span className="text-sm font-medium text-slate-900">{expected != null ? formatCurrency(expected) : "—"}</span>
-                          </div>
-                        </>
-                      )
-                    })()}
-                  </div>
-                </div>
+                <>
+                  {(activeAttendance?.entries ?? []).map((entry) => (
+                    <div key={entry.entryId} className="border border-slate-200 rounded-lg overflow-hidden" style={{ backgroundColor: "#00000008" }}>
+                      <div className="px-4 py-2.5">
+                        <span className="text-sm font-bold text-slate-900">{entry.categoryLabel || entry.category}</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between px-4 py-2.5">
+                          <span className="text-sm text-slate-600">공수</span>
+                          <span className="text-sm font-medium text-slate-900">{entry.effort != null ? `${entry.effort}공수` : "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5">
+                          <span className="text-sm text-slate-600">적용 단가</span>
+                          <span className="text-sm font-medium text-slate-900">{entry.dailyWageSnapshot != null ? formatCurrency(entry.dailyWageSnapshot) : "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200">
+                          <span className="text-sm text-slate-600">예상 임금(세전)</span>
+                          <span className="text-sm font-medium text-slate-900">{entry.expectedWage != null ? formatCurrency(entry.expectedWage) : "—"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {activeAttendance && (
+                    <div className="border border-slate-200 rounded-lg px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "#00000008" }}>
+                      <span className="text-sm text-slate-600">총 노임</span>
+                      <span className="text-sm font-bold text-primary">{formatCurrency(activeAttendance.totalExpectedWage ?? 0)}</span>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Info Message */}
@@ -623,7 +689,7 @@ export function Home() {
             </div>
 
             {/* Button - outside scroll area */}
-            <div className="px-5 pb-5">
+            <div className="px-5 pt-4 pb-5">
               <Button variant="primary" size="full" onClick={async () => {
                 setShowCheckoutDialog(false)
                 const result = await actions.clockOut()
@@ -645,23 +711,26 @@ export function Home() {
           <div className="relative z-10 w-[calc(100%-2rem)] max-w-sm bg-white rounded-2xl shadow-xl pt-8 pb-5 px-5">
             {/* Error Icon */}
             <div className="flex justify-center mb-5">
-              <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="white" strokeWidth="3" strokeLinecap="round" />
                 </svg>
               </div>
             </div>
             {/* Title */}
-            <h2 className="text-lg font-bold text-slate-900 text-center mb-3">출근에 실패했어요</h2>
+            <h2 className="text-lg leading-[28px] font-bold text-slate-900 text-center mb-3">출근에 실패했어요</h2>
             {/* Message */}
-            <p className="text-sm text-slate-500 text-center leading-relaxed mb-6">
+            <p className="text-sm text-slate-500 text-center leading-relaxed mb-6 whitespace-pre-line">
               {notifications.errorMessage || "출근 가능 반경에서 벗어났습니다.\n출근 현장 근처로 이동 후 다시 시도하거나,\n현장 관리자에게 문의해주세요."}
             </p>
             {/* Button */}
-            <Button variant="outline" size="full" onClick={notifications.dismissError}
-              className="bg-white border-gray-200 text-slate-900 hover:bg-gray-50">
+            <button
+              type="button"
+              onClick={notifications.dismissError}
+              className="w-full h-12 rounded-lg bg-neutral-100 text-slate-900 text-sm font-medium hover:bg-neutral-200 transition-colors"
+            >
               닫기
-            </Button>
+            </button>
           </div>
         </div>
       )}
@@ -680,6 +749,8 @@ export function Home() {
           onSubmit={handleCorrectionSubmit}
         />
       )}
+
+      <CorrectionSuccessModal open={showCorrectionSuccess} onClose={() => setShowCorrectionSuccess(false)} />
     </div>
   )
 }

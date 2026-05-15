@@ -17,6 +17,7 @@ export function SignupRrnPage() {
     ssnSecond: savedSsnSecond,
     phone: savedPhone,
     address: savedData.address || "",
+    addressDetail: savedData.addressDetail || "",
   })
   const allFieldsFilled =
     formData.name.trim() !== "" &&
@@ -35,6 +36,7 @@ export function SignupRrnPage() {
       idType: 'resident_id',
       nationalIdNumber: `${formData.ssnFirst}-${formData.ssnSecond}`,
       address: formData.address,
+      addressDetail: formData.addressDetail,
     })
     workerMetaStorage.patch({ nationalityType: 'domestic', idType: 'resident_id' })
     navigate("/signup/set-password")

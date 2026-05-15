@@ -11,10 +11,8 @@ export function useMonthlyAttendance(year: number, month: number, options?: { en
       }
       return result.data
     },
-    // 1 min cache — navigating between list/calendar inside /attendance
-    // reuses the fresh fetch without re-hitting the backend; browser back
-    // after a minute still refreshes.
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
     enabled: options?.enabled ?? true,
   })
 }

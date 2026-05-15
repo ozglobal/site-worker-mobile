@@ -138,3 +138,28 @@ export function getSiteColor(siteId: string, sites: SiteLegendItem[]): string {
   const site = sites.find((s) => s.id === siteId)
   return site?.color ?? SITE_COLORS[0]
 }
+
+/**
+ * 사이트 → 색 매핑을 안정적으로 만들어 줌. monthly 데이터가 비어있는 달
+ * (예: 출근기록이 없는 과거 달) 에도 today's attendances 순서를 우선으로
+ * 색을 부여해서, 같은 현장이 달 바뀐다고 색이 바뀌지 않도록 함.
+ *
+ * 우선순위: today's attendances → monthly days entries (today에 없는 현장).
+ */
+export function buildSiteColorMap(
+  todaySiteIds: Array<string | null | undefined>,
+  days: MonthlyDay[],
+): Map<string, string> {
+  const ordered: string[] = []
+  const seen = new Set<string>()
+  const add = (id: string | null | undefined) => {
+    if (!id || seen.has(id)) return
+    seen.add(id)
+    ordered.push(id)
+  }
+  todaySiteIds.forEach(add)
+  days.forEach((d) => d.entries?.forEach((e) => add(e.siteId)))
+  const map = new Map<string, string>()
+  ordered.forEach((id, i) => map.set(id, SITE_COLORS[i % SITE_COLORS.length]))
+  return map
+}

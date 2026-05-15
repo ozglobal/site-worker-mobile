@@ -28,6 +28,9 @@ export function useTodayAttendance() {
       }
       return result.data
     },
-    staleTime: 30_000,
+    // 알림 → 상세화면 진입 시 항상 fresh 한 데이터 보장 위해 staleTime 0.
+    // (반려 알림 클릭 → 상세화면 떠도 캐시가 옛 데이터 들고 있는 문제 방지)
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }

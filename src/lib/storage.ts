@@ -277,6 +277,7 @@ export interface SignupData {
   idNumber?: string          // 외국인등록번호 (외국인)
   passportNumber?: string    // 여권번호 (연수생)
   address?: string
+  addressDetail?: string
   gender?: 'male' | 'female' | string
   birthDate?: string // yyyy-MM-dd
   personalInfoConsent?: boolean

@@ -132,7 +132,13 @@ export function WorkerTypePage({ mode = "profile" }: WorkerTypePageProps) {
           <QueryErrorState onRetry={() => refetch()} message="회원 유형을 불러오지 못했습니다." />
         ) : (
           <div className="px-4 space-y-3">
-            {(workerTypes ?? []).filter((t) => t.code.toLowerCase() !== "trainee").map((type) => {
+            {(workerTypes ?? []).filter((t) => {
+              // trainee 는 본인이 trainee 일 때만 카드 노출 (다른 유형 워커에게는 선택지로 안 보임).
+              if (t.code.toLowerCase() === "trainee") {
+                return profile?.workerCategory?.toLowerCase() === "trainee"
+              }
+              return true
+            }).map((type) => {
               const meta = lookupMeta(type.code)
               const isActive = selected === type.code
               const isDisabled = mode === "profile" && !isActive

@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/utils/format"
 
@@ -45,6 +46,49 @@ interface AttendanceRecordCardProps {
   className?: string
 }
 
+function CorrectionButton({
+  disabled,
+  showPendingTooltip,
+  onClick,
+}: {
+  disabled: boolean
+  showPendingTooltip?: boolean
+  onClick: () => void
+}) {
+  const [tooltipOpen, setTooltipOpen] = useState(false)
+  const showTooltip = showPendingTooltip && tooltipOpen
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onMouseEnter={() => { if (showPendingTooltip) setTooltipOpen(true) }}
+        onMouseLeave={() => setTooltipOpen(false)}
+        onClick={() => {
+          if (disabled) {
+            if (showPendingTooltip) {
+              setTooltipOpen(true)
+              window.setTimeout(() => setTooltipOpen(false), 2500)
+            }
+            return
+          }
+          onClick()
+        }}
+        className={cn(
+          "text-sm font-medium flex items-center gap-0.5 text-[#007DCA]",
+          disabled && "opacity-40 cursor-not-allowed"
+        )}
+      >
+        정정 요청 <span>→</span>
+      </button>
+      {showTooltip && (
+        <div className="pointer-events-none absolute bottom-full right-0 z-10 mb-2 whitespace-nowrap rounded-full bg-[#333] px-3 py-1.5 text-xs font-medium text-white">
+          이미 신청중인 정정 요청이 있습니다.
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CorrectionValue({ original, requested }: { original: string; requested: string }) {
   return (
     <span className="flex items-center gap-1.5">
@@ -64,7 +108,8 @@ function EntrySection({
   pendingCorrection,
   onCorrectionClick,
 }: AttendanceEntryDetail) {
-  const pc = pendingCorrection
+  // 승인/반려된 정정요청은 inline "변경 후" 표시에서 제외 — 처리 완료 후에도 화면에 남아있는 문제 방지.
+  const pc = pendingCorrection?.status === 'pending' ? pendingCorrection : undefined
   const affectsEffort = pc && (pc.requestType === "work_effort" || pc.requestType === "work_effort_and_wage")
   const affectsWage = pc && (pc.requestType === "daily_wage" || pc.requestType === "work_effort_and_wage")
 
@@ -85,28 +130,15 @@ function EntrySection({
     : null
 
   return (
-    <div className="rounded-lg overflow-visible bg-slate-50">
+    <div className="rounded-lg overflow-visible" style={{ backgroundColor: "#00000008" }}>
       <div className="px-4 py-2.5 flex items-center justify-between">
         <span className="text-sm font-bold text-slate-900">{recordType || ""}</span>
         {showCorrection && onCorrectionClick && (
-          <div className="relative group">
-            <button
-              type="button"
-              onClick={correctionDisabled || pc?.status === 'pending' ? undefined : onCorrectionClick}
-              disabled={correctionDisabled || pc?.status === 'pending'}
-              className={cn(
-                "text-sm font-medium flex items-center gap-0.5 text-[#007DCA]",
-                (correctionDisabled || pc?.status === 'pending') && "opacity-40 cursor-not-allowed"
-              )}
-            >
-              정정 요청 <span>→</span>
-            </button>
-            {pc?.status === 'pending' && (
-              <div className="pointer-events-none absolute bottom-full right-0 z-10 mb-2 whitespace-nowrap rounded-full bg-[#333] px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
-                이미 신청중인 정정 요청이 있습니다.
-              </div>
-            )}
-          </div>
+          <CorrectionButton
+            disabled={!!correctionDisabled || pc?.status === 'pending'}
+            showPendingTooltip={pc?.status === 'pending'}
+            onClick={onCorrectionClick}
+          />
         )}
       </div>
       <div>
@@ -178,7 +210,7 @@ export function AttendanceRecordCard({
             "inline-block text-xs font-medium px-2.5 py-1 rounded",
             statusVariant === "active"
               ? "text-green-700 bg-green-100"
-              : "text-slate-600 bg-slate-100"
+              : "bg-neutral-100 text-slate-600"
           )}
         >
           {statusBadge}
@@ -187,7 +219,7 @@ export function AttendanceRecordCard({
 
       <div>
         <h3 className="text-base font-bold text-slate-900">{siteName}</h3>
-        <p className="text-sm text-slate-500 mt-1">{timeRange}</p>
+        {timeRange && <p className="text-sm text-slate-500 mt-1">{timeRange}</p>}
       </div>
 
       <EntrySection

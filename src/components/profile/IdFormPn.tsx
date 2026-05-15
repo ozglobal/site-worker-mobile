@@ -19,6 +19,7 @@ export interface PnFormValues {
   birthdate: string
   phone: string
   address: string
+  addressDetail: string
 }
 
 interface IdFormPnProps {
@@ -26,12 +27,17 @@ interface IdFormPnProps {
   values: PnFormValues
   onChange: (field: keyof PnFormValues, value: string) => void
   onPhoneChangeClick?: () => void
+  /** NICE 본인인증 완료된 워커는 신원 필드 수정 불가 */
+  verified?: boolean
+  /** 전체 폼을 읽기 전용으로 표시. */
+  readOnly?: boolean
 }
 
 const readOnlyClass = "bg-gray-100 text-slate-500 pointer-events-none"
 
-export function IdFormPn({ mode, values, onChange, onPhoneChangeClick }: IdFormPnProps) {
+export function IdFormPn({ mode, values, onChange, onPhoneChangeClick, verified = false, readOnly = false }: IdFormPnProps) {
   const isSignup = mode === "signup"
+  const lockId = readOnly || (!isSignup && verified)
   const navigate = useNavigate()
   const { data: nationalities = [] } = useNationalities()
   const { data: rawGenderDict = [] } = useGenderDict()
@@ -48,12 +54,12 @@ export function IdFormPn({ mode, values, onChange, onPhoneChangeClick }: IdFormP
       {/* 휴대폰 번호 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">휴대폰 번호</label>
-        <PhoneField value={values.phone} isSignup={isSignup} onChangeClick={onPhoneChangeClick} />
+        <PhoneField value={values.phone} isSignup={isSignup} onChangeClick={readOnly ? undefined : onPhoneChangeClick} />
       </div>
 
-      <KoreanNameField value={values.name} isSignup={isSignup} onChange={(v) => onChange("name", v)} />
+      <KoreanNameField value={values.name} isSignup={isSignup} verified={verified || readOnly} onChange={(v) => onChange("name", v)} />
 
-      <EnglishNameField value={values.englishName} isSignup={isSignup} onChange={(v) => onChange("englishName", v)} />
+      <EnglishNameField value={values.englishName} isSignup={isSignup} verified={verified || readOnly} onChange={(v) => onChange("englishName", v)} />
 
       {/* 성별 */}
       <div className="space-y-2">
@@ -67,7 +73,7 @@ export function IdFormPn({ mode, values, onChange, onPhoneChangeClick }: IdFormP
                 value={g.code}
                 checked={String(values.gender ?? '').toUpperCase() === g.code.toUpperCase()}
                 onChange={(e) => onChange("gender", e.target.value)}
-                disabled={!isSignup}
+                disabled={lockId}
                 className="w-4 h-4 text-primary"
               />
               <span className="text-sm text-slate-700">{g.name}</span>
@@ -90,11 +96,11 @@ export function IdFormPn({ mode, values, onChange, onPhoneChangeClick }: IdFormP
             onChange("passport", v)
           }}
           placeholder={isSignup ? "여권번호" : undefined}
-          readOnly={!isSignup}
-          className={isSignup ? "bg-white" : readOnlyClass}
+          readOnly={lockId}
+          className={lockId ? readOnlyClass : "bg-white"}
         />
         {isSignup && (
-          <div className="flex items-start gap-2 rounded-lg bg-gray-100 p-3">
+          <div className="flex items-start gap-2 rounded-lg bg-neutral-100 p-3">
             <svg className="h-5 w-5 text-gray-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
@@ -114,18 +120,18 @@ export function IdFormPn({ mode, values, onChange, onPhoneChangeClick }: IdFormP
       {/* 국적 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">국적</label>
-        {isSignup ? (
+        {lockId ? (
+          <Input
+            value={nationalities.find((n) => n.code === values.nationality)?.name ?? values.nationality}
+            readOnly
+            className={readOnlyClass}
+          />
+        ) : (
           <Select
             value={values.nationality}
             onChange={(v) => onChange("nationality", v)}
             options={nationalities.map((n) => ({ value: n.code, label: n.name }))}
             placeholder="국적 선택"
-          />
-        ) : (
-          <Input
-            value={nationalities.find((n) => n.code === values.nationality)?.name ?? values.nationality}
-            readOnly
-            className={readOnlyClass}
           />
         )}
       </div>
@@ -133,20 +139,36 @@ export function IdFormPn({ mode, values, onChange, onPhoneChangeClick }: IdFormP
       {/* 생년월일 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">생년월일</label>
-        {isSignup ? (
+        {lockId ? (
+          <Input value={values.birthdate} readOnly className={readOnlyClass} />
+        ) : (
           <DateInput
             value={(() => { const d = parse(values.birthdate, "yyyy-MM-dd", new Date()); return isValid(d) ? d : undefined })()}
             onChange={(d) => onChange("birthdate", d ? format(d, "yyyy-MM-dd") : "")}
           />
-        ) : (
-          <Input value={values.birthdate} readOnly className={readOnlyClass} />
         )}
       </div>
 
       {/* 주소 */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">주소</label>
-        <AddressField value={values.address} onChange={(v) => onChange("address", v)} />
+        {readOnly ? (
+          <Input value={values.address} readOnly className={readOnlyClass} />
+        ) : (
+          <AddressField value={values.address} onChange={(v) => onChange("address", v)} />
+        )}
+      </div>
+
+      {/* 상세주소 */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-700">상세주소</label>
+        <Input
+          value={values.addressDetail}
+          onChange={(e) => onChange("addressDetail", e.target.value)}
+          placeholder="동/호수 등"
+          readOnly={readOnly}
+          className={readOnly ? readOnlyClass : "bg-white"}
+        />
       </div>
     </div>
   )

@@ -92,3 +92,19 @@
 body {
   font-family: "Pretendard", sans-serif;
 }
+
+/* 비밀번호 필드 우측에 브라우저가 자동으로 붙이는 reveal/clear 아이콘 제거.
+   Edge 의 눈 아이콘 (::-ms-reveal) 과 IE 의 clear (::-ms-clear), 그리고
+   Chrome 의 credential auto-fill 버튼까지 같이 가림. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-strong-password-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}

@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { AppTopBar } from "@/components/layout/AppTopBar"
@@ -16,11 +17,28 @@ import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 
 export function OutsourcingPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { showSuccess, showError } = useToast()
   const { data: profile } = useWorkerProfile()
   const { data: partners, isLoading, isError, refetch } = useActivePartners()
   const [selectedCompany, setSelectedCompany] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // useWorkerProfile 이 staleTime Infinity 라 캐시가 옛 상태로 박혀있을 수 있음.
+  // 이 페이지 마운트 시 최신 profile 로 새로고침하여 relatedVendorId 보장.
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["workerProfile"] })
+  }, [queryClient])
+
+  // 이미 등록된 vendor 가 있으면 dropdown 초기값으로 세팅.
+  useEffect(() => {
+    if (profile?.relatedVendorId) setSelectedCompany(profile.relatedVendorId)
+  }, [profile?.relatedVendorId])
+
+  // labor_service 타입만 노출 (모바일 용역회사 선택용).
+  const laborServicePartners = (partners ?? []).filter(
+    (p) => p.partnerType === 'labor_service',
+  )
 
   const handleSubmit = async () => {
     if (isSubmitting) return
@@ -36,7 +54,9 @@ export function OutsourcingPage() {
       return
     }
     const companyName =
-      partners?.find((p) => p.id === selectedCompany)?.partnerName || selectedCompany
+      laborServicePartners.find((p) => p.id === selectedCompany)?.partnerName || selectedCompany
+    await queryClient.invalidateQueries({ queryKey: ["workerProfile"] })
+    await queryClient.refetchQueries({ queryKey: ["workerProfile"] })
     showSuccess(`[${companyName}]으로 변경되었습니다.`)
     navigate("/profile")
   }
@@ -65,7 +85,7 @@ export function OutsourcingPage() {
               <QueryErrorState message="용역회사 목록을 불러오지 못했습니다" onRetry={refetch} />
             ) : (
               <Select
-                options={(partners || []).map((p) => ({ value: p.id, label: p.partnerName }))}
+                options={laborServicePartners.map((p) => ({ value: p.id, label: p.partnerName }))}
                 value={selectedCompany}
                 onChange={setSelectedCompany}
                 placeholder="용역회사 선택"

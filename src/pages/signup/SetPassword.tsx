@@ -45,6 +45,8 @@ export function SetPasswordPage() {
     const data = signupStorage.getData()
 
     setIsSubmitting(true)
+    // 여권으로 가입(외국인 미등록자) → 회원 유형 자동 '연수생(trainee)' 으로 지정.
+    const isPassportSignup = data.idType === 'passport' || data.nationalityType === 'foreigner_unregistered'
     const result = await registerWorker({
       password: formData.newPassword,
       nameKo: data.nameKo || '',
@@ -57,11 +59,12 @@ export function SetPasswordPage() {
       ...(data.idNumber ? { idNumber: data.idNumber } : {}),
       ...(data.passportNumber ? { passportNumber: data.passportNumber } : {}),
       address: data.address || '',
-      addressDetail: '',
+      addressDetail: data.addressDetail || '',
       ...(data.gender ? { gender: data.gender } : {}),
       ...(data.birthDate ? { birthDate: data.birthDate } : {}),
       personalInfoConsent: data.personalInfoConsent ?? false,
       registrationToken: data.registrationToken || '',
+      ...(isPassportSignup ? { workerCategory: 'trainee' } : {}),
     })
     setIsSubmitting(false)
 
@@ -85,22 +88,34 @@ export function SetPasswordPage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col min-h-full">
-          <form autoComplete="off" onSubmit={e => e.preventDefault()} className="px-4 py-6 space-y-6">
+          <div className="px-4 py-6 space-y-6">
             <p className="text-lg font-bold text-slate-900 mb-6 leading-tight">
               로그인에 사용할 비밀번호를 설정해주세요
             </p>
+
+            {/* Chrome 의 "암호 업데이트?" 휴리스틱을 속이는 미끼 input.
+                 username + current-password 가 form 에 이미 있으면 Chrome 은
+                 "신규 등록" 으로 판단하지 않아 prompt 가 뜨지 않음. */}
+            <input type="text" name="dummy-username" autoComplete="username" tabIndex={-1} aria-hidden="true" style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, width: 0 }} readOnly />
+            <input type="password" name="dummy-current-password" autoComplete="current-password" tabIndex={-1} aria-hidden="true" style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, width: 0 }} readOnly />
 
             {/* 비밀번호 */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">비밀번호</label>
               <Input
-                type="password"
+                type="text"
                 value={formData.newPassword}
                 onChange={handleChange("newPassword")}
                 placeholder=""
                 autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 data-lpignore="true"
+                data-1p-ignore="true"
                 name="signup-pw"
+                aria-label="비밀번호"
+                style={{ WebkitTextSecurity: "disc", textSecurity: "disc" } as React.CSSProperties}
                 className="bg-white"
               />
               {formData.newPassword.length > 64 && (
@@ -127,15 +142,21 @@ export function SetPasswordPage() {
               <label className="text-sm font-medium text-slate-700">비밀번호 확인</label>
               <Input
                 ref={confirmRef}
-                type="password"
+                type="text"
                 value={formData.confirmPassword}
                 onChange={handleChange("confirmPassword")}
                 placeholder="비밀번호 재입력"
                 autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 data-lpignore="true"
+                data-1p-ignore="true"
                 name="signup-pw-confirm"
-                disabled={!isPasswordValid}
-                className={isPasswordValid ? "bg-white" : "bg-gray-100"}
+                aria-label="비밀번호 확인"
+                style={{ WebkitTextSecurity: "disc", textSecurity: "disc" } as React.CSSProperties}
+                error={formData.confirmPassword.length > 0 && formData.confirmPassword.length >= formData.newPassword.length && formData.newPassword !== formData.confirmPassword}
+                className="bg-white"
               />
               {formData.confirmPassword.length > 64 && (
                 <p className="text-sm text-red-500">패스워드는 최대 64자까지 설정할 수 있습니다.</p>
@@ -145,7 +166,7 @@ export function SetPasswordPage() {
               )}
             </div>
 
-          </form>
+          </div>
 
           {/* Save Button */}
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>

@@ -8,6 +8,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { OnboardingDraftProvider } from './contexts/OnboardingDraftContext';
 import { ToastContainer } from './components/ui/toast';
 import { Spinner } from '@/components/ui/spinner';
+import { PwaInstallGuide } from './components/PwaInstallGuide';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,12 +51,14 @@ const MyInfoPnPage = lazyNamed(() => import('./pages/profile/MyInfoPn'), 'MyInfo
 const ProfileDocumentsPage = lazyNamed(() => import('./pages/profile/Documents'), 'ProfileDocumentsPage');
 const DocumentViewerPage = lazyNamed(() => import('./pages/profile/DocumentViewer'), 'DocumentViewerPage');
 const AlienRegistrationPage = lazyNamed(() => import('./pages/profile/AlienRegistration'), 'AlienRegistrationPage');
+const PassportRegistrationPage = lazyNamed(() => import('./pages/profile/PassportRegistration'), 'PassportRegistrationPage');
 const MyAccountPage = lazyNamed(() => import('./pages/profile/MyAccount'), 'MyAccountPage');
 const OutsourcingPage = lazyNamed(() => import('./pages/profile/Outsourcing'), 'OutsourcingPage');
 const EngineerPage = lazyNamed(() => import('./pages/profile/Engineer'), 'EngineerPage');
 const EquipmentPage = lazyNamed(() => import('./pages/profile/Equipment'), 'EquipmentPage');
 const EquipmentListPage = lazyNamed(() => import('./pages/profile/EquipmentList'), 'EquipmentListPage');
 const FamilyAccountPage = lazyNamed(() => import('./pages/profile/FamilyAccount'), 'FamilyAccountPage');
+const CompanyAccountPage = lazyNamed(() => import('./pages/profile/CompanyAccount'), 'CompanyAccountPage');
 const ChangePasswordPage = lazyNamed(() => import('./pages/profile/ChangePassword'), 'ChangePasswordPage');
 const PayrollAccountPage = lazyNamed(() => import('./pages/profile/PayrollAccount'), 'PayrollAccountPage');
 
@@ -114,6 +117,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/onboarding/daily-wage" element={<OnboardingDailyWagePage />} />
         <Route path="/profile/my-account" element={<MyAccountPage />} />
         <Route path="/profile/family-account" element={<FamilyAccountPage />} />
+        <Route path="/profile/company-account" element={<CompanyAccountPage />} />
         <Route path="/profile/outsourcing" element={<OutsourcingPage />} />
         <Route path="/profile/engineer" element={<EngineerPage />} />
         <Route path="/profile/equipments" element={<EquipmentPage />} />
@@ -147,6 +151,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/profile/documents/view/:slug" element={<DocumentViewerPage />} />
         <Route path="/profile/documents/view/:slug/:docId" element={<DocumentViewerPage />} />
         <Route path="/profile/documents/alien-reg" element={<AlienRegistrationPage />} />
+        <Route path="/profile/documents/passport" element={<PassportRegistrationPage />} />
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/test/schedule-add" element={<ScheduleAddPage />} />
         <Route path="/" element={<Navigate to="/home" replace />} />
@@ -170,6 +175,7 @@ const App: React.FC = () => {
             </OnboardingDraftProvider>
           </AuthProvider>
           <ToastContainer />
+          <PwaInstallGuide />
         </ToastProvider>
       </QueryClientProvider>
     </ErrorBoundary>

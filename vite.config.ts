@@ -10,7 +10,7 @@ export default defineConfig({
   root: __dirname,
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
-    __BUILD_TIME__: JSON.stringify(new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).slice(0, 16)),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')),
   },
 
   plugins: [
@@ -66,9 +66,10 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: 'https://worker.kwork365.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
+        rewrite: (path: string) => path.replace(/^\/api/, ''),
       },
       '/juso-api': {
         target: 'https://business.juso.go.kr',

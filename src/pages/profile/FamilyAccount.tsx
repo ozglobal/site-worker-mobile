@@ -114,7 +114,7 @@ export function FamilyAccountPage({ mode = "profile" }: FamilyAccountPageProps) 
       queryClient.invalidateQueries({ queryKey: ['workerProfile'] })
       queryClient.invalidateQueries({ queryKey: ['homeData'] })
       showSuccess("저장되었습니다.")
-      navigate("/profile")
+      navigate("/profile/payroll-account")
     } finally {
       setIsSubmitting(false)
     }

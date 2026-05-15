@@ -43,8 +43,13 @@ export function AlienRegistrationPage() {
   const [residencePeriodEnd, setResidencePeriodEnd] = useState<Date | undefined>()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hydrated, setHydrated] = useState(false)
+  // 이미 업로드된 doc 일 때 '재업로드' 누르기 전까지는 촬영/파일선택 버튼 숨김.
+  const [showFrontUploadButtons, setShowFrontUploadButtons] = useState(false)
+  const [showBackUploadButtons, setShowBackUploadButtons] = useState(false)
   const [frontImageUrl, setFrontImageUrl] = useState<string | null>(null)
   const [backImageUrl, setBackImageUrl] = useState<string | null>(null)
+  const [frontMimeType, setFrontMimeType] = useState<string>("")
+  const [backMimeType, setBackMimeType] = useState<string>("")
 
   // Local blob URL for the just-picked file, so the card can show a
   // thumbnail. Auto-revoked on replace / unmount by the hook.
@@ -101,10 +106,12 @@ export function AlienRegistrationPage() {
       if (frontBlob?.success) {
         createdBlobUrls.current.push(frontBlob.data.url)
         setFrontImageUrl(frontBlob.data.url)
+        setFrontMimeType(frontBlob.data.mimeType)
       }
       if (backBlob?.success) {
         createdBlobUrls.current.push(backBlob.data.url)
         setBackImageUrl(backBlob.data.url)
+        setBackMimeType(backBlob.data.mimeType)
       }
 
       setHydrated(true)
@@ -161,39 +168,63 @@ export function AlienRegistrationPage() {
     file: File | null,
     filePreviewUrl: string | null,
     existingImageUrl: string | null,
+    existingMimeType: string,
+    showUploadButtons: boolean,
+    setShowUploadButtons: (v: boolean) => void,
     onCapture: () => void,
     onPick: () => void,
   ) => {
     // Prefer the user's fresh selection; fall back to the server-stored image.
     const displayUrl = file ? filePreviewUrl : existingImageUrl
+    const isPdf = file
+      ? file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
+      : existingMimeType === 'application/pdf'
+    // 이미 업로드되어있고 사용자가 새 파일 안 골랐고 재업로드 모드 아니면 '재업로드' 버튼만.
+    const showReuploadOnly = !!existingImageUrl && !file && !showUploadButtons
     return (
       <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
         <div className="flex items-center gap-2">
           <p className="flex-1 text-sm font-semibold text-slate-900 truncate">{label}</p>
-          <button
-            type="button"
-            onClick={onCapture}
-            className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-          >
-            사진 촬영
-          </button>
-          <button
-            type="button"
-            onClick={onPick}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-          >
-            파일 선택
-          </button>
+          {showReuploadOnly ? (
+            <button
+              type="button"
+              onClick={() => setShowUploadButtons(true)}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              재업로드
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onCapture}
+                className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+              >
+                사진 촬영
+              </button>
+              <button
+                type="button"
+                onClick={onPick}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                파일 선택
+              </button>
+            </>
+          )}
         </div>
-        {displayUrl && (
+        {displayUrl && !isPdf && (
           <img
             src={displayUrl}
             alt={label}
             className="mt-3 w-full max-h-60 object-contain rounded bg-slate-50"
           />
         )}
-        {file && (
-          <p className="mt-2 text-xs text-slate-500 truncate">{file.name}</p>
+        {displayUrl && isPdf && (
+          <iframe
+            src={displayUrl}
+            title={label}
+            className="mt-3 w-full aspect-[210/297] rounded bg-slate-50"
+          />
         )}
       </div>
     )
@@ -211,6 +242,9 @@ export function AlienRegistrationPage() {
             frontFile,
             frontFilePreviewUrl,
             frontImageUrl,
+            frontMimeType,
+            showFrontUploadButtons,
+            setShowFrontUploadButtons,
             () => setGuideSide("front"),
             () => frontRef.current?.click(),
           )}
@@ -219,6 +253,9 @@ export function AlienRegistrationPage() {
             backFile,
             backFilePreviewUrl,
             backImageUrl,
+            backMimeType,
+            showBackUploadButtons,
+            setShowBackUploadButtons,
             () => setGuideSide("back"),
             () => backRef.current?.click(),
           )}
@@ -227,7 +264,7 @@ export function AlienRegistrationPage() {
         <input
           ref={frontRef}
           type="file"
-          accept="image/*"
+          accept="image/*,application/pdf"
           className="hidden"
           onChange={(e) => {
             setFrontFile(e.target.files?.[0] ?? null)
@@ -237,7 +274,7 @@ export function AlienRegistrationPage() {
         <input
           ref={backRef}
           type="file"
-          accept="image/*"
+          accept="image/*,application/pdf"
           className="hidden"
           onChange={(e) => {
             setBackFile(e.target.files?.[0] ?? null)

@@ -198,6 +198,7 @@ export interface RegisterWorkerParams {
   birthDate?: string // yyyy-MM-dd
   personalInfoConsent: boolean
   registrationToken: string
+  workerCategory?: string    // 'general' | 'engineer' | 'specialty' | 'service' | 'labor_service' | 'trainee'
 }
 
 export const registerWorker = async (params: RegisterWorkerParams): Promise<ApiResult<unknown>> => {

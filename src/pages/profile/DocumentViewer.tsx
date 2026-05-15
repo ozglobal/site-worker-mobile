@@ -6,6 +6,8 @@ import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
 import { DocumentCapture } from "@/components/ui/document-capture/document-capture"
 import { CaptureGuideBankbook } from "@/components/ui/id-card-capture/CaptureGuideBankbook"
+import { CaptureGuideIdcard } from "@/components/ui/document-capture/CaptureGuideIdcard"
+import { CaptureGuidePassport } from "@/components/ui/id-card-capture/CaptureGuidePassport"
 import { useToast } from "@/contexts/ToastContext"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useDocumentSummary } from "@/lib/queries/useDocumentSummary"
@@ -56,6 +58,8 @@ export function DocumentViewerPage() {
   const { slug = "", docId } = useParams<{ slug: string; docId?: string }>()
   const [searchParams] = useSearchParams()
   const equipmentId = searchParams.get("equipmentId") ?? undefined
+  // 현장별 서류(bankbook 등) 조회/업로드 시 함께 보낼 siteId.
+  const siteId = searchParams.get("siteId") ?? undefined
   const { showSuccess, showError } = useToast()
   const { data: profile } = useWorkerProfile()
   // id-card 슬러그 제목은 근로자의 nationalityType 에 따라 동적으로 표시.
@@ -71,28 +75,33 @@ export function DocumentViewerPage() {
     }
     const base = LOADERS[slug]
     if (!base) return undefined
+    // bankbook 은 현장별 doc이므로 siteId 가 있으면 함께 전달.
+    const load: DocLoader = slug === "bankbook" ? () => fetchBankbookDoc(siteId) : base.load
     if (slug === "id-card" && profile?.nationalityType && idCardTitleByNationality[profile.nationalityType]) {
-      return { title: idCardTitleByNationality[profile.nationalityType], load: base.load }
+      return { title: idCardTitleByNationality[profile.nationalityType], load }
     }
-    return base
+    return { title: base.title, load }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, docId, searchParams, profile?.nationalityType])
+  }, [slug, docId, searchParams, profile?.nationalityType, siteId])
   const { data: docSummary } = useDocumentSummary()
   const docCode = SLUG_TO_CODE[slug]
-  const docStatus = docSummary?.find((d) => d.code === docCode)?.status
+  const docMatch = docSummary?.find((d) => d.code === docCode)
+  const docStatus = docMatch?.status
   const isApproved = docStatus === "approved"
+  // 미제출이면 파일 fetch 시도 안 함 — 곧장 사진촬영/파일선택 UI 노출.
+  const isMissing = !docStatus && docMatch?.state !== "completed"
 
   const [reloadKey, setReloadKey] = useState(0)
 
   const { data: docMeta, isLoading: metaLoading, error: metaErr } = useQuery({
-    queryKey: ["docDetail", slug, docId ?? "", reloadKey],
+    queryKey: ["docDetail", slug, docId ?? "", siteId ?? "", reloadKey],
     queryFn: async () => {
       const result = await entry!.load()
       if (!result.success) throw new Error(result.error)
       if (!result.data?.fileUrl) throw new Error("파일을 찾을 수 없습니다.")
       return result.data
     },
-    enabled: !!entry,
+    enabled: !!entry && !isMissing,
     staleTime: 0,
     gcTime: 0,
     retry: false,
@@ -156,6 +165,7 @@ export function DocumentViewerPage() {
         accountHolder: profile?.accountHolder || profile?.workerName || undefined,
         bankName: profile?.bankName || undefined,
         bankAccount: profile?.bankAccount || undefined,
+        siteId,
       })
     }
     if (slug === "family-relation") {
@@ -219,8 +229,38 @@ export function DocumentViewerPage() {
   }
 
   const supportsUpload = UPLOAD_SUPPORTED.has(slug)
-  const hasGuide = slug === "bankbook"
-  const [showUploadButtons, setShowUploadButtons] = useState(false)
+  const guideSlug: "bankbook" | "passport" | "idcard" | null =
+    slug === "bankbook" ? "bankbook"
+    : slug === "passport" ? "passport"
+    : slug === "id-card" ? "idcard"
+    : null
+  // 재업로드 버튼 누른 후에만 true로 토글. 미제출 상태는 isMissing 으로 자동 노출되므로
+  // useState 초기값에 isMissing 을 넣지 않음 (초기 렌더 시 docSummary 미로드라 isMissing=true
+  // 였다가 로드 후 false 가 되어도 setState 안 따라가는 문제 회피).
+  const [forceShowUploadButtons, setForceShowUploadButtons] = useState(false)
+  const showUploadButtons = isMissing || forceShowUploadButtons
+  const setShowUploadButtons = setForceShowUploadButtons
+  // 승인 완료 서류 재업로드 시 확인 모달 게이트.
+  const [showApprovedConfirm, setShowApprovedConfirm] = useState(false)
+  const handleReuploadClick = () => {
+    if (isApproved) setShowApprovedConfirm(true)
+    else setShowUploadButtons(true)
+  }
+
+  const startCapture = () => {
+    if (guideSlug) setShowGuide(true)
+    else setShowCapture(true)
+  }
+
+  // 미리보기 상단 상태 안내문 — 승인 대기 / 승인 완료 / 반려 알림.
+  const statusBanner: { text: string; className: string } | null =
+    docStatus === "uploaded"
+      ? { text: "승인 대기 중인 서류입니다.", className: "bg-[#EA580C1A] text-[#EA580C]" }
+    : docStatus === "approved"
+      ? { text: "승인 완료된 서류입니다.", className: "bg-green-50 text-green-600" }
+    : docStatus === "rejected" || docStatus === "resubmission_requested"
+      ? { text: "반려된 서류입니다. 재업로드 해주세요.", className: "bg-red-50 text-red-600" }
+    : null
 
   return (
     <div className="flex h-screen flex-col bg-white">
@@ -235,7 +275,7 @@ export function DocumentViewerPage() {
                   <button
                     type="button"
                     disabled={isUploading}
-                    onClick={() => (hasGuide ? setShowGuide(true) : setShowCapture(true))}
+                    onClick={startCapture}
                     className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
                   >
                     {isUploading ? "업로드 중..." : "사진 촬영"}
@@ -249,25 +289,35 @@ export function DocumentViewerPage() {
                     파일 선택
                   </button>
                 </>
-              ) : !isApproved ? (
+              ) : (
                 <button
                   type="button"
-                  onClick={() => setShowUploadButtons(true)}
+                  onClick={handleReuploadClick}
                   className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                 >
-                  재등록
+                  재업로드
                 </button>
-              ) : null}
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,application/pdf"
                 className="hidden"
                 onChange={handleFileChange}
               />
             </div>
+            {statusBanner && !isMissing && (
+              <div className={`mt-3 rounded-md px-3 py-2 text-xs font-medium ${statusBanner.className}`}>
+                {statusBanner.text}
+              </div>
+            )}
             <div className="mt-3">
-              {isLoading ? (
+              {isMissing ? (
+                <div className="flex flex-col items-center gap-2 text-center py-10">
+                  <p className="text-sm text-slate-500">아직 제출하지 않은 서류입니다.</p>
+                  <p className="text-xs text-slate-400">위의 사진 촬영 또는 파일 선택으로 제출해주세요.</p>
+                </div>
+              ) : isLoading ? (
                 <div className="flex justify-center py-10"><Spinner /></div>
               ) : error ? (
                 <div className="flex flex-col items-center gap-3 text-center py-6">
@@ -279,7 +329,7 @@ export function DocumentViewerPage() {
               ) : blobUrl && mimeType.startsWith("image/") ? (
                 <img src={blobUrl} alt={entry.title} className="w-full max-h-[70vh] object-contain rounded bg-slate-50" />
               ) : blobUrl && mimeType === "application/pdf" ? (
-                <iframe src={blobUrl} title={entry.title} className="w-full h-[70vh] bg-white" />
+                <iframe key={blobUrl} src={`${blobUrl}#view=FitH&toolbar=0`} title={entry.title} className="w-full aspect-[210/297] bg-white" />
               ) : blobUrl ? (
                 <div className="flex flex-col items-center gap-3 text-center py-6">
                   <p className="text-sm text-slate-700">이 파일은 앱에서 바로 미리볼 수 없습니다.</p>
@@ -327,8 +377,23 @@ export function DocumentViewerPage() {
         )}
       </main>
 
-      {hasGuide && showGuide && (
+      {showGuide && guideSlug === "bankbook" && (
         <CaptureGuideBankbook
+          onStart={() => { setShowGuide(false); setShowCapture(true) }}
+          onClose={() => setShowGuide(false)}
+        />
+      )}
+
+      {showGuide && guideSlug === "passport" && (
+        <CaptureGuidePassport
+          onStart={() => { setShowGuide(false); setShowCapture(true) }}
+          onClose={() => setShowGuide(false)}
+        />
+      )}
+
+      {showGuide && guideSlug === "idcard" && (
+        <CaptureGuideIdcard
+          title={entry.title}
           onStart={() => { setShowGuide(false); setShowCapture(true) }}
           onClose={() => setShowGuide(false)}
         />
@@ -339,6 +404,34 @@ export function DocumentViewerPage() {
           onConfirm={handleCaptureConfirm}
           onClose={() => setShowCapture(false)}
         />
+      )}
+
+      {showApprovedConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5">
+            <h3 className="text-base font-bold text-slate-900">승인이 완료된 서류입니다</h3>
+            <p className="mt-2 text-sm text-slate-600">진짜 재업로드를 하시겠습니까?</p>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowApprovedConfirm(false)}
+                className="flex-1 rounded-lg bg-neutral-100 px-3 py-2 text-sm font-medium text-slate-700"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowApprovedConfirm(false)
+                  setShowUploadButtons(true)
+                }}
+                className="flex-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white"
+              >
+                재업로드
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

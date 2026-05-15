@@ -8,7 +8,7 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command"
-import { ChevronDown as KeyboardArrowDownIcon, Check as CheckIcon } from "lucide-react"
+import { ChevronDown as KeyboardArrowDownIcon, Check as CheckIcon, Building2 as SiteIcon } from "lucide-react"
 
 export interface SiteOption {
   value: string
@@ -51,7 +51,10 @@ export function SiteCombobox({
             className
           )}
         >
-          <span className="truncate font-semibold">{selectedLabel || placeholder}</span>
+          <span className="flex items-center gap-2 min-w-0">
+            <SiteIcon size={18} className="text-slate-500 shrink-0" />
+            <span className="truncate font-semibold">{selectedLabel || placeholder}</span>
+          </span>
           {!single && <KeyboardArrowDownIcon size={20} className="text-slate-400 shrink-0" />}
         </button>
       </PopoverTrigger>

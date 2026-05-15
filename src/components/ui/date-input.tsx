@@ -14,7 +14,9 @@ interface DateInputProps {
   className?: string
 }
 
-const YEARS = Array.from({ length: 2040 - 2010 + 1 }, (_, i) => 2010 + i)
+// 생년월일까지 커버하도록 1920 ~ 현재+10년 범위. 내림차순(최근 연도 먼저)으로 노출.
+const CURRENT_YEAR = new Date().getFullYear()
+const YEARS = Array.from({ length: CURRENT_YEAR + 10 - 1920 + 1 }, (_, i) => CURRENT_YEAR + 10 - i)
 
 export function DateInput({ value, onChange, placeholder = "YYYY-MM-DD", disabled, className }: DateInputProps) {
   const [inputValue, setInputValue] = React.useState("")

@@ -32,7 +32,7 @@ function toSeoulDate(timestamp: string | number | Date): Date | null {
 }
 
 /**
- * Convert serverTimestamp (UTC) to KST time string (HH:MM:SS)
+ * Convert serverTimestamp (UTC) to KST time string (HH:MM)
  * Handles string (ISO format), number (Unix ms), or Date object
  */
 export const formatKstTime = (timestamp: string | number | Date | null | undefined): string => {
@@ -42,9 +42,8 @@ export const formatKstTime = (timestamp: string | number | Date | null | undefin
 
   const hours = String(seoulDate.getUTCHours()).padStart(2, '0')
   const minutes = String(seoulDate.getUTCMinutes()).padStart(2, '0')
-  const seconds = String(seoulDate.getUTCSeconds()).padStart(2, '0')
 
-  return `${hours}:${minutes}:${seconds}`
+  return `${hours}:${minutes}`
 }
 
 /**

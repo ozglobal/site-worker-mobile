@@ -16,7 +16,9 @@ const NOTICE_TYPE_LABELS: Record<string, string> = {
   CONTRACT_SIGNING_REQUEST: '계약',
   DOCUMENT_EXPIRY_D14: '서류만료',
   DOCUMENT_EXPIRY_D7: '서류만료',
-  DOCUMENT_SUBMISSION_REQUEST: '서류제출',
+  DOCUMENT_SUBMISSION_REQUEST: '서류등록',
+  DOCUMENT_SUBMISSION_REQUEST_BULK: '서류등록',
+  DOCUMENT_RESUBMISSION_REQUEST: '서류재등록',
   SALARY_STATEMENT: '임금명세',
 }
 
@@ -196,7 +198,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                   </p>
                   {/* Content */}
                   {notice.content && (
-                    <p className="text-[13px] leading-5 text-slate-400 mt-1 line-clamp-2">
+                    <p className="text-[13px] leading-5 text-slate-400 mt-1 line-clamp-4 whitespace-pre-line">
                       {notice.content}
                     </p>
                   )}

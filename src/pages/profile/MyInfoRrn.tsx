@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { QueryErrorState } from "@/components/ui/query-error-state"
 import { useWorkerProfile } from "@/lib/queries/useWorkerProfile"
 import { useToast } from "@/contexts/ToastContext"
-import { updateWorkerAddress, updateWorkerProfile } from "@/lib/profile"
+import { updateMyInfo } from "@/lib/profile"
 import { getWorkerName } from "@/lib/auth"
 import { usePhoneChange } from "@/hooks/usePhoneChange"
 import { PhoneChangeModal } from "@/components/ui/PhoneChangeModal"
@@ -20,6 +20,7 @@ export function MyInfoRrnPage() {
   const { data: profile, isLoading: loading, isError, refetch } = useWorkerProfile()
   const { showSuccess, showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   const [formData, setFormData] = useState<RrnFormValues>({
     name: "",
@@ -27,20 +28,24 @@ export function MyInfoRrnPage() {
     ssnSecond: "",
     phone: "",
     address: "",
+    addressDetail: "",
   })
-  const [original, setOriginal] = useState<RrnFormValues>({ name: "", ssnFirst: "", ssnSecond: "", phone: "", address: "" })
+  const [original, setOriginal] = useState<RrnFormValues>({ name: "", ssnFirst: "", ssnSecond: "", phone: "", address: "", addressDetail: "" })
 
   useEffect(() => {
     if (profile) {
       // Backend ships the masked ID as one string like "901010-1******";
       // split by `-` into the two inputs.
-      const [maskedFirst = "", maskedSecond = ""] = (profile.idNumberMasked || "").split("-")
+      // 내국인 → nationalIdNumberMasked, 외국인 등록자 → idNumberMasked.
+      const maskedSource = profile.nationalIdNumberMasked || profile.idNumberMasked || ""
+      const [maskedFirst = "", maskedSecond = ""] = maskedSource.split("-")
       const loaded: RrnFormValues = {
         name: profile.workerName || getWorkerName() || "",
         ssnFirst: profile.ssnFirst || maskedFirst || "",
         ssnSecond: profile.ssnSecond || maskedSecond || "",
         phone: profile.phone,
         address: profile.address,
+        addressDetail: profile.addressDetail || "",
       }
       setFormData(loaded)
       setOriginal(loaded)
@@ -51,7 +56,8 @@ export function MyInfoRrnPage() {
     formData.name !== original.name ||
     formData.ssnFirst !== original.ssnFirst ||
     formData.ssnSecond !== original.ssnSecond ||
-    formData.address !== original.address
+    formData.address !== original.address ||
+    formData.addressDetail !== original.addressDetail
   const isFormValid = !!(formData.name && formData.ssnFirst && formData.ssnSecond && formData.phone && formData.address)
 
   const keyboardOpen = useKeyboardOpen()
@@ -64,28 +70,33 @@ export function MyInfoRrnPage() {
     if (isSubmitting) return
     setIsSubmitting(true)
     try {
-      const nameOrSsnChanged =
-        formData.name !== original.name ||
-        formData.ssnFirst !== original.ssnFirst ||
-        formData.ssnSecond !== original.ssnSecond
-      const result = nameOrSsnChanged
-        ? await updateWorkerProfile({
-            workerName: formData.name,
-            ssnFirst: formData.ssnFirst,
-            ssnSecond: formData.ssnSecond,
-            phone: formData.phone,
-            address: formData.address,
-          })
-        : await updateWorkerAddress(formData.address)
+      const payload: Parameters<typeof updateMyInfo>[0] = {}
+      if (formData.name !== original.name) payload.nameKo = formData.name
+      if (formData.address !== original.address) payload.address = formData.address
+      if (formData.addressDetail !== original.addressDetail) payload.addressDetail = formData.addressDetail
+      const ssnChanged =
+        (formData.ssnFirst !== original.ssnFirst || formData.ssnSecond !== original.ssnSecond) &&
+        !formData.ssnFirst.includes("*") &&
+        !formData.ssnSecond.includes("*")
+      if (ssnChanged) {
+        payload.nationalIdNumber = `${formData.ssnFirst}${formData.ssnSecond}`
+      }
+      const result = await updateMyInfo(payload)
       if (result.success) {
         await refetch()
         showSuccess("저장되었습니다.")
+        setEditing(false)
       } else {
         showError(result.error)
       }
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleCancel = () => {
+    setFormData(original)
+    setEditing(false)
   }
 
   const phoneChange = usePhoneChange()
@@ -104,17 +115,29 @@ export function MyInfoRrnPage() {
           <QueryErrorState onRetry={() => refetch()} message="내 정보를 불러오지 못했습니다." />
         ) : (
         <div className="flex flex-col min-h-full">
-          <IdFormRrn mode="edit" values={formData} onChange={handleFieldChange} onPhoneChangeClick={phoneChange.openModal} />
+          <IdFormRrn mode="edit" values={formData} onChange={handleFieldChange} onPhoneChangeClick={phoneChange.openModal} verified={profile?.isVerified ?? false} readOnly={!editing} />
 
           <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
-            <Button
-              variant={isFormValid && hasChanges && !isSubmitting ? "primary" : "primaryDisabled"}
-              size="full"
-              disabled={!isFormValid || !hasChanges || isSubmitting}
-              onClick={handleSave}
-            >
-              {isSubmitting ? "저장 중..." : "저장"}
-            </Button>
+            {editing ? (
+              <div className="flex gap-3">
+                <Button variant="outline" size="full" onClick={handleCancel} disabled={isSubmitting} className="flex-1 bg-white border-gray-200 text-slate-900 hover:bg-gray-50">
+                  취소
+                </Button>
+                <Button
+                  variant={isFormValid && hasChanges && !isSubmitting ? "primary" : "primaryDisabled"}
+                  size="full"
+                  disabled={!isFormValid || !hasChanges || isSubmitting}
+                  onClick={handleSave}
+                  className="flex-1"
+                >
+                  {isSubmitting ? "저장 중..." : "저장"}
+                </Button>
+              </div>
+            ) : (
+              <Button variant="primary" size="full" onClick={() => setEditing(true)}>
+                내 정보 수정
+              </Button>
+            )}
           </div>
         </div>
         )}

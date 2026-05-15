@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { useBottomNavHandler } from "@/hooks/useBottomNavHandler"
 import { AlertBanner } from "@/components/ui/alert-banner"
 import { CorrectionDialog, type CorrectionDialogSubmitData } from "@/components/ui/correction-dialog"
+import { CorrectionSuccessModal } from "@/components/ui/correction-success-modal"
 import { fetchTodayAttendance, submitCorrectionRequest, type DailyAttendanceSite, type DailyAttendanceEntry } from "@/lib/attendance"
 import { reportError } from "@/lib/errorReporter"
 import { useToast } from "@/contexts/ToastContext"
@@ -24,7 +25,7 @@ function formatTime(t: string | null | undefined): string {
 export function DailyDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { showSuccess, showError } = useToast()
+  const { showError } = useToast()
   const { date } = useParams<{ date: string }>()
 
   const { data, isLoading } = useQuery({
@@ -35,11 +36,13 @@ export function DailyDetailPage() {
       return result.data
     },
     enabled: !!date,
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   // Correction dialog state
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
+  const [showCorrectionSuccess, setShowCorrectionSuccess] = useState(false)
   const [correctionAttendanceId, setCorrectionAttendanceId] = useState<string | null>(null)
   const [correctionEntryId, setCorrectionEntryId] = useState<string | null>(null)
   const [correctionSiteName, setCorrectionSiteName] = useState("")
@@ -73,7 +76,7 @@ export function DailyDetailPage() {
       showError(result.error)
       return
     }
-    showSuccess("정정 요청이 제출되었습니다.")
+    setShowCorrectionSuccess(true)
     if (date) queryClient.invalidateQueries({ queryKey: ["todayAttendance", date] })
     void queryClient.invalidateQueries({ queryKey: ['correctionRequests'] })
     setShowCorrectionDialog(false)
@@ -111,10 +114,18 @@ export function DailyDetailPage() {
   }, [date, navigate])
 
   const { data: correctionRequests = [] } = useCorrectionRequests()
-  const correctionMap = useMemo(
-    () => Object.fromEntries(correctionRequests.map((r) => [r.workEntryId, r])),
-    [correctionRequests]
-  )
+  const correctionMap = useMemo(() => {
+    // 같은 workEntryId 에 여러 이력이 있을 수 있음. pending 을 우선 선택.
+    const map: Record<string, typeof correctionRequests[0]> = {}
+    correctionRequests.forEach((r) => {
+      if (!r.workEntryId) return
+      const existing = map[r.workEntryId]
+      if (!existing || (existing.status !== 'pending' && r.status === 'pending')) {
+        map[r.workEntryId] = r
+      }
+    })
+    return map
+  }, [correctionRequests])
 
   const attendances = data?.attendances ?? []
 
@@ -127,7 +138,12 @@ export function DailyDetailPage() {
         <button aria-label="이전 날" onClick={() => navigateDay(-1)} className="p-1">
           <ChevronLeftIcon className="h-6 w-6 text-slate-900" />
         </button>
-        <span className="text-base font-bold text-slate-900">{displayDate}</span>
+        <span className="flex items-center gap-2">
+          <span className="text-base font-bold text-slate-900">{displayDate}</span>
+          {isToday && (
+            <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">오늘</span>
+          )}
+        </span>
         <button aria-label="다음 날" onClick={nextDisabled ? undefined : () => navigateDay(1)} className={cn("p-1", nextDisabled && "invisible")}>
           <ChevronRightIcon className="h-6 w-6 text-slate-900" />
         </button>
@@ -138,6 +154,7 @@ export function DailyDetailPage() {
         <AlertBanner
           variant="info"
           title="현장 단가나 공수 정정은 근무 당일만 요청할 수 있습니다."
+          className="bg-[#00000008] border-transparent"
         />
       </div>
 
@@ -193,7 +210,7 @@ export function DailyDetailPage() {
                 )
               )
             ) : (
-              <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-center border border-slate-200">
+              <div className="rounded-xl p-4 flex items-center justify-center" style={{ backgroundColor: "#00000008" }}>
                 <p className="text-sm text-slate-500 text-center">해당 날짜에 출근 기록이 없습니다.</p>
               </div>
             )}
@@ -213,6 +230,8 @@ export function DailyDetailPage() {
           onSubmit={handleCorrectionSubmit}
         />
       )}
+
+      <CorrectionSuccessModal open={showCorrectionSuccess} onClose={() => setShowCorrectionSuccess(false)} />
     </div>
   )
 }
