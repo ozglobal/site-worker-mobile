@@ -578,6 +578,7 @@ export const uploadEquipment = async (
 export const reuploadEquipmentLicense = async (
   equipmentId: string,
   file: File,
+  equipmentType?: string,
 ): Promise<ApiResult<void>> => {
   const endpoint = `/system/worker/me/equipment/${equipmentId}`
   const validationError = validateFile(file)
@@ -585,6 +586,7 @@ export const reuploadEquipmentLicense = async (
   try {
     const form = new FormData()
     form.append('licenseFile', file)
+    if (equipmentType) form.append('equipmentType', equipmentType)
     const response = await authFetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
       headers: { 'accept': '*/*' },

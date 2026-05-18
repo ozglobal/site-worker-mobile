@@ -58,6 +58,7 @@ export function DocumentViewerPage() {
   const { slug = "", docId } = useParams<{ slug: string; docId?: string }>()
   const [searchParams] = useSearchParams()
   const equipmentId = searchParams.get("equipmentId") ?? undefined
+  const equipmentType = searchParams.get("equipmentType") ?? undefined
   // 현장별 서류(bankbook 등) 조회/업로드 시 함께 보낼 siteId.
   const siteId = searchParams.get("siteId") ?? undefined
   const { showSuccess, showError } = useToast()
@@ -187,7 +188,7 @@ export function DocumentViewerPage() {
       return uploadPassportDoc({ file })
     }
     if (slug === "equipment-license" && equipmentId) {
-      return reuploadEquipmentLicense(equipmentId, file)
+      return reuploadEquipmentLicense(equipmentId, file, equipmentType)
     }
     return { success: false, error: "지원되지 않는 서류입니다." }
   }

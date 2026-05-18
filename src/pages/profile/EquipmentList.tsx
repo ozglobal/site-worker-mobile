@@ -58,7 +58,7 @@ export function EquipmentListPage() {
                             type="button"
                             onClick={() => navigate(
                               `/profile/documents/view/equipment-license/${item.licenseDocId}` +
-                              `?name=${encodeURIComponent(label)}&equipmentId=${item.id}`
+                              `?name=${encodeURIComponent(label)}&equipmentId=${item.id}&equipmentType=${encodeURIComponent(item.equipmentType)}`
                             )}
                             className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700 shrink-0 ml-3"
                           >
