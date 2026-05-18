@@ -38,17 +38,21 @@ export function DocumentCamera({ onCapture, onClose, frameAspect = "a4" }: Docum
 
     const vw = container.clientWidth
     const vh = container.clientHeight
-    const ratio = frameAspect === "card" ? CARD_RATIO : A4_RATIO
+    if (frameAspect === "card") {
+      const frameW = Math.min(vw * 0.9, 400)
+      const frameH = frameW / CARD_RATIO + 2
+      const x = (vw - frameW) / 2
+      const y = (vh - frameH) / 2
+      return { x, y, width: frameW, height: frameH }
+    }
+
     const frameW = vw * 0.88
-    const frameH = frameW / ratio
+    const frameH = frameW / A4_RATIO
     const maxH = vh * 0.75
-
     const finalH = Math.min(frameH, maxH) + 2
-    const finalW = finalH * ratio
-
+    const finalW = finalH * A4_RATIO
     const x = (vw - finalW) / 2
     const y = (vh - finalH) / 2
-
     return { x, y, width: finalW, height: finalH }
   }, [frameAspect])
 
