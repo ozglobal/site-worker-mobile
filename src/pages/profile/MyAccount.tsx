@@ -82,7 +82,7 @@ export function MyAccountPage({ mode = "profile" }: MyAccountPageProps) {
       queryClient.invalidateQueries({ queryKey: ['workerProfile'] })
       queryClient.invalidateQueries({ queryKey: ['homeData'] })
       showSuccess("저장되었습니다.")
-      navigate("/profile/payroll-account")
+      navigate("/profile")
     } finally {
       setIsSubmitting(false)
     }
