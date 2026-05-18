@@ -8,12 +8,13 @@ interface DocumentCameraProps {
   onCapture: (imageBase64: string) => void
   onClose: () => void
   frameAspect?: "a4" | "card"
+  documentLabel?: string
 }
 
 const A4_RATIO = 1 / 1.414 // width / height (portrait)
 const CARD_RATIO = 85.6 / 53.98 // width / height (landscape card, ~1.586)
 
-export function DocumentCamera({ onCapture, onClose, frameAspect = "a4" }: DocumentCameraProps) {
+export function DocumentCamera({ onCapture, onClose, frameAspect = "a4", documentLabel = "문서" }: DocumentCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -192,7 +193,9 @@ export function DocumentCamera({ onCapture, onClose, frameAspect = "a4" }: Docum
     if (!cameraReady) return "카메라 준비 중..."
     if (stable) return "촬영 중..."
     if (countdown !== null) return `${countdown}`
-    return "문서를 사각형 영역 안에 맞춰주세요."
+    return documentLabel
+      ? `${documentLabel}을 사각형 영역 안에 맞춰주세요.`
+      : "문서를 사각형 영역 안에 맞춰주세요."
   }
 
   const borderColor = stable

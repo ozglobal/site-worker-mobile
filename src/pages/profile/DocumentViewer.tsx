@@ -422,6 +422,7 @@ export function DocumentViewerPage() {
           onConfirm={handleCaptureConfirm}
           onClose={() => setShowCapture(false)}
           frameAspect={slug === "id-card" ? "card" : "a4"}
+          documentLabel={slug === "id-card" ? entry?.title : undefined}
         />
       )}
 
