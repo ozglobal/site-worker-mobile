@@ -119,6 +119,8 @@ export function DocumentViewerPage() {
   const [blobError, setBlobError] = useState<string | null>(null)
   const [blobLoading, setBlobLoading] = useState(false)
 
+  const isMobileBrowser = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
   const isLoading = metaLoading || blobLoading
   const error = (metaErr as Error | null)?.message ?? blobError
 
@@ -336,7 +338,20 @@ export function DocumentViewerPage() {
               ) : blobUrl && mimeType.startsWith("image/") ? (
                 <img src={blobUrl} alt={entry.title} className="w-full max-h-[70vh] object-contain rounded bg-slate-50" />
               ) : blobUrl && mimeType === "application/pdf" ? (
-                <iframe key={blobUrl} src={`${blobUrl}#view=FitH&toolbar=0`} title={entry.title} className="w-full aspect-[210/297] bg-white" />
+                isMobileBrowser ? (
+                  <div className="flex flex-col items-center gap-3 text-center py-10">
+                    <p className="text-sm text-slate-600">PDF를 열려면 아래 버튼을 눌러주세요.</p>
+                    <button
+                      type="button"
+                      onClick={() => window.open(blobUrl, '_blank')}
+                      className="inline-block rounded bg-primary px-4 py-2 text-sm font-medium text-white"
+                    >
+                      PDF 열기
+                    </button>
+                  </div>
+                ) : (
+                  <iframe key={blobUrl} src={`${blobUrl}#view=FitH&toolbar=0`} title={entry.title} className="w-full aspect-[210/297] bg-white" />
+                )
               ) : blobUrl ? (
                 <div className="flex flex-col items-center gap-3 text-center py-6">
                   <p className="text-sm text-slate-700">이 파일은 앱에서 바로 미리볼 수 없습니다.</p>
@@ -366,7 +381,20 @@ export function DocumentViewerPage() {
             ) : blobUrl && mimeType.startsWith("image/") ? (
               <img src={blobUrl} alt={entry.title} className="max-h-full max-w-full rounded shadow" />
             ) : blobUrl && mimeType === "application/pdf" ? (
-              <iframe src={blobUrl} title={entry.title} className="w-full h-full bg-white" />
+              isMobileBrowser ? (
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <p className="text-sm text-slate-600">PDF를 열려면 아래 버튼을 눌러주세요.</p>
+                  <button
+                    type="button"
+                    onClick={() => window.open(blobUrl, '_blank')}
+                    className="inline-block rounded bg-primary px-4 py-2 text-sm font-medium text-white"
+                  >
+                    PDF 열기
+                  </button>
+                </div>
+              ) : (
+                <iframe src={blobUrl} title={entry.title} className="w-full h-full bg-white" />
+              )
             ) : blobUrl ? (
               <div className="flex flex-col items-center gap-3 text-center">
                 <p className="text-sm text-slate-700">이 파일은 앱에서 바로 미리볼 수 없습니다.</p>
