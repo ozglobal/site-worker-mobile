@@ -201,7 +201,10 @@ export function DocumentViewerPage() {
       showError(result.error)
       return
     }
-    showSuccess(`${entry?.title ?? "서류"}이(가) 업데이트되었습니다.`)
+    showSuccess(isMissing
+      ? `${entry?.title ?? "서류"}이(가) 업로드되었습니다.`
+      : `${entry?.title ?? "서류"}이(가) 업데이트되었습니다.`
+    )
     queryClient.invalidateQueries({ queryKey: ["documentSummary"] })
     if (slug === "equipment-license") {
       queryClient.invalidateQueries({ queryKey: ["workerEquipments"] })
