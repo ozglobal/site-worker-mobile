@@ -319,7 +319,7 @@ export function DocumentCamera({ onCapture, onClose, frameAspect = "a4", documen
 
         {/* Hint */}
         <p className="text-center text-xs text-white/50 mt-3">
-          문서를 프레임에 맞추면 자동으로 촬영됩니다
+          {documentLabel ? `${documentLabel}을 프레임에 맞추면 자동으로 촬영됩니다` : "문서를 프레임에 맞추면 자동으로 촬영됩니다"}
         </p>
       </div>
     </div>
