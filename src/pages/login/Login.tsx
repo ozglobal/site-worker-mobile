@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect, useRef } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
 import { IconEye, IconEyeClosed } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,10 +15,22 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [passwordChangedBanner, setPasswordChangedBanner] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuth()
   const { honeypotProps, isBotDetected } = useHoneypot()
   const [autoLogin, setAutoLogin] = useState(() => autoLoginStorage.isEnabled())
+  const passwordChangedHandled = useRef(false)
+
+  useEffect(() => {
+    if (passwordChangedHandled.current) return
+    if ((location.state as { passwordChanged?: boolean })?.passwordChanged) {
+      passwordChangedHandled.current = true
+      setPasswordChangedBanner(true)
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [])
 
   const handleLogin = async () => {
     if (isBotDetected || isSubmitting) return
@@ -80,8 +92,15 @@ export function LoginPage() {
         <img src="/icons/app-logo.png" alt="건설인" className="h-12" />
       </div>
 
+      {/* Password changed banner */}
+      {passwordChangedBanner && (
+        <div className="mt-6 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 text-center">
+          비밀번호가 변경되었습니다. 변경된 비밀번호로 로그인해 주세요.
+        </div>
+      )}
+
       {/* Form */}
-      <form className="mt-8 flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); handleLogin() }}>
+      <form className={`${passwordChangedBanner ? "mt-4" : "mt-8"} flex flex-col gap-3`} onSubmit={(e) => { e.preventDefault(); handleLogin() }}>
         {/* Phone Input */}
         <Input
           type="tel"

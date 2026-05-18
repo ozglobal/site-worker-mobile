@@ -10,7 +10,7 @@ import { resetPasswordBySms } from "@/lib/auth"
 export function SetPasswordPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { showSuccess, showError } = useToast()
+  const { showError } = useToast()
   const { phone, code } = (location.state as { phone?: string; code?: string }) || {}
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -68,8 +68,7 @@ export function SetPasswordPage() {
     setIsSubmitting(false)
 
     if (result.success) {
-      showSuccess("비밀번호가 변경되었습니다. 변경된 비밀번호로 로그인해 주세요.")
-      navigate("/login")
+      navigate("/login", { state: { passwordChanged: true } })
     } else {
       showError(result.error)
     }
