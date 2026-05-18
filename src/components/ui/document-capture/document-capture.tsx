@@ -7,11 +7,12 @@ interface DocumentCaptureProps {
   onConfirm: (imageBase64: string) => void
   /** Called when user closes / cancels the capture flow */
   onClose: () => void
+  frameAspect?: "a4" | "card"
 }
 
 type Step = "camera" | "preview"
 
-export function DocumentCapture({ onConfirm, onClose }: DocumentCaptureProps) {
+export function DocumentCapture({ onConfirm, onClose, frameAspect }: DocumentCaptureProps) {
   const [step, setStep] = useState<Step>("camera")
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
 
@@ -32,7 +33,7 @@ export function DocumentCapture({ onConfirm, onClose }: DocumentCaptureProps) {
   }
 
   if (step === "camera") {
-    return <DocumentCamera onCapture={handleCapture} onClose={onClose} />
+    return <DocumentCamera onCapture={handleCapture} onClose={onClose} frameAspect={frameAspect} />
   }
 
   if (step === "preview" && capturedImage) {

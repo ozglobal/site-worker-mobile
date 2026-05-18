@@ -7,11 +7,13 @@ import { useShutterSound } from "../camera-utils/useShutterSound"
 interface DocumentCameraProps {
   onCapture: (imageBase64: string) => void
   onClose: () => void
+  frameAspect?: "a4" | "card"
 }
 
-const A4_RATIO = 1 / 1.414 // width / height
+const A4_RATIO = 1 / 1.414 // width / height (portrait)
+const CARD_RATIO = 85.6 / 53.98 // width / height (landscape card, ~1.586)
 
-export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
+export function DocumentCamera({ onCapture, onClose, frameAspect = "a4" }: DocumentCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -36,18 +38,19 @@ export function DocumentCamera({ onCapture, onClose }: DocumentCameraProps) {
 
     const vw = container.clientWidth
     const vh = container.clientHeight
+    const ratio = frameAspect === "card" ? CARD_RATIO : A4_RATIO
     const frameW = vw * 0.88
-    const frameH = frameW / A4_RATIO
+    const frameH = frameW / ratio
     const maxH = vh * 0.75
 
     const finalH = Math.min(frameH, maxH) + 2
-    const finalW = finalH * A4_RATIO
+    const finalW = finalH * ratio
 
     const x = (vw - finalW) / 2
     const y = (vh - finalH) / 2
 
     return { x, y, width: finalW, height: finalH }
-  }, [])
+  }, [frameAspect])
 
   // Start camera
   useEffect(() => {
