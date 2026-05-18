@@ -92,7 +92,7 @@ export function IdFormPn({ mode, values, onChange, onPhoneChangeClick, verified 
           autoComplete="new-password"
           value={values.passport}
           onChange={(e) => {
-            const v = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase()
+            const v = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 12)
             onChange("passport", v)
           }}
           placeholder={isSignup ? "여권번호" : undefined}
