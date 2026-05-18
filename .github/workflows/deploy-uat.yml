@@ -1,0 +1,36 @@
+name: Deploy to UAT (worker.kwork365.com)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install
+      - run: npm run build
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/key
+          chmod 600 ~/.ssh/key
+          ssh-keyscan -H 3.34.165.192 >> ~/.ssh/known_hosts
+
+      - name: Deploy to UAT (worker.kwork365.com)
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/key" \
+            dist/ ubuntu@3.34.165.192:/var/www/site-worker-mobile/
+
+      - name: Reload Nginx (UAT)
+        run: ssh -i ~/.ssh/key ubuntu@3.34.165.192 "sudo systemctl reload nginx"

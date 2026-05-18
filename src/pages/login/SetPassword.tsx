@@ -1,0 +1,167 @@
+import { useState, useRef } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen"
+import { AppHeader } from "@/components/layout/AppHeader"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/contexts/ToastContext"
+import { resetPasswordBySms } from "@/lib/auth"
+
+export function SetPasswordPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { showSuccess, showError } = useToast()
+  const { phone, code } = (location.state as { phone?: string; code?: string }) || {}
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [formData, setFormData] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  })
+
+  const hasAlphabet = /[a-zA-Z]/.test(formData.newPassword)
+  const hasNumeric = /[0-9]/.test(formData.newPassword)
+  const hasSpecial = /[^a-zA-Z0-9]/.test(formData.newPassword)
+  const isPasswordValid =
+    formData.newPassword.length >= 8 &&
+    formData.newPassword.length <= 64 &&
+    hasAlphabet && hasNumeric && hasSpecial
+
+  const isFormValid =
+    isPasswordValid &&
+    formData.newPassword === formData.confirmPassword
+
+  const keyboardOpen = useKeyboardOpen()
+
+  const confirmRef = useRef<HTMLInputElement>(null)
+  const [passwordWasValid, setPasswordWasValid] = useState(false)
+
+  const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    setFormData(prev => ({ ...prev, [field]: newValue }))
+
+    if (field === "newPassword") {
+      const valid =
+        newValue.length >= 8 &&
+        newValue.length <= 64 &&
+        /[a-zA-Z]/.test(newValue) &&
+        /[0-9]/.test(newValue) &&
+        /[^a-zA-Z0-9]/.test(newValue)
+      if (valid && !passwordWasValid) {
+        setPasswordWasValid(true)
+        setTimeout(() => confirmRef.current?.focus(), 0)
+      } else if (!valid) {
+        setPasswordWasValid(false)
+      }
+    }
+  }
+
+  const handleSave = async () => {
+    if (!isFormValid || isSubmitting) return
+    if (!phone || !code) {
+      showError("인증 정보가 없습니다. 다시 시도해주세요.")
+      return
+    }
+
+    setIsSubmitting(true)
+    const result = await resetPasswordBySms({ phone, code, newPassword: formData.newPassword })
+    setIsSubmitting(false)
+
+    if (result.success) {
+      showSuccess("비밀번호가 변경되었습니다. 변경된 비밀번호로 로그인해 주세요.")
+      navigate("/login")
+    } else {
+      showError(result.error)
+    }
+  }
+
+  return (
+    <div className="flex h-dvh flex-col overflow-hidden bg-white">
+      <AppHeader
+        showLeftAction={true}
+        title=""
+        showRightAction={false}
+        onLeftActionClick={() => navigate(-1)}
+        className="shrink-0"
+      />
+
+      <main className="flex-1 overflow-y-auto">
+        <div className="flex flex-col min-h-full">
+          <form autoComplete="off" onSubmit={e => e.preventDefault()} className="px-4 py-6 space-y-6">
+            <p className="text-lg font-bold text-slate-900 mb-6 leading-tight">
+              비밀번호를 설정해주세요
+            </p>
+
+            {/* 비밀번호 */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">비밀번호</label>
+              <Input
+                type="password"
+                value={formData.newPassword}
+                onChange={handleChange("newPassword")}
+                placeholder=""
+                autoComplete="off"
+                data-lpignore="true"
+                name="reset-pw"
+                className="bg-white"
+              />
+              {formData.newPassword.length > 64 && (
+                <p className="text-sm text-red-500">패스워드는 최대 64자까지 설정할 수 있습니다.</p>
+              )}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+                <span className={`text-xs ${formData.newPassword.length >= 8 ? "text-green-500" : "text-slate-400"}`}>
+                  {formData.newPassword.length >= 8 ? "\u2713" : "\u2022"} 8자 이상
+                </span>
+                <span className={`text-xs ${hasAlphabet ? "text-green-500" : "text-slate-400"}`}>
+                  {hasAlphabet ? "\u2713" : "\u2022"} 영문 포함
+                </span>
+                <span className={`text-xs ${hasNumeric ? "text-green-500" : "text-slate-400"}`}>
+                  {hasNumeric ? "\u2713" : "\u2022"} 숫자 포함
+                </span>
+                <span className={`text-xs ${hasSpecial ? "text-green-500" : "text-slate-400"}`}>
+                  {hasSpecial ? "\u2713" : "\u2022"} 특수문자 포함
+                </span>
+              </div>
+            </div>
+
+            {/* 비밀번호 확인 */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">비밀번호 확인</label>
+              <Input
+                ref={confirmRef}
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange("confirmPassword")}
+                placeholder="비밀번호 재입력"
+                autoComplete="off"
+                data-lpignore="true"
+                name="reset-pw-confirm"
+                disabled={!isPasswordValid}
+                className={isPasswordValid ? "bg-white" : "bg-gray-100"}
+              />
+              {formData.confirmPassword.length > 64 && (
+                <p className="text-sm text-red-500">패스워드는 최대 64자까지 설정할 수 있습니다.</p>
+              )}
+              {formData.confirmPassword.length > 0 && formData.confirmPassword.length >= formData.newPassword.length && formData.newPassword !== formData.confirmPassword && (
+                <p className="text-sm text-red-500">비밀번호가 일치하지 않습니다.</p>
+              )}
+            </div>
+
+          </form>
+
+          {/* Save Button */}
+          <div className={`px-4 py-6 ${keyboardOpen ? "" : "mt-auto"}`}>
+            <Button
+              variant={isFormValid && !isSubmitting ? "primary" : "primaryDisabled"}
+              size="full"
+              disabled={!isFormValid || isSubmitting}
+              onClick={handleSave}
+            >
+              {isSubmitting ? "처리 중..." : "다음"}
+            </Button>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}

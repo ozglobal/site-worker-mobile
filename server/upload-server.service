@@ -1,0 +1,21 @@
+# Systemd service for CWorker Upload Server
+# Install: sudo cp upload-server.service /etc/systemd/system/
+# Enable:  sudo systemctl daemon-reload && sudo systemctl enable upload-server
+# Start:   sudo systemctl start upload-server
+# Logs:    sudo journalctl -u upload-server -f
+
+[Unit]
+Description=CWorker Upload Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/upload-server
+ExecStart=/usr/bin/node upload-server.js
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

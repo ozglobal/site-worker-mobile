@@ -1,0 +1,1 @@
+export { MyInfoPage } from './Profile'

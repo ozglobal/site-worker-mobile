@@ -1,0 +1,11 @@
+node_modules
+dist
+dev-dist
+.claude
+*.pem
+# Playwright
+tests/.auth/worker.json
+playwright-report/
+test-results/
+.env.test
+tests/.env.local

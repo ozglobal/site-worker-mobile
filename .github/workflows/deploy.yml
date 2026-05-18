@@ -1,0 +1,38 @@
+name: Deploy to DEV (workerm.kwork365.com)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install
+      - run: npm run build
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/key
+          chmod 600 ~/.ssh/key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to dev (workerm.kwork365.com)
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/key" \
+            dist/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_TARGET_DIR }}/
+
+      - name: Reload Nginx (dev)
+        run: ssh -i ~/.ssh/key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo systemctl reload nginx || true"

@@ -1,0 +1,29 @@
+{
+  "name": "건설인",
+  "short_name": "건설인",
+  "description": "건설현장 근로자 출퇴근 관리 앱",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone"],
+  "background_color": "#ffffff",
+  "theme_color": "#007DCA",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/app-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "ko-KR"
+}
