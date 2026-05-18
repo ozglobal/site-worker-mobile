@@ -339,16 +339,7 @@ export function DocumentViewerPage() {
                 <img src={blobUrl} alt={entry.title} className="w-full max-h-[70vh] object-contain rounded bg-slate-50" />
               ) : blobUrl && mimeType === "application/pdf" ? (
                 isMobileBrowser ? (
-                  <div className="flex flex-col items-center gap-3 text-center py-10">
-                    <p className="text-sm text-slate-600">PDF를 열려면 아래 버튼을 눌러주세요.</p>
-                    <button
-                      type="button"
-                      onClick={() => window.open(blobUrl, '_blank')}
-                      className="inline-block rounded bg-primary px-4 py-2 text-sm font-medium text-white"
-                    >
-                      PDF 열기
-                    </button>
-                  </div>
+                  <embed key={blobUrl} src={blobUrl} type="application/pdf" className="w-full h-[70vh]" />
                 ) : (
                   <iframe key={blobUrl} src={`${blobUrl}#view=FitH&toolbar=0`} title={entry.title} className="w-full aspect-[210/297] bg-white" />
                 )
@@ -382,16 +373,7 @@ export function DocumentViewerPage() {
               <img src={blobUrl} alt={entry.title} className="max-h-full max-w-full rounded shadow" />
             ) : blobUrl && mimeType === "application/pdf" ? (
               isMobileBrowser ? (
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <p className="text-sm text-slate-600">PDF를 열려면 아래 버튼을 눌러주세요.</p>
-                  <button
-                    type="button"
-                    onClick={() => window.open(blobUrl, '_blank')}
-                    className="inline-block rounded bg-primary px-4 py-2 text-sm font-medium text-white"
-                  >
-                    PDF 열기
-                  </button>
-                </div>
+                <embed key={blobUrl} src={blobUrl} type="application/pdf" className="w-full h-full" />
               ) : (
                 <iframe src={blobUrl} title={entry.title} className="w-full h-full bg-white" />
               )
